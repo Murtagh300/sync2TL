@@ -1,66 +1,73 @@
 <template>
-    <q-layout view="hHh lpR fFf">
-        <q-page-container>
-            <q-page class="q-pa-md column items-center q-gutter-y-md">
-                <img
-                    src="~assets/bvm-logo.png"
-                    alt="BVM"
-                    style="width: min(320px, 70vw)"
-                >
-                <div class="text-h5">{{ $t('wizard.title_feature_1') }}</div>
-                <div class="text-body2 text-center" style="max-width: 420px">
-                    {{ $t('wizard.msg_feature_1') }}
-                </div>
-                <div class="text-caption text-grey">
-                    v{{ version }} ({{ build }}) · Quasar {{ $q.version }} · Vue {{ vueVersion }}
-                </div>
+    <div class="scroll">
+        <div class="q-pa-md column no-wrap items-center q-gutter-y-md">
+            <img
+                src="~assets/bvm-logo.png"
+                alt="BVM"
+                style="width: min(320px, 70vw)"
+            >
+            <div class="text-h5">{{ $t('wizard.title_feature_1') }}</div>
+            <div class="text-body2 text-center" style="max-width: 420px">
+                {{ $t('wizard.msg_feature_1') }}
+            </div>
+            <div class="text-caption text-grey">
+                v{{ version }} ({{ build }}) · Quasar {{ $q.version }} · Vue {{ vueVersion }}
+            </div>
 
-                <q-btn-toggle
-                    v-model="$i18n.locale"
-                    no-caps
-                    toggle-color="primary"
-                    :options="[{ label: 'English', value: 'en-us' }, { label: '中文', value: 'zh-cn' }]"
-                />
+            <q-btn-toggle
+                v-model="$i18n.locale"
+                no-caps
+                toggle-color="primary"
+                :options="[{ label: 'English', value: 'en-us' }, { label: '中文', value: 'zh-cn' }]"
+            />
 
-                <q-btn
-                    color="primary"
-                    no-caps
-                    :loading="running"
-                    label="Run toolchain check"
-                    @click="run"
-                />
+            <q-btn
+                color="primary"
+                no-caps
+                :loading="running"
+                label="Run toolchain check"
+                @click="run"
+            />
 
-                <q-list
-                    v-if="results.length"
-                    bordered
-                    separator
-                    class="rounded-borders bg-surface"
-                    style="width: min(560px, 100%)"
-                >
-                    <q-item v-for="r in results" :key="r.name">
-                        <q-item-section avatar>
-                            <q-icon
-                                :name="r.ok ? 'check_circle' : 'error'"
-                                :color="r.ok ? 'positive' : 'negative'"
-                            />
-                        </q-item-section>
-                        <q-item-section>
-                            <q-item-label>{{ r.name }}</q-item-label>
-                            <q-item-label caption class="monospace" style="word-break: break-all">
-                                {{ r.detail }}
-                            </q-item-label>
-                        </q-item-section>
-                        <q-item-section side class="text-caption">{{ r.ms }} ms</q-item-section>
-                    </q-item>
-                </q-list>
-                <div v-if="done" :class="allOk ? 'text-positive' : 'text-negative'" data-test="summary">
-                    {{ allOk ? 'All checks passed' : 'Some checks failed' }}
-                </div>
+            <q-list
+                v-if="results.length"
+                bordered
+                separator
+                class="rounded-borders bg-surface"
+                style="width: min(560px, 100%)"
+            >
+                <q-item v-for="r in results" :key="r.name">
+                    <q-item-section avatar>
+                        <q-icon
+                            :name="r.ok ? 'check_circle' : 'error'"
+                            :color="r.ok ? 'positive' : 'negative'"
+                        />
+                    </q-item-section>
+                    <q-item-section>
+                        <q-item-label>{{ r.name }}</q-item-label>
+                        <q-item-label caption class="monospace" style="word-break: break-all">
+                            {{ r.detail }}
+                        </q-item-label>
+                    </q-item-section>
+                    <q-item-section side class="text-caption">{{ r.ms }} ms</q-item-section>
+                </q-item>
+            </q-list>
+            <div v-if="done" :class="allOk ? 'text-positive' : 'text-negative'" data-test="summary">
+                {{ allOk ? 'All checks passed' : 'Some checks failed' }}
+            </div>
 
-                <service-check />
-            </q-page>
-        </q-page-container>
-    </q-layout>
+            <service-check />
+
+            <q-btn
+                color="primary"
+                outline
+                no-caps
+                label="Open stack demo (phase 3)"
+                data-test="open-stack-demo"
+                :to="{ name: 'stack-demo', params: { level: '1' } }"
+            />
+        </div>
+    </div>
 </template>
 
 <script setup lang="ts">

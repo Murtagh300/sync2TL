@@ -4,10 +4,11 @@ import * as State from './state'
 import * as Plugins from './plugins'
 import * as Modals from './modals'
 import { genesises } from 'src/consts'
+import { stack } from 'src/router/stack'
 
 declare module 'vue' {
     interface ComponentCustomProperties {
-        /** navigate back or go to home(/) if there is no history entry to go back to */
+        /** navigate back or go to home(/) if the stack is empty */
         $backOrHome(): void
         /** returns the display name of network identified by gid */
         $netDisplayName(gid: string): string
@@ -36,8 +37,7 @@ export default defineBoot(({ app }) => {
 
     const props = app.config.globalProperties
     props.$backOrHome = function (this: ComponentPublicInstance) {
-        // vue-router keeps the previous location in history.state.back
-        this.$router.options.history.state.back
+        stack.canGoBack
             ? this.$router.back()
             : void this.$router.replace('/')
     }
