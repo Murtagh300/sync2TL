@@ -6,10 +6,10 @@
         <!-- drawer content header -->
         <q-toolbar>
             <q-avatar square>
-                <img src="~assets/sync-logo.svg">
+                <img src="~assets/bvm-icon.png">
             </q-avatar>
             <q-toolbar-title>
-                Sync2
+                BlackVault
                 <q-badge
                     v-if="distTag"
                     outline

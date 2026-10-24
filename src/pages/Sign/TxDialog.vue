@@ -14,7 +14,7 @@
                 @action="hide()"
             />
             <page-content
-                class="col q-pa-sm bg-grey-3"
+                class="col q-pa-sm bg-page"
                 innerClass="q-gutter-y-sm"
             >
                 <clause-card

@@ -13,7 +13,7 @@
                 :gid="gid"
                 @action="hide()"
             />
-            <page-content class="col q-pa-sm bg-grey-3">
+            <page-content class="col q-pa-sm bg-page">
                 <div class="text-uppercase">{{req.message.purpose}}</div>
                 <q-card
                     flat

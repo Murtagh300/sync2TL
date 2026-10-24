@@ -27,7 +27,7 @@
                 :ref="wallet.id.toString()"
                 clickable
                 :active="wallet.id === current"
-                active-class="bg-blue-1"
+                active-class="bg-surface-2"
                 @click="$emit('select', wallet.id)"
             >
                 <q-item-section>
