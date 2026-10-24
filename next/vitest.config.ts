@@ -15,12 +15,14 @@ export default defineConfig(({ mode }) => {
                 { find: /^worker-loader!\.\/worker$/, replacement: workerStub },
                 { find: /^\.\/worker\?worker$/, replacement: workerStub },
                 { find: /^core\//, replacement: `${src}/core/` },
+                { find: /^assets\//, replacement: `${src}/assets/` },
                 { find: /^src\//, replacement: `${src}/` }
             ]
         },
         test: {
             name: mode === 'legacy' ? 'legacy' : 'next',
-            include: ['test/**/*.spec.ts'],
+            // the services depend on Vue 2 / webpack in the legacy app, so only core is shared
+            include: mode === 'legacy' ? ['test/core/**/*.spec.ts'] : ['test/**/*.spec.ts'],
             setupFiles: ['test/setup.ts'],
             environment: 'node'
         }

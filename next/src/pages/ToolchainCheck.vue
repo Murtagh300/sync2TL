@@ -56,6 +56,8 @@
                 <div v-if="done" :class="allOk ? 'text-positive' : 'text-negative'" data-test="summary">
                     {{ allOk ? 'All checks passed' : 'Some checks failed' }}
                 </div>
+
+                <service-check />
             </q-page>
         </q-page-container>
     </q-layout>
@@ -69,6 +71,7 @@ import { computed, ref, version as vueVersion } from 'vue'
 import { Transaction, secp256k1, address } from 'thor-devkit'
 import { Vault, kdfDecrypt, kdfEncrypt } from 'core/vault'
 import { Storage } from 'core/storage'
+import ServiceCheck from './ServiceCheck.vue'
 
 type Result = { name: string, ok: boolean, detail: string, ms: number }
 

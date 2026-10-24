@@ -20,7 +20,7 @@ npm run test:legacy  # the same tests against the current app in ../src
 | --- | --- | --- |
 | 0 | Test checklist (`../docs/TEST-CHECKLIST.md`), core tests | done |
 | 1 | Quasar 2 + Vite toolchain, theme, assets, i18n, `core/` | done |
-| 2 | Boot files and global services | – |
+| 2 | Boot files and global services | done |
 | 3 | Router and stack navigation | – |
 | 4 | Pages and components | – |
 | 5 | Electron | – |
@@ -28,7 +28,22 @@ npm run test:legacy  # the same tests against the current app in ../src
 | 7 | Lint, CI, cleanup | – |
 
 Until phase 4 the app only shows a toolchain check page (`src/pages/ToolchainCheck.vue`)
-that runs the wallet core in the browser.
+that runs the wallet core in the browser, plus `src/pages/ServiceCheck.vue` for the
+services (live chain head, balances, tokens, reactive storage, `$dialog`, `$loading`).
+
+## Porting notes
+
+- **Options API** is enabled (`build.vueOptionsAPI`); app-vite 3 turns it off by default.
+- **Global helpers** (`$svc`, `$state`, `$axios`, `$dialog`, `$loading`, `$backOrHome`,
+  `$netDisplayName`, `$onWindowEvent`) are `app.config.globalProperties`, typed through
+  `declare module 'vue' { interface ComponentCustomProperties }`. Outside components use
+  `useSvc()` from `boot/services`.
+- **`$dialog`** passes every option except Quasar's own to a custom `component` as props
+  (Quasar 2 wants `componentProps`); call sites stay as they were.
+- **asyncComputed** (vue-async-computed 4): declare each key in `data()` as
+  `key: null as T | null` for typing, see `src/shims-async-computed.d.ts`.
+- **Still to come in phase 4**, with the dialogs they open: `$authenticate`, `$signTx`,
+  `$signCert`, `$qrcode` and the biometric unlock (`utils/bio-pass`, phase 6 for native).
 
 ## Core tests
 

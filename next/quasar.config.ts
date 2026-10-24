@@ -16,7 +16,7 @@ const appBuild = execSync('git --no-pager log -n 1 --date=short --pretty="%ad.%h
 
 export default defineConfig(() => {
     return {
-        boot: ['i18n'],
+        boot: ['i18n', 'axios', 'misc', 'directives', 'services'],
 
         css: ['app.sass'],
 
@@ -39,6 +39,9 @@ export default defineConfig(() => {
 
             vueRouterMode: 'hash',
 
+            // the ported Sync2 components use the Options API (data, methods, mixins)
+            vueOptionsAPI: true,
+
             // the import prefixes used throughout the Sync2 code base
             alias: {
                 src: srcDir(''),
@@ -59,13 +62,17 @@ export default defineConfig(() => {
                 GA_ID: process.env.GA_ID || ''
             },
 
-            vitePlugins: [
+            extendViteConf(viteConf) {
                 // thor-devkit and connex expect Node's Buffer/crypto/process in the browser
-                [nodePolyfills, {
-                    globals: { Buffer: true, global: true, process: true },
-                    protocolImports: true
-                }]
-            ]
+                // (added here: nodePolyfills returns several plugins, vitePlugins expects one)
+                viteConf.plugins = [
+                    ...(viteConf.plugins || []),
+                    nodePolyfills({
+                        globals: { Buffer: true, global: true, process: true },
+                        protocolImports: true
+                    })
+                ]
+            }
         },
 
         devServer: {
