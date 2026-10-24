@@ -1,0 +1,86 @@
+// app global css in Sass form
+
+.monospace
+  font-family: "SFMono-Regular", Consolas, "Liberation Mono", Menlo, monospace
+
+.serif
+  font-family: Cambria, "Hoefler Text", Utopia, "Liberation Serif", "Nimbus Roman No9 L Regular", Times, "Times New Roman", serif
+
+body.q-ios-padding 
+  .safe-area,
+  .stack-page,
+  .drawer-panel
+    padding-top: env(safe-area-inset-top) !important
+    padding-bottom: env(safe-area-inset-bottom) !important
+
+body.q-ios-padding .q-dialog__inner.q-dialog__inner--maximized
+  padding: 0!important
+  > div
+    max-height: 100% !important
+    padding-top: env(safe-area-inset-top) !important
+    padding-bottom: env(safe-area-inset-bottom) !important
+
+body.q-ios-padding .q-dialog__inner.q-dialog__inner--bottom
+  padding-bottom: 0 !important
+  > div
+    padding-bottom: env(safe-area-inset-bottom) !important
+
+.q-btn
+  text-transform: none
+
+body
+  overflow: hidden
+  position: fixed!important
+  height: 100%
+  -webkit-user-select: none !important
+  -moz-user-select: none !important
+  -ms-user-select: none !important
+  user-select: none !important
+
+.w40
+  width: 40%
+
+.narrow-page
+  width: 100%
+  max-width: map-get($sizes, "sm")
+
+// the workaround for the q-popup-proxy bug: can't set menu's max-width
+.q-menu
+  max-width: 80% !important
+  box-shadow: 0 5px 12px 0px rgba(0,0,0,0.25)
+
+img
+  pointer-events: none
+
+// ---- BlackVault theme ----
+.bg-page
+  background: $dark-page
+
+.bg-surface
+  background: $surface
+
+.bg-surface-2
+  background: $surface-2
+
+// buttons/chips/badges filled with the mint accent need dark text
+.bg-primary.text-white,
+.bg-accent.text-white,
+.q-btn.bg-primary,
+.q-btn.bg-accent
+  color: $on-primary !important
+
+.q-drawer, .q-dialog .q-card, .q-menu
+  background: $surface
+
+.q-header, .q-footer
+  background: $dark-page
+
+// carousels sit on the page, not on a card
+.q-carousel.q-dark
+  background: transparent
+
+// dark text on the light status colors
+.bg-warning, .bg-positive
+  color: $on-primary !important
+  .q-btn
+    color: $on-primary !important

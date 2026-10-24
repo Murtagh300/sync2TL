@@ -1,0 +1,43 @@
+{
+  "name": "com.blackvemarket.blackvault",
+  "version": "2.0.10",
+  "description": "BlackVault — the VeChain wallet by BlackVeMarket (BVM), based on VeChain Sync2",
+  "productName": "BlackVault",
+  "author": "BlackVeMarket (BVM)",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "quasar dev",
+    "build": "quasar build -m pwa",
+    "typecheck": "vue-tsc --noEmit",
+    "test": "vitest run",
+    "test:legacy": "vitest run --mode legacy",
+    "postinstall": "quasar prepare"
+  },
+  "dependencies": {
+    "@quasar/extras": "^2.1.0",
+    "asmcrypto.js": "^2.3.2",
+    "dexie": "^4.4.7",
+    "more-entropy": "0.0.7",
+    "quasar": "^2.35.2",
+    "register-service-worker": "^1.7.2",
+    "thor-devkit": "^2.0.9",
+    "vue": "^3.5.44",
+    "vue-i18n": "^11.4.16",
+    "vue-router": "^5.4.0"
+  },
+  "devDependencies": {
+    "@quasar/app-vite": "^3.10.3",
+    "@types/node": "^24.0.0",
+    "fake-indexeddb": "^6.2.6",
+    "sass-embedded": "^1.106.1",
+    "typescript": "~5.9.3",
+    "vite-plugin-node-polyfills": "^0.28.0",
+    "vitest": "^5.0.5",
+    "vue-tsc": "^3.3.13",
+    "workbox-build": "^7.4.1"
+  },
+  "engines": {
+    "node": "^24 || ^22.22.0"
+  }
+}
