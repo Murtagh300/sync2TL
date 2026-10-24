@@ -95,7 +95,7 @@ export default Vue.extend({
                 : null
         },
         title(): string {
-            return (this.wallet && this.wallet.meta.name) || 'Sync2'
+            return (this.wallet && this.wallet.meta.name) || 'BlackVault'
         }
     },
     asyncComputed: {

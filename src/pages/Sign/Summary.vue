@@ -22,7 +22,7 @@
                     >
                     <div
                         v-else
-                        class="fit text-h4 bg-grey-4 column justify-center"
+                        class="fit text-h4 bg-surface-2 column justify-center"
                     >{{(host[0]|| '?').toUpperCase()}}</div>
                 </transition>
             </div>

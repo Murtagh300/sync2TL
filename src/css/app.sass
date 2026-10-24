@@ -51,3 +51,36 @@ body
 
 img
   pointer-events: none
+
+// ---- BlackVault theme ----
+.bg-page
+  background: $dark-page
+
+.bg-surface
+  background: $surface
+
+.bg-surface-2
+  background: $surface-2
+
+// buttons/chips/badges filled with the mint accent need dark text
+.bg-primary.text-white,
+.bg-accent.text-white,
+.q-btn.bg-primary,
+.q-btn.bg-accent
+  color: $on-primary !important
+
+.q-drawer, .q-dialog .q-card, .q-menu
+  background: $surface
+
+.q-header, .q-footer
+  background: $dark-page
+
+// carousels sit on the page, not on a card
+.q-carousel.q-dark
+  background: transparent
+
+// dark text on the light status colors
+.bg-warning, .bg-positive
+  color: $on-primary !important
+  .q-btn
+    color: $on-primary !important

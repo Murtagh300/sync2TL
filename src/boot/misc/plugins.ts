@@ -7,9 +7,11 @@ import VueGtag from 'vue-gtag'
 export function boot() {
     Vue.use(AsyncComputed)
     Vue.use(Fragment.Plugin)
+    // analytics only when a measurement id is supplied at build time (GA_ID=G-XXXX)
+    const gaId = process.env.GA_ID
     Vue.use(VueGtag, {
-        config: { id: 'G-6QEHC6TLQV' },
-        enabled: process.env.PROD,
-        disableScriptLoad: !process.env.PROD
+        config: { id: gaId || 'disabled' },
+        enabled: !!(process.env.PROD && gaId),
+        disableScriptLoad: !(process.env.PROD && gaId)
     })
 }

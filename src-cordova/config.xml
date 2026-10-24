@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
-<widget android-versionCode="200100" id="org.vechain.sync2" ios-CFBundleIdentifier="org.vechain.sync2app" ios-CFBundleVersion="7" version="2.0.10" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
-    <name>Sync2</name>
-    <description>VeChain Sync2</description>
+<widget android-versionCode="200100" id="com.blackvemarket.blackvault" ios-CFBundleIdentifier="com.blackvemarket.blackvault" ios-CFBundleVersion="7" version="2.0.10" xmlns="http://www.w3.org/ns/widgets" xmlns:cdv="http://cordova.apache.org/ns/1.0">
+    <name>BlackVault</name>
+    <description>BlackVault — the VeChain wallet by BlackVeMarket (BVM)</description>
     <author email="dev@cordova.apache.org" href="http://cordova.io">
         Apache Cordova Team
     </author>

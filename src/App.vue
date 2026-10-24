@@ -75,7 +75,7 @@ export default Vue.extend({
         }
     },
     created() {
-        console.log(`[Sync2] v${process.env.APP_VERSION} (${process.env.APP_BUILD})`)
+        console.log(`[BlackVault] v${process.env.APP_VERSION} (${process.env.APP_BUILD})`)
         this.externalSignHandlerLoop()
 
         // to watch available update for electron build only

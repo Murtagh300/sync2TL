@@ -38,7 +38,7 @@ export default Vue.extend({
     computed: {
         slides() {
             return [{
-                img: require('assets/sync-logo.svg'),
+                img: require('assets/bvm-logo.png'),
                 title: this.$t('wizard.title_feature_1'),
                 name: 's1',
                 content: this.$t('wizard.msg_feature_1').toString()

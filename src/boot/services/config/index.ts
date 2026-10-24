@@ -4,11 +4,12 @@ import { genesises } from 'src/consts'
 import { TokenRegistry } from './token-registry'
 import { unique } from 'src/utils/array'
 
+// the first node per network is the default; veblocks.net nodes are gone
 const presetNodes: M.Node[] = [
     { // mainnet
         genesis: genesises.main,
         preset: true,
-        url: 'https://sync-mainnet.veblocks.net'
+        url: 'https://mainnet.vechain.org'
     },
     { // mainnet
         genesis: genesises.main,
@@ -18,7 +19,7 @@ const presetNodes: M.Node[] = [
     { // testnet
         genesis: genesises.test,
         preset: true,
-        url: 'https://sync-testnet.veblocks.net'
+        url: 'https://testnet.vechain.org'
     },
     { // testnet
         genesis: genesises.test,

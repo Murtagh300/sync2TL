@@ -185,7 +185,7 @@ export default Vue.extend({
     font-size: 14px;
     height: 150px;
     overflow: auto;
-    background-color: #0000000d;
+    background-color: rgba(255, 255, 255, 0.05);
     border: 1px dashed #b8b8b8;
 }
 </style>

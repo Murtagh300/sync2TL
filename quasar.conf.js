@@ -55,6 +55,7 @@ module.exports = configure(function (ctx) {
       iconSet: 'material-icons', // Quasar icon set
       lang: 'en-us', // Quasar language pack
       config: {
+        dark: true,
         loadingBar: {
             skipHijack: true
         }
@@ -134,9 +135,15 @@ module.exports = configure(function (ctx) {
       env: {
           APP_VERSION: JSON.stringify(appVersion),
           APP_BUILD: JSON.stringify(appBuild),
-          DIST_TAG: JSON.stringify(process.env.DIST_TAG)
+          DIST_TAG: JSON.stringify(process.env.DIST_TAG),
+          GA_ID: JSON.stringify(process.env.GA_ID || '')
       },
       vueRouterMode: 'hash', // available values: 'hash', 'history'
+
+      // node-sass (pulled in by @quasar/app) has no binary for modern Node; use dart-sass
+      // (dart-sass does not know the 'nested' output style Quasar defaults to)
+      sassLoaderOptions: { implementation: require('sass'), sassOptions: { outputStyle: 'expanded' } },
+      scssLoaderOptions: { implementation: require('sass'), sassOptions: { outputStyle: 'expanded' } },
 
       // rtl: false, // https://quasar.dev/options/rtl-support
       // showProgress: false,
@@ -220,16 +227,16 @@ module.exports = configure(function (ctx) {
         }]
       }, // only for GenerateSW
       manifest: {
-        name: 'Sync2',
+        name: 'BlackVault',
         // eslint-disable-next-line @typescript-eslint/camelcase
-        short_name: 'Sync2',
-        description: 'VeChain Sync2',
+        short_name: 'BlackVault',
+        description: 'BlackVault — the VeChain wallet by BlackVeMarket (BVM)',
         display: 'standalone',
         orientation: 'portrait',
         // eslint-disable-next-line @typescript-eslint/camelcase
-        background_color: '#ffffff',
+        background_color: '#080a09',
         // eslint-disable-next-line @typescript-eslint/camelcase
-        theme_color: '#027be3',
+        theme_color: '#080a09',
         icons: [
           {
             src: 'statics/icons/icon-128x128.png',
@@ -267,7 +274,7 @@ module.exports = configure(function (ctx) {
     // Full list of options: https://quasar.dev/quasar-cli/developing-cordova-apps/configuring-cordova
     cordova: {
       // noIosLegacyBuildFlag: true, // uncomment only if you know what you are doing
-      id: 'org.vechain.sync2'
+      id: 'com.blackvemarket.blackvault'
     },
 
     // Full list of options: https://quasar.dev/quasar-cli/developing-capacitor-apps/configuring-capacitor
@@ -294,8 +301,8 @@ module.exports = configure(function (ctx) {
 
       builder: {
         // https://www.electron.build/configuration/configuration
-        productName: 'Sync2',
-        appId: 'org.vechain.sync2',
+        productName: 'BlackVault',
+        appId: 'com.blackvemarket.blackvault',
         artifactName: '${productName}-${os}-${arch}-${version}.${ext}',
         protocols: {
             name: 'VeChain Connex',

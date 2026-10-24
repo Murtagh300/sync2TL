@@ -10,7 +10,7 @@
             >
                 <q-spinner-ios
                     :size="80"
-                    color="black"
+                    color="primary"
                 />
             </transition>
         </delay-render>
