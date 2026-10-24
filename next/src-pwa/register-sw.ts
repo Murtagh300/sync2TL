@@ -1,41 +1,33 @@
-import { register } from "register-service-worker";
-
-// The ready(), registered(), cached(), updatefound() and updated()
-// events passes a ServiceWorkerRegistration instance in their arguments.
-// ServiceWorkerRegistration: https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerRegistration
+import { register } from 'register-service-worker'
 
 register(import.meta.env.QUASAR_SERVICE_WORKER_FILE, {
-  // The registrationOptions object will be passed as the second argument
-  // to ServiceWorkerContainer.register()
-  // https://developer.mozilla.org/en-US/docs/Web/API/ServiceWorkerContainer/register#Parameter
-
-  // registrationOptions: { scope: './' },
-
-  ready(/* registration */) {
-    // console.log('Service worker is active.')
-  },
-
-  registered(/* registration */) {
-    // console.log('Service worker has been registered.')
-  },
-
-  cached(/* registration */) {
-    // console.log('Content has been cached for offline use.')
-  },
-
-  updatefound(/* registration */) {
-    // console.log('New content is downloading.')
-  },
-
-  updated(/* registration */) {
-    // console.log('New content is available; please refresh.')
-  },
-
-  offline() {
-    // console.log('No internet connection found. App is running in offline mode.')
-  },
-
-  error(/* err */) {
-    // console.error('Error during service worker registration:', err)
-  }
-});
+    ready() {
+        console.log('Service worker is active.')
+    },
+    registered() {
+        console.log('Service worker has been registered.')
+    },
+    cached() {
+        console.log('Content has been cached for offline use.')
+    },
+    updatefound(registration) {
+        console.log('New content is downloading.')
+        const installing = registration.installing
+        registration.active && installing && installing.addEventListener('statechange', () => {
+            if (installing.state === 'installed') {
+                console.log('New content is installed')
+                // shows the upgrade tip (pages/Index/UpgradeTip.vue)
+                window.AppState.updateAvailable = true
+            }
+        })
+    },
+    updated() {
+        console.log('New content is available')
+    },
+    offline() {
+        console.log('No internet connection found. App is running in offline mode.')
+    },
+    error(err) {
+        console.error('Error during service worker registration:', err)
+    }
+})

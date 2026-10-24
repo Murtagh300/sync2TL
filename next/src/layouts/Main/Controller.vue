@@ -1,15 +1,60 @@
 <template>
     <div>
-        <!-- the wizard, disclaimer and background notifiers are ported with the pages (phase 4) -->
-        <stacked-router-view class="fit" />
+        <transition
+            v-if="mounted"
+            appear
+            name="q-transition--fade"
+        >
+            <stacked-router-view
+                v-if="initialized"
+                class="fit"
+            />
+            <wizard
+                v-else
+                class="fit"
+                @done="initialized=true"
+            />
+        </transition>
+        <template v-if="initialized">
+            <activity-status-updater />
+            <transfer-notifier
+                v-for="gid in gids"
+                :key="gid"
+                :gid="gid"
+            />
+        </template>
+        <disclaimer />
     </div>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import Wizard from 'pages/Wizard'
 import StackedRouterView from 'components/StackedRouterView.vue'
+import ActivityStatusUpdater from 'pages/ActivityStatusUpdater'
+import TransferNotifier from 'pages/TransferNotifier.vue'
+import { unique } from 'src/utils/array'
+import Disclaimer from './Disclaimer'
 
 export default defineComponent({
     name: 'Main',
-    components: { StackedRouterView }
+    components: { Wizard, StackedRouterView, ActivityStatusUpdater, TransferNotifier, Disclaimer },
+    data() {
+        return {
+            initialized: false,
+            mounted: false,
+            // async computed (see src/shims-async-computed.d.ts)
+            gids: null as string[] | null
+        }
+    },
+    asyncComputed: {
+        async gids(): Promise<string[]> {
+            const wallets = await this.$svc.wallet.all()
+            return unique(wallets.map(w => w.gid))
+        }
+    },
+    async mounted() {
+        this.initialized = await this.$svc.config.getUserMasterKeyGlob().then(r => !!r)
+        this.mounted = true
+    }
 })
 </script>

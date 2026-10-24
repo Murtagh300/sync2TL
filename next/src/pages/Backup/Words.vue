@@ -1,0 +1,27 @@
+<template>
+    <div>
+        <p>{{$t('backup.label_your_mnemonic')}}</p>
+        <div class="row bg-surface-2 rounded-borders q-px-sm">
+            <div
+                v-for="(item, index) in words"
+                :key="index"
+                class="col-4 row q-py-sm"
+            >
+                <div class="col-2 text-caption text-grey text-right q-pr-sm">{{index+1}}.</div>
+                <div class="col-10 text-h6 serif">{{item}}</div>
+            </div>
+        </div>
+        <slot />
+    </div>
+</template>
+<script lang="ts">
+import { defineComponent } from 'vue'
+export default defineComponent({
+    props: {
+        words: {
+            type: Array as () => string[],
+            default: () => []
+        }
+    }
+})
+</script>

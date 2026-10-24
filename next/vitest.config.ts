@@ -21,8 +21,8 @@ export default defineConfig(({ mode }) => {
         },
         test: {
             name: mode === 'legacy' ? 'legacy' : 'next',
-            // the services depend on Vue 2 / webpack in the legacy app, so only core is shared
-            include: mode === 'legacy' ? ['test/core/**/*.spec.ts'] : ['test/**/*.spec.ts'],
+            // the services depend on Vue 2 / webpack in the legacy app, so only core and utils are shared
+            include: mode === 'legacy' ? ['test/core/**/*.spec.ts', 'test/utils/**/*.spec.ts'] : ['test/**/*.spec.ts'],
             setupFiles: ['test/setup.ts'],
             environment: 'node'
         }

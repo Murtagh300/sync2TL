@@ -22,14 +22,22 @@ npm run test:legacy  # the same tests against the current app in ../src
 | 1 | Quasar 2 + Vite toolchain, theme, assets, i18n, `core/` | done |
 | 2 | Boot files and global services | done |
 | 3 | Router and stack navigation | done |
-| 4 | Pages and components | – |
+| 4 | Pages and components | done |
 | 5 | Electron | – |
 | 6 | Mobile (Capacitor) | – |
 | 7 | Lint, CI, cleanup | – |
 
-Until phase 4 the app only shows a toolchain check page (`src/pages/ToolchainCheck.vue`)
-that runs the wallet core in the browser, plus `src/pages/ServiceCheck.vue` for the
-services (live chain head, balances, tokens, reactive storage, `$dialog`, `$loading`).
+The web app (SPA/PWA) is feature complete. Checked in the browser against mainnet
+(see `../docs/TEST-CHECKLIST.md`): wizard, create/import (known BIP39 vector), backup and
+verification, wallets/addresses, rename/delete, password change, settings (language,
+tokens, nodes), address/asset pages, send form, transaction dialog (estimation, warnings,
+priority), certificate signing, the dApp sign flow over a (local) relay, activities.
+
+Not checked yet: broadcasting a real transaction (needs testnet funds), transfer history
+and notifications with real transfers, Ledger (needs a device), PWA install/update.
+
+Platform hooks left for later phases: `utils/external-url.ts`, `utils/bio-pass.ts`,
+`utils/clipboard.ts`, `utils/open-url.ts`, the update tip (phase 5 desktop, phase 6 native).
 
 ## Porting notes
 
@@ -49,8 +57,15 @@ services (live chain head, balances, tokens, reactive storage, `$dialog`, `$load
   Options API `inject` unwraps refs. Pages under `layouts/Main` get their route params
   and query as props. `pages/StackDemo.vue` (temporary) exercises push, back, replace,
   swipe-back and reload.
-- **Still to come in phase 4**, with the dialogs they open: `$authenticate`, `$signTx`,
-  `$signCert`, `$qrcode` and the biometric unlock (`utils/bio-pass`, phase 6 for native).
+- **Vue 3 changes applied across the pages** (watch for these in new code too):
+  `v-model` on own components uses `v-model:<prop>` + `update:<prop>` (the `model` option is
+  gone); declare `emits` (undeclared listeners fall through to the root element);
+  `<template v-for>` carries the `key`; a bare nested `<template>` must be
+  `<template v-slot:default>`; no `this.` in templates; `$once('hook:…')` became
+  `beforeUnmount`; Quasar dialogs are teleported, so `this.$el` of a dialog component is
+  not its DOM (use the QDialog ref's `contentEl`).
+- **Dark theme**: no light-theme classes (`bg-*-1`, `text-dark`); use `bg-surface`,
+  `bg-surface-2`, `text-white`.
 
 ## Core tests
 

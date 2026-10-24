@@ -1,0 +1,45 @@
+<template>
+    <div>
+        <q-item dense>
+            <q-item-section>
+                ⨏(𝑥)
+            </q-item-section>
+        </q-item>
+        <q-item dense>
+            <q-item-section
+                top
+                class="items-center"
+            >
+                <q-icon name="subdirectory_arrow_right" />
+            </q-item-section>
+            <q-item-section avatar>
+                <address-avatar
+                    :addr="op.to"
+                    size="1em"
+                />
+            </q-item-section>
+            <q-item-section avatar>
+                <q-item-label class="ellipsis">
+                    <address-label :addr="op.to" />
+                </q-item-label>
+            </q-item-section>
+        </q-item>
+    </div>
+</template>
+<script lang="ts">
+import { defineComponent } from 'vue'
+import AddressLabel from 'src/components/AddressLabel.vue'
+import AddressAvatar from 'src/components/AddressAvatar.vue'
+
+export type OpCall = {
+    type: 'call'
+    to: string
+}
+
+export default defineComponent({
+    components: { AddressLabel, AddressAvatar },
+    props: {
+        op: { type: Object as () => OpCall, required: true }
+    }
+})
+</script>

@@ -1,0 +1,67 @@
+<template>
+    <div>
+        <async-resolve
+            v-if="token"
+            :promise="$svc.bc(token.gid).balanceOf(address, token)"
+            v-slot="{data}"
+        >
+            <TokenItem
+                clickable
+                :token="token"
+                :balance="data"
+                :selectIcon="true"
+            />
+        </async-resolve>
+        <q-popup-proxy position="bottom" fit>
+            <q-card>
+                <q-list
+                    padding
+                >
+                    <async-resolve
+                        v-for="item in tokens"
+                        :key="item.symbol"
+                        :promise="$svc.bc(item.gid).balanceOf(address, item)"
+                        v-slot="{data}"
+                    >
+                        <TokenItem
+                            clickable
+                            v-close-popup
+                            @click="onSelect(item.symbol)"
+                            :balance="data"
+                            :token="item"
+                        />
+                    </async-resolve>
+                </q-list>
+            </q-card>
+        </q-popup-proxy>
+    </div>
+</template>
+<script lang="ts">
+import { defineComponent } from 'vue'
+import TokenItem from './TokenItem.vue'
+import AsyncResolve from 'components/AsyncResolve'
+
+export default defineComponent({
+    components: {
+        TokenItem,
+        AsyncResolve
+    },
+    props: {
+        address: { type: String, required: true },
+        tokens: { type: Array as () => M.TokenSpec[], default: () => [] },
+        // v-model:symbol
+        symbol: String
+    },
+    emits: ['update:symbol'],
+    computed: {
+        token(): M.TokenSpec | undefined {
+            return this.tokens.find(t => t.symbol === this.symbol)
+        }
+    },
+    methods: {
+        onSelect(symbol: string) {
+            this.$emit('update:symbol', symbol)
+        }
+    }
+})
+</script>

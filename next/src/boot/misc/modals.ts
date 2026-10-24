@@ -1,6 +1,10 @@
-import { createApp, type App, type Component } from 'vue'
+import { createApp, type App, type Component, type ComponentPublicInstance } from 'vue'
 import { Dialog, type QDialogOptions } from 'quasar'
 import ModalLoading from 'components/ModalLoading.vue'
+import AuthenticationDialog from 'pages/AuthenticationDialog'
+import QRCodeDialog from 'pages/QRCodeDialog.vue'
+import { CertDialog, TxDialog } from 'pages/Sign'
+import { BioPass } from 'src/utils/bio-pass'
 
 /**
  * Options for $dialog. Besides Quasar's own options, a custom `component`
@@ -22,11 +26,34 @@ declare module 'vue' {
          * @returns the result of the task
          */
         $loading<T>(task: () => Promise<T>): Promise<T>
+
+        /**
+         * pop up the authentication dialog to ask user entering password
+         * @returns user master key
+         */
+        $authenticate(): Promise<Buffer>
+
+        /**
+         * sign tx
+         * @param gid desired genesis id of user wallet
+         * @param req request content
+         */
+        $signTx(gid: string, req: M.TxRequest): Promise<M.TxResponse>
+
+        /**
+         * sign cert
+         * @param gid desired genesis id of user wallet
+         * @param req request content
+         */
+        $signCert(gid: string, req: M.CertRequest): Promise<M.CertResponse>
+
+        /**
+         * qr code dialog
+         * @param req
+         */
+        $qrcode(req: M.QRRequest): void
     }
 }
-
-// $authenticate, $signTx, $signCert and $qrcode open dialogs that are ported
-// with the pages in phase 4 and are registered there.
 
 export function dialog<T>(options: DialogOptions) {
     const { component, ...rest } = options
@@ -65,6 +92,24 @@ export const loading = (() => {
 })()
 
 export function boot(app: App) {
-    app.config.globalProperties.$dialog = dialog
-    app.config.globalProperties.$loading = loading
+    const props = app.config.globalProperties
+    props.$dialog = dialog
+    props.$loading = loading
+    props.$authenticate = async function (this: ComponentPublicInstance) {
+        try {
+            const bioPass = await BioPass.open()
+            if (bioPass && await this.$svc.config.getBioPassOn()) {
+                return Buffer.from(await bioPass.recall(this.$t('bioAuth.title').toString(), this.$t('common.cancel').toString()), 'hex')
+            }
+        } catch (err) {
+            if ((err as { code?: number }).code === -108 /* BIOMETRIC_DISMISSED */) {
+                throw err
+            }
+            console.warn(err)
+        }
+        return dialog<Buffer>({ component: AuthenticationDialog })
+    }
+    props.$signTx = (gid, req) => dialog({ component: TxDialog, gid, req })
+    props.$signCert = (gid, req) => dialog({ component: CertDialog, gid, req })
+    props.$qrcode = req => { void dialog({ component: QRCodeDialog, req }).catch(() => { }) }
 }

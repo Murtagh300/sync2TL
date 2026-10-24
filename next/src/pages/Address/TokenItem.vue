@@ -1,0 +1,55 @@
+<template>
+    <q-expansion-item
+        group="token"
+        v-bind="$attrs"
+        expand-icon-class="hidden"
+    >
+        <template v-slot:header>
+            <q-item-section avatar>
+                <token-avatar
+                    size="md"
+                    :spec="token"
+                />
+            </q-item-section>
+            <q-item-section>
+                <q-item-label>{{token.symbol}}</q-item-label>
+            </q-item-section>
+            <q-item-section
+                side
+                class="text-white"
+            >
+                <amount-label
+                    :value="balance"
+                    :decimals="token.decimals"
+                > --.-- </amount-label>
+            </q-item-section>
+        </template>
+        <q-item>
+            <q-item-section/>
+            <q-item-section/>
+            <q-item-section
+                side
+            >
+                <div class="q-gutter-md">
+                    <slot />
+                </div>
+            </q-item-section>
+        </q-item>
+    </q-expansion-item>
+</template>
+<script lang="ts">
+import { defineComponent } from 'vue'
+import TokenAvatar from 'components/TokenAvatar.vue'
+import AmountLabel from 'components/AmountLabel.vue'
+
+export default defineComponent({
+    components: {
+        TokenAvatar,
+        AmountLabel
+    },
+    props: {
+        token: { type: Object as () => M.TokenSpec, required: true },
+        balance: String as () => ''
+    }
+})
+</script>
