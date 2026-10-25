@@ -245,6 +245,25 @@ Production needs CORS on the BlackVeMarket API for the wallet's origin on: `/api
 - Printing (PDF export, emergency letter) now prints from the app instead of an inline script, which the CSP blocks.
 - A test checks that every text the code asks for exists in English (`test/utils/i18n-used.spec.ts`).
 
+## WalletConnect, VeChain programs and more market tools
+
+- **WalletConnect v2** (`utils/walletconnect.ts`, `pages/WalletConnect`): the wallet side of VeChain's dapp-kit
+  protocol (namespace `vechain`, chain `vechain:<last 32 hex of the genesis id>`, methods `thor_sendTransaction` and
+  `thor_signCertificate` with `{ message, options }`). Requests go through the wallet's own sign dialogs, which now
+  show the asking site; a request is always signed by the address the dApp was given. The SDK (Reown WalletKit,
+  pinned) loads only when used. It needs a project ID: `WALLETCONNECT_PROJECT_ID` at build time, or pasted in the app.
+- **Private key import** (`type: 'key'`, the vault's static key): wallets VeWorld made from a key.
+- **StarGate staking** (`pages/Ecosystem/Stargate.vue`) and **VeBetterDAO** (`pages/Ecosystem/VeBetter.vue`),
+  contracts in `utils/ecosystem.ts` (checked on chain): positions, rewards to claim, B3TR ↔ VOT3, the current round.
+- **Launchpad calendar** (`utils/launch-calendar.ts`): coming phases, an in-app reminder and an .ics file.
+- **My listings** and **Offers** (`pages/Market`): reprice or end listings in bulk; offers received and made.
+- **NFT value over 30 days** from daily floors, and private **notes and labels** per NFT.
+- **Profit and loss** (`utils/cost-basis.ts`): average cost in VET from swaps of the last year.
+- **Split a bill**: one request per person, each share a little different so payments can be told apart; a payment
+  now settles one request only.
+- **Activity search and filters**, **contacts as CSV**, and **Deutsch** and **Français** (tests keep every
+  complete translation in step with English).
+
 ## Security
 
 Reviewed internally on 2026-10-25: see [SECURITY-AUDIT.md](SECURITY-AUDIT.md) for the findings, the fixes,

@@ -40,6 +40,7 @@
         </template>
         <disclaimer />
         <app-lock v-if="initialized" />
+        <wallet-connect-host v-if="initialized" />
     </div>
 </template>
 <script lang="ts">
@@ -54,12 +55,13 @@ import TabBar, { TAB_ROUTES } from 'components/TabBar.vue'
 import TxStatusBar from 'components/TxStatusBar.vue'
 import OfflineBar from 'components/OfflineBar.vue'
 import AppLock from 'components/AppLock.vue'
+import { WalletConnectHost } from 'pages/WalletConnect'
 import { applyAccent, applyDisplay } from 'src/utils/prefs'
 import { setupPrivacyClass, setupShake } from 'src/utils/shake'
 
 export default defineComponent({
     name: 'Main',
-    components: { Wizard, StackedRouterView, ActivityStatusUpdater, TransferNotifier, Disclaimer, TabBar, TxStatusBar, OfflineBar, AppLock },
+    components: { Wizard, StackedRouterView, ActivityStatusUpdater, TransferNotifier, Disclaimer, TabBar, TxStatusBar, OfflineBar, AppLock, WalletConnectHost },
     data() {
         return {
             initialized: false,

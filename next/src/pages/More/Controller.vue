@@ -45,6 +45,31 @@
                     :to="{ name: 'dapps' }"
                 />
                 <more-item
+                    icon="o_link"
+                    :title="$t('wc.title')"
+                    :to="{ name: 'walletconnect' }"
+                />
+                <more-item
+                    icon="o_sell"
+                    :title="$t('listings.title')"
+                    :to="{ name: 'listings' }"
+                />
+                <more-item
+                    icon="o_local_offer"
+                    :title="$t('offerInbox.title')"
+                    :to="{ name: 'offers' }"
+                />
+                <more-item
+                    icon="o_hub"
+                    :title="$t('stargate.title')"
+                    :to="{ name: 'stargate' }"
+                />
+                <more-item
+                    icon="o_eco"
+                    :title="$t('vebetter.title')"
+                    :to="{ name: 'vebetter' }"
+                />
+                <more-item
                     icon="o_water_drop"
                     :title="$t('liquidity.title')"
                     :to="{ name: 'liquidity' }"
@@ -53,6 +78,11 @@
                     icon="o_request_quote"
                     :title="$t('payments.title')"
                     :to="{ name: 'payments' }"
+                />
+                <more-item
+                    icon="o_query_stats"
+                    :title="$t('pnl.title')"
+                    :to="{ name: 'pnl' }"
                 />
                 <more-item
                     icon="o_insights"

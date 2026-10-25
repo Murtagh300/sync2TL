@@ -33,6 +33,28 @@
                             </q-item-section>
                             <q-item-section>{{$t('contacts.action_import_qr')}}</q-item-section>
                         </q-item>
+                        <q-separator />
+                        <q-item
+                            v-close-popup
+                            clickable
+                            :disable="!contacts.length"
+                            @click="exportCsv()"
+                        >
+                            <q-item-section avatar>
+                                <q-icon name="o_file_download" />
+                            </q-item-section>
+                            <q-item-section>{{$t('contacts.action_export_csv')}}</q-item-section>
+                        </q-item>
+                        <q-item
+                            v-close-popup
+                            clickable
+                            @click="($refs.csv as HTMLInputElement).click()"
+                        >
+                            <q-item-section avatar>
+                                <q-icon name="o_upload_file" />
+                            </q-item-section>
+                            <q-item-section>{{$t('contacts.action_import_csv')}}</q-item-section>
+                        </q-item>
                     </q-list>
                 </q-menu>
             </q-btn>
@@ -44,6 +66,13 @@
                 @click="add()"
             />
         </page-toolbar>
+        <input
+            ref="csv"
+            type="file"
+            accept=".csv,text/csv,text/plain"
+            class="hidden"
+            @change="importCsv"
+        >
         <page-content
             class="col"
             padding
@@ -175,6 +204,8 @@ import type { Contact } from 'src/utils/names'
 import QrScannerDialog from 'pages/QrScannerDialog'
 import { decodeContacts, encodeContacts } from 'src/utils/contacts-share'
 import { lastPayment } from 'src/utils/last-payments'
+import { contactsFromCsv, contactsToCsv } from 'src/utils/contacts-csv'
+import { downloadText } from 'src/utils/export'
 import { formatDate } from 'src/utils/format'
 import { nameOf } from 'src/utils/names'
 import type { BVM } from 'boot/services/bvm'
@@ -239,6 +270,33 @@ export default defineComponent({
                 const rest = this.contacts.filter(x => x !== contact && x.address.toLowerCase() !== c.address.toLowerCase())
                 await this.save([...rest, c])
             } catch { }
+        },
+        exportCsv() {
+            downloadText(`blackvault-contacts-${new Date().toISOString().slice(0, 10)}.csv`, contactsToCsv(this.sorted))
+        },
+        importCsv(e: Event) {
+            const input = e.target as HTMLInputElement
+            const file = input.files?.[0]
+            input.value = ''
+            if (!file || file.size > 512 * 1024) return
+            void file.text().then(async text => {
+                const { contacts, skipped } = contactsFromCsv(text)
+                // a contact already in the book keeps its name; new groups are added
+                const byAddress = new Map(this.contacts.map(c => [c.address.toLowerCase(), c]))
+                let added = 0
+                for (const c of contacts) {
+                    const known = byAddress.get(c.address.toLowerCase())
+                    if (known) {
+                        const groups = [...new Set([...(known.groups || []), ...(c.groups || [])])]
+                        byAddress.set(c.address.toLowerCase(), { ...known, ...(groups.length ? { groups } : {}) })
+                    } else {
+                        byAddress.set(c.address.toLowerCase(), c)
+                        added++
+                    }
+                }
+                await this.save([...byAddress.values()])
+                this.$q.notify(this.$t('contacts.msg_imported_csv', { n: added, skipped }))
+            })
         },
         shareQr() {
             this.$qrcode({

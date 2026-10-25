@@ -17,6 +17,17 @@
                 class="col q-pa-sm bg-page"
                 innerClass="q-gutter-y-sm"
             >
+                <div
+                    v-if="originHost"
+                    class="bvm-tile origin row no-wrap items-center"
+                >
+                    <q-icon
+                        name="o_public"
+                        size="18px"
+                        class="q-mr-sm"
+                    />
+                    <span class="ellipsis">{{$t('sign.label_from_site', { host: originHost })}}</span>
+                </div>
                 <simulation-card
                     v-if="changes"
                     :changes="changes"
@@ -219,6 +230,14 @@ export default defineComponent({
             return !!this.req.options.delegator
         },
         thor(): Connex.Thor { return this.$svc.bc(this.gid).thor },
+        /** the site that asks (a dApp, over WalletConnect or a link) */
+        originHost(): string {
+            try {
+                return this.req.origin ? new URL(this.req.origin).host : ''
+            } catch {
+                return ''
+            }
+        },
         estimation(): EstimateGasResult | null {
             if (this.delayedEstimation && this.delayedEstimation.caller === this.signer) {
                 return this.delayedEstimation
@@ -440,6 +459,11 @@ export default defineComponent({
 })
 </script>
 <style lang="sass" scoped>
+.origin
+  padding: 8px 12px
+  font-size: 13px
+  font-weight: 700
+
 .vtho-short
   padding: 10px 12px
   font-size: 13px

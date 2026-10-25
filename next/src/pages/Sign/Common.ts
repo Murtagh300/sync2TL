@@ -60,7 +60,7 @@ export default defineComponent({
             localStorage.setItem(`last-signer-${this.gid}`, this.signer)
         },
         async signTx(wallet: M.Wallet, signer: string, buildTx: () => Promise<Transaction<Transaction.LegacyBody>>): Promise<Buffer> {
-            if (wallet.meta.type === 'hd') {
+            if (wallet.meta.type === 'hd' || wallet.meta.type === 'key') {
                 // acquire user master key
                 const umk = await this.$authenticate()
 
@@ -74,7 +74,7 @@ export default defineComponent({
             }
         },
         async signCert(wallet: M.Wallet, cert: Certificate): Promise<Buffer> {
-            if (wallet.meta.type === 'hd') {
+            if (wallet.meta.type === 'hd' || wallet.meta.type === 'key') {
                 // acquire user master key
                 const umk = await this.$authenticate()
 

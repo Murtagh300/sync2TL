@@ -29,6 +29,57 @@
                         @click="load()"
                     />
                 </div>
+                <div
+                    v-if="!loading && !error && calendar.length"
+                    class="q-mb-lg"
+                >
+                    <div class="bvm-label q-mb-sm">{{$t('calendar.title')}}</div>
+                    <q-list class="bvm-list">
+                        <q-item
+                            v-for="e in calendar"
+                            :key="e.id"
+                        >
+                            <q-item-section avatar>
+                                <div class="cal-day column items-center">
+                                    <span class="cal-month">{{month(e.start)}}</span>
+                                    <span class="cal-date">{{new Date(e.start).getDate()}}</span>
+                                </div>
+                            </q-item-section>
+                            <q-item-section style="min-width: 0">
+                                <q-item-label
+                                    lines="1"
+                                    class="text-weight-bold"
+                                >{{e.name}}</q-item-label>
+                                <q-item-label
+                                    caption
+                                    lines="1"
+                                >{{e.phase}} · {{time(e.start)}}</q-item-label>
+                            </q-item-section>
+                            <q-item-section side>
+                                <div class="row no-wrap">
+                                    <q-btn
+                                        flat
+                                        round
+                                        dense
+                                        :icon="reminded.includes(e.id) ? 'notifications_active' : 'o_notifications'"
+                                        :color="reminded.includes(e.id) ? 'primary' : undefined"
+                                        :aria-label="$t('calendar.action_remind')"
+                                        :aria-pressed="reminded.includes(e.id)"
+                                        @click="remind(e)"
+                                    />
+                                    <q-btn
+                                        flat
+                                        round
+                                        dense
+                                        icon="o_event"
+                                        :aria-label="$t('calendar.action_ics')"
+                                        @click="addToCalendar(e)"
+                                    />
+                                </div>
+                            </q-item-section>
+                        </q-item>
+                    </q-list>
+                </div>
                 <empty-state
                     v-else-if="!launches.length"
                     icon="o_rocket_launch"
@@ -84,6 +135,8 @@ import PageContent from 'components/PageContent.vue'
 import EmptyState from 'components/EmptyState.vue'
 import { openURL } from 'src/utils/open-url'
 import { marketURL } from 'boot/services/bvm'
+import { icsFor, reminders, toggleReminder, upcomingPhases, type LaunchEvent } from 'src/utils/launch-calendar'
+import { downloadText } from 'src/utils/export'
 import { formatUnits } from 'src/utils/format'
 import type { BVM } from 'boot/services/bvm'
 
@@ -96,6 +149,7 @@ export function launchState(l: BVM.Launch): 'live' | 'upcoming' | 'soldout' {
 export default defineComponent({
     components: { EmptyState, PageToolbar, PageContent },
     data: () => ({
+        reminded: reminders().map(r => r.id),
         loading: true,
         error: false,
         launches: [] as BVM.Launch[]
@@ -103,7 +157,29 @@ export default defineComponent({
     created() {
         void this.load()
     },
+    computed: {
+        calendar(): LaunchEvent[] {
+            return upcomingPhases(this.launches)
+        }
+    },
     methods: {
+        month(t: number) {
+            return new Date(t).toLocaleDateString(this.$i18n.locale, { month: 'short' })
+        },
+        time(t: number) {
+            return new Date(t).toLocaleString(this.$i18n.locale, { weekday: 'short', hour: '2-digit', minute: '2-digit' })
+        },
+        remind(e: LaunchEvent) {
+            const on = toggleReminder(e)
+            this.reminded = reminders().map(r => r.id)
+            this.$q.notify(this.$t(on ? 'calendar.msg_reminder_on' : 'calendar.msg_reminder_off', { name: e.name }))
+            if (on && typeof Notification !== 'undefined' && Notification.permission === 'default') {
+                void Notification.requestPermission().catch(() => { })
+            }
+        },
+        addToCalendar(e: LaunchEvent) {
+            downloadText(`${e.slug}-${e.id.split(':')[1]}.ics`, icsFor(e, `${marketURL}/launchpad/${e.slug}`), 'text/calendar')
+        },
         openMarket() {
             openURL(marketURL)
         },
@@ -126,6 +202,23 @@ export default defineComponent({
 })
 </script>
 <style lang="sass" scoped>
+.cal-day
+  width: 40px
+  padding: 2px 0
+  border-radius: 10px
+  border: 1px solid $hairline-2
+  line-height: 1.1
+
+.cal-month
+  font-size: 10px
+  font-weight: 800
+  text-transform: uppercase
+  color: var(--q-primary)
+
+.cal-date
+  font-size: 17px
+  font-weight: 900
+
 .launch-grid
   display: grid
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr))

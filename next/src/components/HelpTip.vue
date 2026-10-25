@@ -35,7 +35,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 
-export type HelpTerm = 'vtho' | 'gas' | 'approval' | 'floor' | 'vvet' | 'recovery' | 'sponsor' | 'slippage'
+export type HelpTerm = 'vtho' | 'gas' | 'approval' | 'floor' | 'vvet' | 'recovery' | 'sponsor' | 'slippage' | 'vot3'
 
 // a small (?) next to a term: tap for a plain explanation
 export default defineComponent({

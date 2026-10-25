@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 import enUS from 'src/i18n/en-us'
 import nlNL from 'src/i18n/nl-nl'
+import deDE from 'src/i18n/de-de'
+import frFR from 'src/i18n/fr-fr'
 
 type Tree = { [k: string]: string | Tree }
 
@@ -12,15 +14,19 @@ function keys(t: Tree, prefix = ''): string[] {
 /** the {placeholders} in a message */
 const params = (s: string) => [...s.matchAll(/\{(\w+)\}/g)].map(m => m[1]).sort()
 
-describe('the Dutch translation', () => {
-    it('has every English key, and no others', () => {
-        expect(keys(nlNL as Tree).sort()).toEqual(keys(enUS as Tree).sort())
-    })
+const get = (t: Tree, path: string) => path.split('.').reduce<string | Tree>((o, k) => (o as Tree)[k]!, t) as string
 
-    it('keeps the placeholders of each message', () => {
-        const get = (t: Tree, path: string) => path.split('.').reduce<string | Tree>((o, k) => (o as Tree)[k]!, t) as string
-        for (const k of keys(enUS as Tree)) {
-            expect([k, params(get(nlNL as Tree, k))]).toEqual([k, params(get(enUS as Tree, k))])
-        }
+// complete translations (zh-cn may lack a few strings: English fills in)
+for (const [name, messages] of Object.entries({ Dutch: nlNL, German: deDE, French: frFR })) {
+    describe(`the ${name} translation`, () => {
+        it('has every English key, and no others', () => {
+            expect(keys(messages as Tree).sort()).toEqual(keys(enUS as Tree).sort())
+        })
+
+        it('keeps the placeholders of each message', () => {
+            for (const k of keys(enUS as Tree)) {
+                expect([k, params(get(messages as Tree, k))]).toEqual([k, params(get(enUS as Tree, k))])
+            }
+        })
     })
-})
+}

@@ -46,6 +46,7 @@
                 >{{$t('nft.label_offer_count', { n: offerCount })}}</span>
                 <span v-if="unpriced">{{$t('nft.label_unpriced', { n: unpriced })}}</span>
             </div>
+            <nft-value-chart :collections="collections" />
         </div>
 
         <!-- collections: filter; sort and listed/unlisted -->
@@ -210,6 +211,15 @@
                         class="nft-hidden-tag"
                     >{{verified && !verified.has(nft.collectionSlug) ? $t('nft.label_unverified') : $t('nft.label_hidden_one')}}</div>
                         <div class="nft-collection ellipsis">{{nft.collection}}</div>
+                        <div
+                            v-if="labelOf(nft)"
+                            class="nft-label ellipsis"
+                        >
+                            <q-icon
+                                name="o_sell"
+                                size="11px"
+                            /> {{labelOf(nft)}}
+                        </div>
                         <div
                             v-if="nft.listed && nft.displayPrice"
                             class="nft-price bvm-amount"
@@ -376,6 +386,8 @@ import { canTrade, listClauses, listingCurrencies, sendClauses, signMarketTx } f
 import { toWei } from 'src/utils/format'
 import { readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 import { navigateWithHero } from 'src/utils/hero'
+import { loadNotes, noteOf, type NftNotes } from 'src/utils/nft-notes'
+import NftValueChart from 'components/NftValueChart.vue'
 import { isFavorite, isHidden, loadHidden, nftKey, saveHidden, toggleFavorite, type HiddenNfts } from 'src/utils/hidden-nfts'
 import { shareCard } from 'src/utils/share-card'
 import GalleryDialog from 'components/GalleryDialog.vue'
@@ -391,6 +403,7 @@ const PAGE = 30
 
 // the NFTs an address holds, from the BlackVeMarket index
 export default defineComponent({
+    components: { NftValueChart },
     props: {
         address: { type: String, required: true },
         walletId: { type: String, required: true },
@@ -417,6 +430,7 @@ export default defineComponent({
         verified: null as Set<string> | null,
         showHidden: false,
         onlyFavorites: false,
+        notes: {} as NftNotes,
         selected: [] as BVM.NFT[],
         marketURL
     }),
@@ -486,6 +500,7 @@ export default defineComponent({
     },
     async created() {
         this.hiddenPrefs = await loadHidden(this.$svc)
+        this.notes = await loadNotes(this.$svc)
         this.$svc.bvm.collections()
             .then(c => { this.verified = new Set(Object.values(c).map(x => x.slug)) })
             .catch(() => { })
@@ -538,6 +553,10 @@ export default defineComponent({
             const { prefs, favorite } = await toggleFavorite(this.$svc, nft)
             this.hiddenPrefs = prefs
             haptic(favorite ? 'success' : 'tap')
+        },
+        labelOf(nft: BVM.NFT): string {
+            const n = noteOf(this.notes, nft)
+            return n ? n.labels[0] || (n.note ? '📝' : '') : ''
         },
         isFavoriteNft(nft: BVM.NFT) {
             return isFavorite(this.hiddenPrefs, nft)
@@ -769,6 +788,11 @@ export default defineComponent({
   border-radius: $radius-lg
   background: rgba(17, 20, 19, 0.96)
   backdrop-filter: blur(6px)
+
+.nft-label
+  font-size: 11px
+  font-weight: 700
+  color: var(--q-primary)
 
 .nft-star
   position: absolute

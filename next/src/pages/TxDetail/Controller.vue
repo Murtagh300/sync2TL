@@ -356,7 +356,7 @@ export default defineComponent({
             const me = (this.me || '').toLowerCase()
             const wallets = await this.$svc.wallet.all()
             const wallet = wallets.find(w => w.gid === this.gid && w.meta.addresses.some(a => a.toLowerCase() === me))
-            if (!wallet || wallet.meta.type !== 'hd') {
+            if (!wallet || wallet.meta.type === 'watch') {
                 this.messageError = this.$t('txDetail.msg_message_unsupported')
                 return
             }

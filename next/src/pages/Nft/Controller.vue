@@ -240,6 +240,43 @@
                     />
                 </div>
 
+                <!-- a private note and labels -->
+                <div class="bvm-tile q-pa-md q-mt-lg nft-note">
+                    <div class="row items-center q-mb-sm">
+                        <q-icon
+                            name="o_sticky_note_2"
+                            size="18px"
+                            color="primary"
+                            class="q-mr-xs"
+                        />
+                        <span class="text-weight-bold">{{$t('nftNotes.title')}}</span>
+                        <q-space />
+                        <span class="text-caption text-muted">{{$t('nftNotes.hint')}}</span>
+                    </div>
+                    <q-input
+                        v-model="note.note"
+                        dense
+                        outlined
+                        autogrow
+                        maxlength="280"
+                        :placeholder="$t('nftNotes.placeholder')"
+                        @blur="saveNote()"
+                    />
+                    <div class="row q-gutter-xs q-mt-sm">
+                        <q-chip
+                            v-for="l in labelOptions"
+                            :key="l"
+                            clickable
+                            dense
+                            :outline="!note.labels.includes(l)"
+                            :color="note.labels.includes(l) ? 'primary' : undefined"
+                            :text-color="note.labels.includes(l) ? 'dark' : undefined"
+                            :aria-pressed="note.labels.includes(l)"
+                            class="q-ma-none q-mr-xs"
+                            @click="toggleLabel(l)"
+                        >{{l}}</q-chip>
+                    </div>
+                </div>
                 <!-- offers -->
                 <template v-if="offers.length">
                     <div class="bvm-label q-mt-lg q-mb-sm">{{$t('market.label_offers')}} · {{offers.length}}</div>
@@ -416,6 +453,7 @@ import { emptyWatchlist, type Watchlist } from 'src/utils/alerts'
 import { heroHint, HERO_NAME } from 'src/utils/hero'
 import { isFavorite, isHidden, loadHidden, nftKey, saveHidden, toggleFavorite } from 'src/utils/hidden-nfts'
 import { shareCard } from 'src/utils/share-card'
+import { loadNotes, noteOf, saveNote, SUGGESTED_LABELS, type NftNote } from 'src/utils/nft-notes'
 import { listingSuggestions, traitHighlights } from 'src/utils/pricing'
 import { haptic, prefs } from 'src/utils/prefs'
 import type { BVM } from 'boot/services/bvm'
@@ -466,6 +504,7 @@ export default defineComponent({
         activity: [] as BVM.ActivityEntry[],
         hidden: false,
         favorite: false,
+        note: { note: '', labels: [] } as NftNote,
         heroName: HERO_NAME,
         // async computed (see src/shims-async-computed.d.ts)
         wallet: null as M.Wallet | null,
@@ -485,6 +524,8 @@ export default defineComponent({
                 const [h, cols] = await Promise.all([loadHidden(this.$svc), this.$svc.bvm.collections().catch(() => null)])
                 this.hidden = isHidden(h, cols ? new Set(Object.values(cols).map(c => c.slug)) : null, nft)
                 this.favorite = isFavorite(h, nft)
+                const n = noteOf(await loadNotes(this.$svc), nft)
+                this.note = n ? { note: n.note, labels: [...n.labels] } : { note: '', labels: [] }
                 return nft
             } catch (err) {
                 console.warn('BlackVeMarket nft:', err)
@@ -494,6 +535,10 @@ export default defineComponent({
         }
     },
     computed: {
+        /** the suggested labels and the ones this NFT has */
+        labelOptions(): string[] {
+            return [...new Set([...SUGGESTED_LABELS.map(l => this.$t(`nftNotes.label_${l}`)), ...this.note.labels])]
+        },
         /** the picture the NFT card handed over, shown until the data arrives */
         hint(): string {
             return heroHint(`${this.contract.toLowerCase()}:${this.tokenId}`)
@@ -578,6 +623,13 @@ export default defineComponent({
             try {
                 await shareCard({ title: nft.name, subtitle: nft.collection, image: nft.image }, this.$svc.bvm.nftPage(nft.contract, nft.tokenId))
             } catch { }
+        },
+        async saveNote() {
+            if (this.nft) await saveNote(this.$svc, this.nft, this.note)
+        },
+        toggleLabel(l: string) {
+            this.note.labels = this.note.labels.includes(l) ? this.note.labels.filter(x => x !== l) : [...this.note.labels, l]
+            void this.saveNote()
         },
         async toggleFavorite() {
             if (!this.nft) {
@@ -801,6 +853,9 @@ export default defineComponent({
 })
 </script>
 <style lang="sass" scoped>
+.nft-note :deep(.q-field__native)
+  font-size: 14px
+
 .offer-amount
   font-size: 16px
 

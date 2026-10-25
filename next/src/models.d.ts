@@ -18,7 +18,8 @@ declare namespace M {
         interface Meta {
             name: string
             /** 'watch': an address followed without its keys; it can't sign */
-            type: 'hd' | 'watch'
+            /** 'key': one private key (imported), one address */
+            type: 'hd' | 'key' | 'watch'
             addresses: string[]
             backedUp?: boolean
             /** a color key (src/utils/wallet-look.ts) and an emoji to tell wallets apart */

@@ -60,16 +60,21 @@ export const newId = () => Math.random().toString(36).slice(2, 10)
 /** mark open requests paid when an incoming transfer of the exact amount arrived after them */
 export function matchPaidRequests(incoming: (Incoming & { gid: string })[]): PaymentRequestRecord[] {
     const newlyPaid: PaymentRequestRecord[] = []
-    for (const r of payments.requests) {
+    // one payment settles one request: requests with the same amount each need their own
+    const used = new Set(payments.requests.filter(r => r.paid).map(r => r.paid!.txId.toLowerCase()))
+    // oldest requests first, so payments settle them in the order they were asked
+    for (const r of [...payments.requests].sort((a, b) => a.createdAt - b.createdAt)) {
         if (r.paid) continue
         const wei = new BigNumber(r.amount).times(new BigNumber(10).pow(r.decimals)).toFixed(0)
         const hit = incoming.find(i =>
+            !used.has(i.txId.toLowerCase()) &&
             i.gid === r.gid &&
             i.to === r.to.toLowerCase() &&
             i.time >= r.createdAt - 60 * 1000 &&
             (r.token ? i.kind === 'token' && i.contract === r.token.toLowerCase() : i.kind === 'vet') &&
             i.amount === wei)
         if (hit) {
+            used.add(hit.txId.toLowerCase())
             r.paid = { txId: hit.txId, from: hit.from, at: hit.time }
             newlyPaid.push(r)
         }

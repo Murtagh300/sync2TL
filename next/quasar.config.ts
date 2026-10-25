@@ -63,7 +63,9 @@ export default defineConfig(() => {
                 // the BlackVeMarket API; needs CORS for the wallet's origin (see README)
                 BVM_API_URL: process.env.BVM_API_URL || '',
                 // BetterSwap prices; it sends no CORS headers, so a build points this at a proxy
-                BETTERSWAP_API_URL: process.env.BETTERSWAP_API_URL || ''
+                BETTERSWAP_API_URL: process.env.BETTERSWAP_API_URL || '',
+                // WalletConnect (Reown) project id; without it the app asks for one (Meer › WalletConnect)
+                WALLETCONNECT_PROJECT_ID: process.env.WALLETCONNECT_PROJECT_ID || ''
             },
 
             extendViteConf(viteConf) {

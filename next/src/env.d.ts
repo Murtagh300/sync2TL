@@ -6,5 +6,6 @@ interface ImportMetaEnv {
     readonly DIST_TAG: string
     readonly GA_ID: string
     readonly BVM_API_URL: string
-        readonly BETTERSWAP_API_URL: string
+    readonly BETTERSWAP_API_URL: string
+    readonly WALLETCONNECT_PROJECT_ID: string
 }

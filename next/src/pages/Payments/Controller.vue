@@ -67,15 +67,26 @@
                         </q-item-section>
                     </q-item>
                 </q-list>
-                <q-btn
-                    unelevated
-                    no-caps
-                    color="primary"
-                    icon="add"
-                    class="full-width"
-                    :label="$t('payments.title_new_request')"
-                    @click="newRequest()"
-                />
+                <div class="row no-wrap q-gutter-x-sm">
+                    <q-btn
+                        class="col"
+                        unelevated
+                        no-caps
+                        color="primary"
+                        icon="add"
+                        :label="$t('payments.title_new_request')"
+                        @click="newRequest()"
+                    />
+                    <q-btn
+                        class="col"
+                        outline
+                        no-caps
+                        color="primary"
+                        icon="o_call_split"
+                        :label="$t('split.title')"
+                        @click="splitBill()"
+                    />
+                </div>
             </template>
 
             <!-- payments you make regularly -->
@@ -144,6 +155,7 @@ import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import AddressLabel from 'components/AddressLabel.vue'
 import PaymentDialog, { type PaymentDialogResult } from './PaymentDialog.vue'
+import SplitDialog, { type SplitResult } from './SplitDialog.vue'
 import { matchPaidRequests, newId, payments, type PaymentRequestRecord, type ScheduledPayment } from 'src/utils/payments'
 import { incomingTransfers } from 'src/utils/incoming'
 import { buildPaymentLink } from 'src/utils/payment-request'
@@ -217,6 +229,33 @@ export default defineComponent({
                 payments.requests = [record, ...payments.requests]
                 this.showRequest(record)
             } catch { }
+        },
+        /** one request per person; shown one after the other to share */
+        async splitBill() {
+            const w = this.wallet
+            if (!w) return
+            let r: SplitResult
+            try {
+                r = await this.$dialog<SplitResult>({ component: SplitDialog, symbols: this.tokens.map(t => t.symbol) })
+            } catch {
+                return
+            }
+            const spec = this.tokens.find(t => t.symbol === r.symbol)
+            const now = Date.now()
+            const records: PaymentRequestRecord[] = r.shares.map((s, k) => ({
+                id: newId(),
+                gid: w.gid,
+                to: w.meta.addresses[0]!,
+                amount: s.amount,
+                symbol: r.symbol,
+                token: spec?.address || '',
+                decimals: spec?.decimals ?? 18,
+                note: [r.note, s.name].filter(Boolean).join(' · '),
+                // in order, so they settle in order
+                createdAt: now + k
+            }))
+            payments.requests = [...records, ...payments.requests]
+            this.$q.notify(this.$t('split.msg_created', { n: records.length }))
         },
         showRequest(r: PaymentRequestRecord) {
             const link = buildPaymentLink({ to: r.to, amount: r.amount, symbol: r.symbol })

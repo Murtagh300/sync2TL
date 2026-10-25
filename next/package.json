@@ -18,10 +18,13 @@
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
     "@quasar/extras": "^2.1.0",
+    "@reown/walletkit": "1.6.0",
     "@vechain/connex-driver": "^2.3.2",
     "@vechain/connex-framework": "^2.3.2",
     "@vechain/connex-types": "^2.2.1",
     "@vechain/picasso": "^2.1.1",
+    "@walletconnect/core": "2.25.0",
+    "@walletconnect/utils": "2.25.0",
     "asmcrypto.js": "^2.3.2",
     "axios": "^1.20.0",
     "bignumber.js": "^9.3.1",

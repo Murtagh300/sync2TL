@@ -44,10 +44,107 @@
                 </q-menu>
             </q-btn>
         </page-toolbar>
+        <!-- search and filters -->
+        <div class="q-px-md q-pt-sm q-pb-xs filters">
+            <q-input
+                v-model="filter.q"
+                dense
+                outlined
+                clearable
+                debounce="200"
+                :placeholder="$t('activityFilter.placeholder')"
+                @clear="filter.q = ''"
+            >
+                <template #prepend>
+                    <q-icon name="o_search" />
+                </template>
+            </q-input>
+            <div class="row no-wrap q-gutter-x-xs q-mt-xs chips">
+                <q-chip
+                    v-for="k in (['all', 'in', 'out', 'fail'] as const)"
+                    :key="k"
+                    clickable
+                    dense
+                    :outline="filter.kind !== k"
+                    :color="filter.kind === k ? 'primary' : undefined"
+                    :text-color="filter.kind === k ? 'dark' : undefined"
+                    class="q-ma-none q-mr-xs"
+                    @click="filter.kind = k"
+                >{{$t(`activityFilter.kind_${k}`)}}</q-chip>
+                <q-chip
+                    clickable
+                    dense
+                    outline
+                    icon="o_event"
+                    class="q-ma-none q-mr-xs"
+                >
+                    {{$t(`activityFilter.period_${filter.period}`)}}
+                    <q-menu auto-close>
+                        <q-list dense>
+                            <q-item
+                                v-for="p in (['all', 'month', '30d', 'year'] as const)"
+                                :key="p"
+                                clickable
+                                :active="filter.period === p"
+                                @click="filter.period = p"
+                            >
+                                <q-item-section>{{$t(`activityFilter.period_${p}`)}}</q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-menu>
+                </q-chip>
+                <q-chip
+                    v-if="tokenOptions.length > 1"
+                    clickable
+                    dense
+                    outline
+                    icon="o_toll"
+                    class="q-ma-none q-mr-xs"
+                >
+                    {{filter.token === null ? $t('activityFilter.any_token') : tokenLabel(filter.token)}}
+                    <q-menu auto-close>
+                        <q-list dense>
+                            <q-item
+                                clickable
+                                :active="filter.token === null"
+                                @click="filter.token = null"
+                            >
+                                <q-item-section>{{$t('activityFilter.any_token')}}</q-item-section>
+                            </q-item>
+                            <q-item
+                                v-for="t in tokenOptions"
+                                :key="t"
+                                clickable
+                                :active="filter.token === t"
+                                @click="filter.token = t"
+                            >
+                                <q-item-section>{{tokenLabel(t)}}</q-item-section>
+                            </q-item>
+                        </q-list>
+                    </q-menu>
+                </q-chip>
+            </div>
+        </div>
         <page-content class="col">
             <pull-refresh
                 @refresh="refresh"
             >
+                <div
+                    v-if="filtered && built.rows.length"
+                    class="q-px-md q-pt-sm text-caption text-muted row items-center"
+                >
+                    {{$t('activityFilter.label_count', { n: shownRows.length, of: built.rows.length })}}
+                    <q-space />
+                    <q-btn
+                        flat
+                        dense
+                        no-caps
+                        size="sm"
+                        color="primary"
+                        :label="$t('activityFilter.action_clear')"
+                        @click="filter = emptyFilter()"
+                    />
+                </div>
                 <template v-if="groups.length">
                     <section
                         v-for="g in groups"
@@ -89,6 +186,13 @@
                     </q-item>
                 </q-list>
                 <empty-state
+                    v-else-if="filtered"
+                    icon="o_search_off"
+                    :text="$t('activityFilter.msg_nothing')"
+                    :action="$t('activityFilter.action_clear')"
+                    @action="filter = emptyFilter()"
+                />
+                <empty-state
                     v-else
                     icon="o_receipt_long"
                     :text="$t('activities.msg_not_found')"
@@ -113,6 +217,8 @@ import { describeAction, type ActionText } from 'src/utils/describe-action'
 import { formatUnits } from 'src/utils/format'
 import { incomingTransfers, type Incoming } from 'src/utils/incoming'
 import { txNote } from 'src/utils/tx-notes'
+import { emptyFilter, filterRows, isFiltered, type ActivityFilter } from 'src/utils/activity-filter'
+import { nameOf } from 'src/utils/names'
 import { decodeAsTokenTransferClause, decodeAsNftTransferClause } from 'pages/Sign/helper'
 import type { BVM } from 'boot/services/bvm'
 import { downloadText, printTable, toCsv, type ExportRow } from 'src/utils/export'
@@ -135,7 +241,8 @@ export default defineComponent({
         list: [] as M.Activity[],
         incoming: [] as (Incoming & { gid: string })[],
         tokens: [] as M.TokenSpec[],
-        collections: {} as Record<string, BVM.Collection>
+        collections: {} as Record<string, BVM.Collection>,
+        filter: emptyFilter() as ActivityFilter
     }),
     computed: {
         built(): { rows: Row[], targets: Record<string, Target> } {
@@ -164,9 +271,19 @@ export default defineComponent({
             }
             return { rows: rows.sort((a, b) => b.time - a.time), targets }
         },
+        filtered(): boolean {
+            return isFiltered(this.filter)
+        },
+        shownRows(): Row[] {
+            return filterRows(this.built.rows, this.filter, nameOf)
+        },
+        /** the tokens that occur, for the token filter */
+        tokenOptions(): string[] {
+            return [...new Set(this.built.rows.filter(r => r.asset).map(r => (r.asset!.token || '').toLowerCase()))]
+        },
         groups(): { label: string, rows: Row[] }[] {
             const out: { label: string, rows: Row[] }[] = []
-            for (const r of this.built.rows) {
+            for (const r of this.shownRows) {
                 const label = this.groupLabel(r.time)
                 const last = out[out.length - 1]
                 if (last && last.label === label) {
@@ -182,6 +299,11 @@ export default defineComponent({
         void this.load()
     },
     methods: {
+        emptyFilter,
+        tokenLabel(address: string): string {
+            if (!address || address === ZERO) return 'VET'
+            return this.tokens.find(t => (t.address || '').toLowerCase() === address)?.symbol || `${address.slice(0, 6)}…`
+        },
         async load() {
             this.loading = true
             try {
@@ -395,6 +517,13 @@ export default defineComponent({
 })
 </script>
 <style lang="sass" scoped>
+.filters
+  border-bottom: 1px solid $hairline
+
+.chips
+  overflow-x: auto
+  scrollbar-width: none
+
 .group-label
   padding: 16px 16px 4px
 </style>

@@ -75,7 +75,9 @@ export default defineComponent({
                     try {
                         const text = await this.$dialog<string>({ component: QrScannerDialog })
                         const req = parsePaymentRequest(text)
-                        if (req) {
+                        if (/^wc:/i.test(text.trim())) {
+                            void this.$router.push({ name: 'walletconnect', query: { link: text.trim() } })
+                        } else if (req) {
                             void this.$router.push({ name: 'send', query: { wid, i: '0', ...req } })
                         } else if (/[#/]sign\?src=/.test(text)) {
                             void this.$router.push({ name: 'sign', query: { src: new URLSearchParams(text.slice(text.indexOf('?'))).get('src') || '' } })

@@ -10,10 +10,13 @@ import { listen } from 'src/utils/external-url'
 import { checkAlerts, notifySystem } from 'src/utils/alerts'
 import { notify as addNotification } from 'src/utils/notifications'
 import { dueScheduled } from 'src/utils/payments'
+import { dueReminders } from 'src/utils/launch-calendar'
 import dayjs from 'dayjs'
 // import more locales here
 import 'dayjs/locale/zh-cn'
 import 'dayjs/locale/nl'
+import 'dayjs/locale/de'
+import 'dayjs/locale/fr'
 import { nodeHealth, startNodeHealth } from 'src/utils/node-health'
 
 /**
@@ -57,17 +60,26 @@ export default defineComponent({
             const wanted = (newVal || navigator.language).toLowerCase()
             const lang = this.$i18n.availableLocales.includes(wanted)
                 ? wanted
-                : wanted.startsWith('zh') ? 'zh-cn' : wanted.startsWith('nl') ? 'nl-nl' : 'en-us'
+                : wanted.startsWith('zh') ? 'zh-cn'
+                    : wanted.startsWith('nl') ? 'nl-nl'
+                        : wanted.startsWith('de') ? 'de-de'
+                            : wanted.startsWith('fr') ? 'fr-fr' : 'en-us'
             this.$i18n.locale = lang
 
             // should set to default first
             dayjs.locale('en')
-            // dayjs names Dutch 'nl'
-            dayjs.locale(lang === 'nl-nl' ? 'nl' : lang)
+            // dayjs names these by language only
+            dayjs.locale(({ 'nl-nl': 'nl', 'de-de': 'de', 'fr-fr': 'fr' } as Record<string, string>)[lang] || lang)
         }
     },
     methods: {
         async runAlerts() {
+            for (const e of dueReminders()) {
+                const text = this.$t('calendar.msg_starting', { name: e.name, phase: e.phase })
+                addNotification({ id: `launch:${e.id}`, kind: 'alert', title: text, route: { name: 'launch', params: { slug: e.slug } } })
+                this.$q.notify({ message: text, icon: 'o_rocket_launch', timeout: 10000 })
+                notifySystem(text)
+            }
             for (const s of dueScheduled()) {
                 addNotification({
                     id: `due:${s.id}:${s.next}`,

@@ -74,6 +74,25 @@
                 <button
                     type="button"
                     class="bvm-tile choice row no-wrap items-center"
+                    @click="importKey()"
+                >
+                    <q-icon
+                        name="o_vpn_key"
+                        size="24px"
+                        color="primary"
+                    />
+                    <div class="col q-ml-md">
+                        <div class="choice-title">{{$t('privateKey.action')}}</div>
+                        <div class="choice-body">{{$t('privateKey.msg')}}</div>
+                    </div>
+                    <q-icon
+                        name="o_chevron_right"
+                        class="text-muted"
+                    />
+                </button>
+                <button
+                    type="button"
+                    class="bvm-tile choice row no-wrap items-center"
                     @click="watchAddress()"
                 >
                     <q-icon
@@ -113,6 +132,10 @@ import { address as addressUtil } from 'thor-devkit'
 import { isVetName, resolveVetName } from 'src/utils/names'
 
 const defaultGid = genesises.main.id
+
+// the order of secp256k1: a private key is a number between 1 and it
+const CURVE_N = BigInt('0xFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFFEBAAEDCE6AF48A03BBFD25E8CD0364141')
+const validKey = (hex: string) => /^[0-9a-f]{64}$/i.test(hex) && BigInt('0x' + hex) > 0n && BigInt('0x' + hex) < CURVE_N
 
 export default defineComponent({
     components: { PageToolbar, PopSheets, PageContent },
@@ -183,6 +206,54 @@ export default defineComponent({
         }
     },
     methods: {
+        /** a wallet from one private key (VeWorld can make those); it has one address */
+        async importKey() {
+            this.error = ''
+            await this.$nextTick()
+            if (!this.name) {
+                this.error = this.$t('common.required_field').toString()
+                return
+            }
+            const clean = (v: string) => v.trim().replace(/^0x/i, '')
+            const opts: PromptOptions = {
+                title: this.$t('privateKey.action'),
+                message: this.$t('privateKey.msg_input'),
+                model: '',
+                action: { label: this.$t('common.continue'), color: 'primary' },
+                validate: input => {
+                    const hex = clean(input)
+                    return validKey(hex) ? '' : this.$t('privateKey.msg_invalid')
+                }
+            }
+            let sk: Buffer
+            try {
+                sk = Buffer.from(clean(await this.$dialog<string>({ component: PromptDialog, opts })), 'hex')
+            } catch {
+                return
+            }
+            try {
+                const umk = await this.$authenticate()
+                await this.$loading(async () => {
+                    const vault = Vault.createStatic(sk, umk)
+                    const addr = vault.derive(0).address
+                    const existing = await this.$svc.wallet.all()
+                    if (existing.some(w => w.gid === this.gid && w.meta.type !== 'watch' && w.meta.addresses.some(a => a.toLowerCase() === addr.toLowerCase()))) {
+                        throw new Error(this.$t('newWallet.msg_watch_exists'))
+                    }
+                    await this.$svc.wallet.insert({
+                        gid: this.gid,
+                        vault: vault.encode(),
+                        meta: { name: this.name, type: 'key', addresses: [addr], backedUp: true }
+                    })
+                })
+                this.$backOrHome()
+                this.$q.notify(this.$t('common.wallet_created'))
+            } catch (err) {
+                if (err instanceof Error && err.message) this.error = err.message
+            } finally {
+                sk.fill(0)
+            }
+        },
         /** follow an address (or name.vet) without its keys */
         async watchAddress() {
             this.error = ''

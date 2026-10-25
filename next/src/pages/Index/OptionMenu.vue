@@ -20,12 +20,13 @@ export default defineComponent({
             return [{
                 label: this.$t('index.action_new_address').toString(),
                 action: () => this.newAddress(),
-                hidden: this.wallet.meta.addresses.length >= MAX_ADDRESS || this.wallet.meta.type === 'watch'
+                hidden: this.wallet.meta.addresses.length >= MAX_ADDRESS || this.wallet.meta.type !== 'hd'
             },
             {
                 label: this.$t('index.action_backup').toString(),
                 action: () => this.$router.push({ name: 'backup', params: { walletId: this.wallet.id.toString() } }),
-                hidden: this.wallet.meta.type === 'watch'
+                // a key wallet's backup is the key the user imported
+                hidden: this.wallet.meta.type !== 'hd'
             },
             {
                 label: this.$t('index.action_rename').toString(),

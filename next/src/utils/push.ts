@@ -25,6 +25,29 @@ export async function bvmSession(): Promise<string> {
     }
 }
 
+/** an offer this wallet made, as BlackVeMarket lists it (read loosely: fields may vary) */
+export type MadeOffer = { name: string, collection: string, image: string, amount: string, contract: string, tokenId: string }
+
+/** the offers an address made; BlackVeMarket answers a signed-in wallet only (401 otherwise) */
+export async function madeOffers(address: string): Promise<MadeOffer[]> {
+    const r = await http.get<{ made?: Record<string, unknown>[] }>(`/profile/${address.toLowerCase()}/offers`, { headers: { 'cache-control': 'no-store' } })
+    const str = (v: unknown) => (typeof v === 'string' || typeof v === 'number' ? String(v) : '')
+    return (r.data.made || []).map(o => {
+        const nft = (o.nft || {}) as Record<string, unknown>
+        const contract = str(o.contract || o.nftContract || nft.contract)
+        const tokenId = str(o.tokenId || nft.tokenId)
+        const amount = [str(o.displayAmount || o.price || o.amount), str(o.currency || o.paySymbol)].filter(Boolean).join(' ')
+        return {
+            name: str(o.name || nft.name) || (contract ? `${contract.slice(0, 6)}… #${tokenId}` : '—'),
+            collection: str(o.collection || o.collectionName || nft.collection),
+            image: /^https:/.test(str(o.image || nft.image)) ? str(o.image || nft.image) : '',
+            amount,
+            contract,
+            tokenId
+        }
+    })
+}
+
 /** the certificate BlackVeMarket asks for when connecting */
 export function signInMessage(): Connex.Vendor.CertMessage {
     return {

@@ -15,7 +15,9 @@ import PopSheets, { Sheet } from 'src/components/PopSheets.vue'
 const displayNames: Record<string, string> = {
     'en-us': 'English (U.S.)',
     'zh-cn': '中文 (中国)',
-    'nl-nl': 'Nederlands'
+    'nl-nl': 'Nederlands',
+    'de-de': 'Deutsch',
+    'fr-fr': 'Français'
 }
 
 type Item = {

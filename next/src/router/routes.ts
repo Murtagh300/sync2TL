@@ -28,6 +28,10 @@ import Portfolio from 'pages/Portfolio'
 import Payments from 'pages/Payments'
 import Payout from 'pages/Payout'
 import Overview from 'pages/Overview'
+import Pnl from 'pages/Pnl'
+import { Listings, OfferInbox } from 'pages/Market'
+import { Stargate, VeBetter } from 'pages/Ecosystem'
+import WalletConnect from 'pages/WalletConnect'
 import SwitchGuide from 'pages/SwitchGuide'
 import { Dust, Consolidate } from 'pages/Tidy'
 import Liquidity from 'pages/Liquidity'
@@ -130,6 +134,30 @@ const routes: RouteRecordRaw[] = [
             path: 'switch-guide',
             name: 'switch-guide',
             component: SwitchGuide
+        }, {
+            path: 'walletconnect',
+            name: 'walletconnect',
+            component: WalletConnect
+        }, {
+            path: 'stargate',
+            name: 'stargate',
+            component: Stargate
+        }, {
+            path: 'vebetter',
+            name: 'vebetter',
+            component: VeBetter
+        }, {
+            path: 'listings',
+            name: 'listings',
+            component: Listings
+        }, {
+            path: 'offers',
+            name: 'offers',
+            component: OfferInbox
+        }, {
+            path: 'pnl',
+            name: 'pnl',
+            component: Pnl
         }, {
             path: 'overview',
             name: 'overview',

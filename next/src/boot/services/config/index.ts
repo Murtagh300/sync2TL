@@ -29,7 +29,7 @@ const presetNodes: M.Node[] = [
     }
 ]
 
-type JsonKey = 'watchlist' | 'alerts' | 'alert-state' | 'token-prefs' | 'hidden-nfts'
+type JsonKey = 'watchlist' | 'alerts' | 'alert-state' | 'token-prefs' | 'hidden-nfts' | 'nft-notes'
 
 export function build(storage: Storage) {
     const t = delegateTable<Storage.ConfigEntity, Storage.ConfigEntity>(
@@ -38,7 +38,7 @@ export function build(storage: Storage) {
         m => m
     )
     type Key = 'nodes' | 'activeNodeMap' | 'userMasterKeyGlob' |
-        'tokenRegistry' | 'activeTokenSymbols' | 'recentRecipients' | 'language' | 'bio-pass-on' | 'contacts' | 'watchlist' | 'alerts' | 'alert-state' | 'token-prefs' | 'hidden-nfts'
+        'tokenRegistry' | 'activeTokenSymbols' | 'recentRecipients' | 'language' | 'bio-pass-on' | 'contacts' | 'watchlist' | 'alerts' | 'alert-state' | 'token-prefs' | 'hidden-nfts' | 'nft-notes'
 
     const getSubKey = async (key: Key, subKey: string) => {
         const row = (await t.all().where({ key, subKey }).query())[0]
