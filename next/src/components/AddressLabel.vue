@@ -1,7 +1,12 @@
 <template>
     <div class="inline-block address">
         <template v-if="test(addr)">
-            {{displayString}}
+            <span
+                v-if="name"
+                class="address-name"
+                :title="checksumed"
+            >{{name}}</span>
+            <template v-else>{{displayString}}</template>
         </template>
         <slot v-else>!!Invalid address!!</slot>
     </div>
@@ -9,13 +14,23 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { address } from 'thor-devkit'
+import { nameOf } from 'src/utils/names'
 
 export default defineComponent({
     props: {
         addr: String as () => string | null,
-        full: Boolean
+        full: Boolean,
+        /** show the address even when it has a name */
+        noName: Boolean
     },
     computed: {
+        checksumed(): string {
+            return this.addr && address.test(this.addr) ? address.toChecksumed(this.addr) : ''
+        },
+        /** a contact or .vet name; never in full mode, which is for checking the address itself */
+        name(): string {
+            return this.full || this.noName ? '' : nameOf(this.addr)
+        },
         displayString(): string {
             if (!this.addr || !address.test(this.addr)) {
                 return ''
@@ -40,5 +55,9 @@ export default defineComponent({
     white-space: inherit;
     overflow: inherit;
     vertical-align: middle;
+}
+.address-name {
+    font-weight: 700;
+    letter-spacing: 0;
 }
 </style>

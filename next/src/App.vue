@@ -7,6 +7,7 @@ import { defineComponent } from 'vue'
 // Geist, the typeface of blackvemarket.com, bundled (no font CDN for a wallet)
 import '@fontsource-variable/geist'
 import { listen } from 'src/utils/external-url'
+import { checkAlerts, notifySystem } from 'src/utils/alerts'
 import dayjs from 'dayjs'
 // import more locales here
 import 'dayjs/locale/zh-cn'
@@ -36,6 +37,7 @@ function parseConnexURL(urlStr: string) {
 export default defineComponent({
     data: () => ({
         destroyed: false,
+        alertTimer: 0 as ReturnType<typeof setInterval> | 0,
         // async computed (see src/shims-async-computed.d.ts)
         lang: null as string | null
     }),
@@ -60,6 +62,22 @@ export default defineComponent({
         }
     },
     methods: {
+        async runAlerts() {
+            try {
+                const fired = await checkAlerts(this.$svc, (key, params) => this.$t(key, params ?? {}))
+                for (const m of fired) {
+                    this.$q.notify({
+                        message: m.text,
+                        icon: 'o_notifications',
+                        timeout: 8000,
+                        actions: [{ label: this.$t('watchlist.title'), color: 'primary', handler: () => { void this.$router.push({ name: 'watchlist' }) } }]
+                    })
+                    notifySystem(m.text)
+                }
+            } catch (err) {
+                console.warn('alerts:', err)
+            }
+        },
         async externalSignHandlerLoop() {
             // eslint-disable-next-line no-unmodified-loop-condition
             while (!this.destroyed) {
@@ -77,11 +95,15 @@ export default defineComponent({
     created() {
         console.log(`[BlackVault] v${import.meta.env.APP_VERSION} (${import.meta.env.APP_BUILD})`)
         void this.externalSignHandlerLoop()
+        // price alerts and new offers, while BlackVault is open
+        setTimeout(() => void this.runAlerts(), 15 * 1000)
+        this.alertTimer = setInterval(() => void this.runAlerts(), 5 * 60 * 1000)
         // the desktop (phase 5) and native (phase 6) apps report updates and style
         // the status bar here; the PWA reports updates from src-pwa/register-sw.ts
     },
     beforeUnmount() {
         this.destroyed = true
+        this.alertTimer && clearInterval(this.alertTimer)
     }
 })
 </script>

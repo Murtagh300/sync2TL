@@ -104,3 +104,27 @@ fails, wallets saved by an earlier version may no longer open.
 `src/utils/tokens.ts` dry-runs `balanceOf` for every registry token in batches of 40 clauses through
 `thor.explain`, and shows every token with a balance next to the ones switched on in Settings › Tokens.
 Results are cached for 5 minutes per address; the token registry itself refreshes every hour.
+
+## Beyond Sync2 and VeWorld
+
+- **Readable signing** (`src/utils/actions.ts`, `describe-action.ts`, `simulate.ts`): every clause the wallet
+  recognises is shown as a sentence ("Give BlackVeMarket access to all your Squad Pop NFTs"), unlimited and
+  collection-wide approvals are flagged, and the dry run shows what leaves and arrives ("−100 VET, +1,124 VTHO").
+- **Approvals** (`pages/Approvals`, `utils/approvals.ts`): open token allowances and NFT operator approvals from the
+  logs, checked on chain, with revoke and revoke-all.
+- **BlackVeMarket trading** (`utils/market.ts`, `pages/Nft`): list, change price, cancel, accept offers, bulk send and
+  bulk list (NFTs tab › Select), and launchpad mints (`pages/Launchpad`). These build the same clauses as
+  blackvemarket.com on each collection's marketplace contract; BVM pays the gas via `/api/delegate/sign` when it
+  sponsors the wallet.
+- **Watchlist and alerts** (`pages/Watchlist`, `utils/alerts.ts`): collections and wallets to follow, floor price
+  alerts and new offers on your NFTs, checked every 5 minutes while the app is open.
+- **Names and contacts** (`utils/names.ts`, `pages/Contacts`): contacts and .vet names (vet.domains, on chain) show
+  instead of addresses everywhere; the recipient field takes `name.vet`.
+- **Payment requests** (`utils/payment-request.ts`, `pages/Address/ReceiveDialog.vue`): a QR code or link with an
+  amount that fills in the send form.
+- **Swap** (`pages/Swap`, `utils/swap.ts`): quotes and routes from VeTrade's API (CORS open), checked before signing,
+  with BetterSwap's on-chain aggregator as fallback.
+
+Production needs CORS on the BlackVeMarket API for the wallet's origin on: `/api/profile/*`, `/api/nft/*`,
+`/api/collections`, `/api/activity`, `/api/launchpad/public`, `/api/delegate/status` (GET) and
+`/api/delegate/sign` (POST, JSON). Hosting the wallet on blackvemarket.com itself avoids that.

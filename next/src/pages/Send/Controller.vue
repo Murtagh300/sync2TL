@@ -11,7 +11,8 @@
         <page-content class="col no-wrap">
             <q-item-label header>{{$t('send.label_to')}}</q-item-label>
             <To
-                v-model:address="to"
+                v-model:address="recipient"
+                @request="onRequest"
                 class="q-mx-md"
                 :wallets="toWallets"
                 :error-message="errors.to"
@@ -29,7 +30,7 @@
                 no-error-icon
                 autocomplete="off"
                 class="q-mx-md"
-                v-model="amount"
+                v-model="amountText"
                 :error-message="errors.amount"
                 :error="!!errors.amount"
                 @update:model-value="errors.amount = ''"
@@ -67,6 +68,9 @@ import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
 import { toWei } from 'src/utils/format'
+import { genesises } from 'src/consts'
+import type { Contact } from 'src/utils/names'
+import type { PaymentRequest } from 'src/utils/payment-request'
 
 export default defineComponent({
     components: {
@@ -79,12 +83,15 @@ export default defineComponent({
     props: {
         wid: String,
         i: String,
-        symbol: String
+        symbol: String,
+        // a payment request (see src/utils/payment-request.ts)
+        to: String,
+        amount: String
     },
     data() {
         return {
-            to: null as null | string,
-            amount: '',
+            recipient: (this.to || null) as null | string,
+            amountText: this.amount || '',
             sym: this.symbol || 'VET',
             errors: {
                 to: '',
@@ -93,13 +100,19 @@ export default defineComponent({
             // async computed (see src/shims-async-computed.d.ts)
             wallet: null as M.Wallet | null,
             recent: [] as string[],
+            contacts: [] as Contact[],
             wallets: [] as M.Wallet[],
             tokenList: [] as M.TokenSpec[]
         }
     },
     asyncComputed: {
-        wallet(): Promise<M.Wallet | null> {
-            return this.$svc.wallet.get(parseInt(this.wid || ''))
+        async wallet(): Promise<M.Wallet | null> {
+            if (this.wid) {
+                return this.$svc.wallet.get(parseInt(this.wid))
+            }
+            // a payment link names no wallet: the first one on mainnet
+            const [first] = await this.$svc.wallet.getByGid(genesises.main.id)
+            return first || null
         },
         recent: {
             async get(): Promise<string[]> {
@@ -107,6 +120,12 @@ export default defineComponent({
                     return []
                 }
                 return this.$svc.config.getRecentRecipients(this.wallet.gid)
+            },
+            default: []
+        },
+        contacts: {
+            get(): Promise<Contact[]> {
+                return this.$svc.config.getContacts()
             },
             default: []
         },
@@ -133,6 +152,15 @@ export default defineComponent({
     computed: {
         toWallets(): AddressGroup[] {
             let list = [...this.wallets.map<AddressGroup>(w => { return { name: w.meta.name, list: w.meta.addresses } })]
+            if (this.contacts.length) {
+                list = [
+                    {
+                        name: this.$t('contacts.title').toString(),
+                        list: this.contacts.map(c => c.address)
+                    },
+                    ...list
+                ]
+            }
             if (this.recent.length) {
                 list = [
                     {
@@ -148,14 +176,22 @@ export default defineComponent({
             return this.tokenList.find(item => item.symbol === this.sym)
         },
         from(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i || '', 10)] : ''
+            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i || '0')] : ''
         },
         address(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i || '')] : ''
+            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i || '0')] : ''
         }
     },
     methods: {
         isAddress: address.test,
+        onRequest(req: PaymentRequest) {
+            if (req.amount) {
+                this.amountText = req.amount
+            }
+            if (req.symbol && this.tokenList.some(t => t.symbol === req.symbol)) {
+                this.sym = req.symbol
+            }
+        },
         checkSumAddress(v: string): boolean {
             return !(v !== v.toLowerCase() && address.toChecksumed(v) !== v)
         },
@@ -170,11 +206,11 @@ export default defineComponent({
             return regexp.test(v) ? parseFloat(v) > 0 : false
         },
         validate(): boolean {
-            this.errors.to = this.isAddress(this.to)
-                ? this.checkSumAddress(this.to) ? '' : this.$t('send.msg_invalid_address_checksum').toString()
+            this.errors.to = this.isAddress(this.recipient)
+                ? this.checkSumAddress(this.recipient) ? '' : this.$t('send.msg_invalid_address_checksum').toString()
                 : this.$t('send.msg_invalid_address').toString()
 
-            this.errors.amount = this.balanceCheck(this.amount) ? '' : this.$t('send.msg_invalid_amount').toString()
+            this.errors.amount = this.balanceCheck(this.amountText) ? '' : this.$t('send.msg_invalid_amount').toString()
 
             return (!this.errors.to && !this.errors.amount)
         },
@@ -185,16 +221,16 @@ export default defineComponent({
             let msgItem!: Connex.Vendor.TxMessage[0]
             let comment = ''
             if (this.sym === 'VET') {
-                comment = `${this.$t('send.title')} ${this.amount} VET`
+                comment = `${this.$t('send.title')} ${this.amountText} VET`
                 msgItem = {
-                    to: this.to,
-                    value: toWei(this.amount, this.currentToken!.decimals),
+                    to: this.recipient,
+                    value: toWei(this.amountText, this.currentToken!.decimals),
                     comment
                 }
             } else {
                 const func = new abi.Function(abis.transfer)
-                comment = `${this.$t('send.title')} ${this.amount} ${this.sym}`
-                const data = func.encode(this.to, toWei(this.amount, this.currentToken!.decimals))
+                comment = `${this.$t('send.title')} ${this.amountText} ${this.sym}`
+                const data = func.encode(this.recipient, toWei(this.amountText, this.currentToken!.decimals))
                 msgItem = {
                     to: this.currentToken!.address,
                     value: 0,
@@ -211,7 +247,7 @@ export default defineComponent({
             }).then(() => {
                 // eslint-disable-next-line @typescript-eslint/camelcase
                 gtagEvent('token-send', { event_label: this.sym })
-                const temp = [this.to, ...this.recent].reduce((result: string[], cv: string | null) => {
+                const temp = [this.recipient, ...this.recent].reduce((result: string[], cv: string | null) => {
                     (cv && !result.includes(cv.toLowerCase())) && result.push(cv.toLowerCase())
                     return result
                 }, []).slice(0, 10)

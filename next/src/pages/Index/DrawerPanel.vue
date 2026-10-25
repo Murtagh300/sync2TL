@@ -24,6 +24,39 @@
         </div>
         <!-- drawer content footer -->
         <q-list padding>
+            <q-item :to="{name: 'swap'}">
+                <q-item-section avatar>
+                    <q-icon
+                        size="sm"
+                        name="o_swap_vert"
+                    />
+                </q-item-section>
+                <q-item-section>
+                    <q-item-label>{{$t('swap.title')}}</q-item-label>
+                </q-item-section>
+            </q-item>
+            <q-item :to="{name: 'launchpad'}">
+                <q-item-section avatar>
+                    <q-icon
+                        size="sm"
+                        name="o_rocket_launch"
+                    />
+                </q-item-section>
+                <q-item-section>
+                    <q-item-label>{{$t('launchpad.title')}}</q-item-label>
+                </q-item-section>
+            </q-item>
+            <q-item :to="{name: 'watchlist'}">
+                <q-item-section avatar>
+                    <q-icon
+                        size="sm"
+                        name="o_visibility"
+                    />
+                </q-item-section>
+                <q-item-section>
+                    <q-item-label>{{$t('watchlist.title')}}</q-item-label>
+                </q-item-section>
+            </q-item>
             <q-item :to="{name: 'settings'}">
                 <q-item-section avatar>
                     <q-icon

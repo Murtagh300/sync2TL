@@ -3,7 +3,16 @@
         <page-toolbar
             :title="nft ? nft.collection : $t('nft.label_nfts')"
             :gid="wallet?.gid"
-        />
+        >
+            <q-btn
+                v-if="nft"
+                flat
+                round
+                :icon="watching ? 'visibility' : 'o_visibility'"
+                :color="watching ? 'primary' : undefined"
+                @click="toggleWatch()"
+            />
+        </page-toolbar>
         <page-content
             class="col"
             size="md"
@@ -68,10 +77,47 @@
 
                 <!-- actions -->
                 <div class="column q-gutter-y-sm q-mt-lg">
+                    <template v-if="isOwner && tradable">
+                        <q-btn
+                            v-if="!nft.listed"
+                            unelevated
+                            no-caps
+                            size="lg"
+                            color="primary"
+                            icon="o_sell"
+                            :label="$t('market.action_list')"
+                            @click="list()"
+                        />
+                        <div
+                            v-else
+                            class="row no-wrap q-gutter-x-sm"
+                        >
+                            <q-btn
+                                class="col"
+                                unelevated
+                                no-caps
+                                size="lg"
+                                color="primary"
+                                icon="o_edit"
+                                :label="$t('market.action_reprice')"
+                                @click="reprice()"
+                            />
+                            <q-btn
+                                class="col"
+                                outline
+                                no-caps
+                                size="lg"
+                                color="negative"
+                                :label="$t('market.action_cancel_listing')"
+                                @click="cancelListing()"
+                            />
+                        </div>
+                    </template>
                     <q-btn
-                        unelevated
+                        :unelevated="!(isOwner && tradable)"
+                        :outline="isOwner && tradable"
                         no-caps
-                        size="lg"
+                        :size="isOwner && tradable ? 'md' : 'lg'"
                         color="primary"
                         icon="o_north_east"
                         :label="$t('nft.action_send')"
@@ -92,6 +138,38 @@
                         @click="openURL($svc.bvm.nftPage(nft.contract, nft.tokenId))"
                     />
                 </div>
+
+                <!-- offers -->
+                <template v-if="offers.length">
+                    <div class="bvm-label q-mt-lg q-mb-sm">{{$t('market.label_offers')}} · {{offers.length}}</div>
+                    <q-list class="bvm-list">
+                        <q-item
+                            v-for="o in offers"
+                            :key="o.id"
+                        >
+                            <q-item-section>
+                                <q-item-label class="bvm-amount offer-amount">{{o.displayAmount}} {{o.currency}}</q-item-label>
+                                <q-item-label caption>
+                                    <address-label :addr="o.buyer" />
+                                </q-item-label>
+                            </q-item-section>
+                            <q-item-section
+                                v-if="isOwner && tradable"
+                                side
+                            >
+                                <q-btn
+                                    unelevated
+                                    dense
+                                    no-caps
+                                    color="primary"
+                                    class="q-px-md"
+                                    :label="$t('market.action_accept')"
+                                    @click="acceptOffer(o)"
+                                />
+                            </q-item-section>
+                        </q-item>
+                    </q-list>
+                </template>
 
                 <p
                     v-if="nft.description"
@@ -158,6 +236,10 @@ import PageContent from 'components/PageContent.vue'
 import AddressLabel from 'components/AddressLabel.vue'
 import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
 import { openURL } from 'src/utils/open-url'
+import ListDialog, { type ListResult } from './ListDialog.vue'
+import { acceptOfferClauses, cancelListingClauses, canTrade, listClauses, listingCurrencies, repriceClauses, signMarketTx, type Clause } from 'src/utils/market'
+import { toWei } from 'src/utils/format'
+import { emptyWatchlist, type Watchlist } from 'src/utils/alerts'
 import type { BVM } from 'boot/services/bvm'
 
 const erc721TransferFrom = new abi.Function({
@@ -201,6 +283,7 @@ export default defineComponent({
     },
     data: () => ({
         error: false,
+        watching: false,
         // async computed (see src/shims-async-computed.d.ts)
         wallet: null as M.Wallet | null,
         nft: null as BVM.NFT | null
@@ -212,7 +295,10 @@ export default defineComponent({
         async nft(): Promise<BVM.NFT | null> {
             this.error = false
             try {
-                return await this.$svc.bvm.nft(this.contract, this.tokenId)
+                const nft = await this.$svc.bvm.nft(this.contract, this.tokenId)
+                const list = await this.$svc.config.getJSON<Watchlist>('watchlist', emptyWatchlist())
+                this.watching = list.collections.includes(nft.collectionSlug)
+                return nft
             } catch (err) {
                 console.warn('BlackVeMarket nft:', err)
                 this.error = true
@@ -225,7 +311,22 @@ export default defineComponent({
             return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex)] || '' : ''
         },
         isOwner(): boolean {
-            return !!this.nft && !!this.address && this.nft.owner.toLowerCase() === this.address.toLowerCase()
+            const me = this.address.toLowerCase()
+            const nft = this.nft
+            if (!nft || !me) {
+                return false
+            }
+            // a listed NFT shows its seller; BlackVeMarket leaves the owner empty for some collections
+            return (nft.owner || '').toLowerCase() === me || (!!nft.listed && (nft.seller || '').toLowerCase() === me)
+        },
+        tradable(): boolean {
+            return !!this.nft && canTrade(this.nft)
+        },
+        offers(): BVM.Offer[] {
+            return (this.nft?.offers || []).filter(o => !!o && !!o.amount)
+        },
+        floor(): string {
+            return this.nft?.intelligence?.collection?.floor || ''
         },
         sendBlock(): string {
             if (!this.nft) {
@@ -248,6 +349,81 @@ export default defineComponent({
     },
     methods: {
         openURL,
+        async toggleWatch() {
+            const slug = this.nft?.collectionSlug
+            if (!slug) {
+                return
+            }
+            const list = await this.$svc.config.getJSON<Watchlist>('watchlist', emptyWatchlist())
+            const collections = this.watching ? list.collections.filter(s => s !== slug) : [...list.collections, slug]
+            await this.$svc.config.setJSON('watchlist', { ...list, collections })
+            this.watching = !this.watching
+            this.$q.notify(this.watching ? this.$t('watchlist.msg_watching', { name: this.nft!.collection }) : this.$t('watchlist.msg_unwatched'))
+        },
+        async market(clauses: Clause[], comment: string, done: string) {
+            const wallet = this.wallet
+            if (!wallet) {
+                return
+            }
+            try {
+                await signMarketTx(this.$signTx, this.$svc.bvm, wallet.gid, this.address, clauses, comment)
+                this.$q.notify(done)
+                // BlackVeMarket picks it up within a minute
+                setTimeout(() => void this.$asyncComputed.nft.update(), 20 * 1000)
+            } catch {
+                // declined in the transaction dialog
+            }
+        },
+        async askPrice(title: string, action: string): Promise<{ wei: string, token: string, text: string } | null> {
+            const nft = this.nft!
+            try {
+                const r = await this.$dialog<ListResult>({
+                    component: ListDialog,
+                    title,
+                    action,
+                    message: nft.name,
+                    floor: this.floor,
+                    initialSymbol: nft.currency || 'VET'
+                })
+                // the listing currencies all have 18 decimals
+                return { wei: toWei(r.price, 18), token: listingCurrencies[r.symbol]!, text: `${r.price} ${r.symbol}` }
+            } catch {
+                return null
+            }
+        },
+        async list() {
+            const nft = this.nft
+            const p = nft && await this.askPrice(this.$t('market.action_list'), this.$t('market.action_list'))
+            if (!nft || !p) {
+                return
+            }
+            await this.market(listClauses([nft], p.wei, p.token), this.$t('market.comment_list', { nft: nft.name, price: p.text }), this.$t('market.msg_listed'))
+        },
+        async reprice() {
+            const nft = this.nft
+            const p = nft && await this.askPrice(this.$t('market.action_reprice'), this.$t('market.action_reprice'))
+            if (!nft || !p) {
+                return
+            }
+            await this.market(repriceClauses(nft, p.wei, p.token), this.$t('market.comment_list', { nft: nft.name, price: p.text }), this.$t('market.msg_listed'))
+        },
+        async cancelListing() {
+            const nft = this.nft
+            if (!nft) {
+                return
+            }
+            await this.market(cancelListingClauses([nft]), this.$t('market.comment_cancel', { nft: nft.name }), this.$t('market.msg_cancelled'))
+        },
+        async acceptOffer(offer: BVM.Offer) {
+            const nft = this.nft
+            if (!nft) {
+                return
+            }
+            await this.market(
+                acceptOfferClauses(nft, offer),
+                this.$t('market.comment_accept', { nft: nft.name, amount: `${offer.displayAmount} ${offer.currency}` }),
+                this.$t('market.msg_accepted'))
+        },
         async send() {
             const nft = this.nft
             const wallet = this.wallet
@@ -297,6 +473,9 @@ export default defineComponent({
 })
 </script>
 <style lang="sass" scoped>
+.offer-amount
+  font-size: 16px
+
 .hero-image
   border-radius: $radius-lg
   border: 1px solid $hairline

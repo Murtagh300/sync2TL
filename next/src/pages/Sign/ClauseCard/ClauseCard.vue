@@ -24,6 +24,12 @@
                 :op="op"
                 :gid="tokens[0]?.gid"
             />
+            <action-item
+                v-if="op.type==='action'"
+                :op="op"
+                :tokens="tokens"
+                :collections="collections"
+            />
             <call-item
                 v-if="op.type==='call'"
                 :op="op"
@@ -41,21 +47,25 @@ import TransferItem, { OpTransfer } from './TransferItem.vue'
 import CallItem, { OpCall } from './CallItem.vue'
 import CreateItem, { OpCreate } from './CreateItem.vue'
 import NftItem, { type OpNft } from './NftItem.vue'
+import ActionItem, { type OpAction } from './ActionItem.vue'
+import { decodeAction } from 'src/utils/actions'
 import { decodeAsNftTransferClause } from '../helper'
 import BigNumber from 'bignumber.js'
 import { decodeAsTokenTransferClause } from '../helper'
 
 export default defineComponent({
-    components: { TransferItem, CallItem, CreateItem, NftItem },
+    components: { TransferItem, CallItem, CreateItem, NftItem, ActionItem },
     props: {
         index: { type: Number, required: true },
         clause: { type: Object as () => Connex.Vendor.TxMessage[0], required: true },
-        tokens: { type: Array as () => M.TokenSpec[], default: () => [] }
+        tokens: { type: Array as () => M.TokenSpec[], default: () => [] },
+        /** BlackVeMarket collections by NFT contract, for names */
+        collections: { type: Object as () => Record<string, { name: string }>, default: () => ({}) }
     },
     computed: {
         // convert clause into ops
         ops() {
-            const ret: Array<OpTransfer | OpCall | OpCreate | OpNft> = []
+            const ret: Array<OpTransfer | OpCall | OpCreate | OpNft | OpAction> = []
             const { to, value, data } = this.clause
 
             if (to) {
@@ -77,8 +87,11 @@ export default defineComponent({
                     }
                     if (!isTokenTransfer) {
                         const nft = decodeAsNftTransferClause(this.clause)
+                        const action = nft ? null : decodeAction(this.clause)
                         if (nft) {
                             ret.push({ type: 'nft', contract: to, ...nft })
+                        } else if (action) {
+                            ret.push({ type: 'action', action, to })
                         } else {
                             // contract call
                             ret.push({ type: 'call', to })
@@ -94,8 +107,10 @@ export default defineComponent({
             const vetSpec = this.tokens.find(t => t.symbol === 'VET')
             if (vetSpec) {
                 const amount = new BigNumber(value)
+                // a wrap already says how much VET goes in
+                const isWrap = ret.some(op => op.type === 'action' && op.action.kind === 'wrap')
                 // when no op yet, append the VET transfer op even amount is zero
-                if (!amount.isZero() || ret.length === 0) {
+                if ((!amount.isZero() && !isWrap) || ret.length === 0) {
                     ret.unshift({
                         type: 'transfer',
                         token: vetSpec,
@@ -108,8 +123,9 @@ export default defineComponent({
         }
     },
     methods: {
-        opLabel(op: OpTransfer | OpCall | OpCreate | OpNft) {
+        opLabel(op: OpTransfer | OpCall | OpCreate | OpNft | OpAction) {
             switch (op.type) {
+                case 'action': return this.$t('sign.op_action')
                 case 'nft': return this.$t('sign.op_nft_transfer')
                 case 'transfer': return this.$t('sign.op_transfer_asset')
                 case 'call': return this.$t('sign.op_contract_call')

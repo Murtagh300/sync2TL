@@ -59,6 +59,19 @@ export function formatAmount(val: BigNumber.Value, opts?: FormatAmountOptions): 
     }
 }
 
+/** an amount in a token's smallest unit as text: up to 4 decimals, trailing zeros dropped */
+export function formatUnits(val: bigint | string, decimals: number, maxDecimals = 4): string {
+    const bn = new BigNumber(val.toString()).div('1' + '0'.repeat(decimals))
+    if (!bn.isFinite()) {
+        return '?'
+    }
+    // tiny but not zero: show that it is not zero
+    if (!bn.isZero() && bn.abs().lt(new BigNumber(10).pow(-maxDecimals))) {
+        return '< ' + new BigNumber(10).pow(-maxDecimals).toFormat()
+    }
+    return new BigNumber(bn.toFixed(maxDecimals, BigNumber.ROUND_FLOOR)).toFormat()
+}
+
 export function toWei(v: string, decimals: number) {
     return new BigNumber(v)
         .times(`1${'0'.repeat(decimals)}`)

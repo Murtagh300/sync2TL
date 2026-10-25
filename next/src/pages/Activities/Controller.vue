@@ -30,6 +30,11 @@ import { defineComponent } from 'vue'
 import Item, { Entry } from './Item.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import { Transaction } from 'thor-devkit'
+import { decodeAction } from 'src/utils/actions'
+import { describeAction } from 'src/utils/describe-action'
+import { formatUnits } from 'src/utils/format'
+import type { BVM } from 'boot/services/bvm'
 
 export default defineComponent({
     components: {
@@ -40,7 +45,9 @@ export default defineComponent({
     data: () => ({
         // async computed (see src/shims-async-computed.d.ts)
         list: [] as M.Activity[],
-        walletNames: {} as { [key: string]: string }
+        walletNames: {} as { [key: string]: string },
+        tokens: [] as M.TokenSpec[],
+        collections: {} as Record<string, BVM.Collection>
     }),
     asyncComputed: {
         list: {
@@ -48,6 +55,18 @@ export default defineComponent({
                 return this.$svc.activity.page(100, 0)
             },
             default: []
+        },
+        tokens: {
+            get(): Promise<M.TokenSpec[]> {
+                return this.$svc.config.token.all()
+            },
+            default: []
+        },
+        collections: {
+            get(): Promise<Record<string, BVM.Collection>> {
+                return this.$svc.bvm.collections().catch(() => ({}))
+            },
+            default: {}
         },
         walletNames: {
             async get(): Promise<{ [key: string]: string }> {
@@ -72,6 +91,7 @@ export default defineComponent({
                     link: a.glob.link || '',
                     status: this.status(a),
                     comment: a.type === 'tx' ? a.glob.comment : this.certComment(a.glob.encoded),
+                    summary: a.type === 'tx' ? this.txSummary(a) : this.certComment(a.glob.encoded),
                     id: a.glob.id
                 }
                 if (a.type === 'tx') {
@@ -85,6 +105,40 @@ export default defineComponent({
         }
     },
     methods: {
+        /** our own comment ("Send 5 VET"), or what the transaction's clauses do */
+        txSummary(a: M.Activity): string {
+            if (a.type !== 'tx') {
+                return ''
+            }
+            if (a.glob.comment) {
+                return a.glob.comment
+            }
+            try {
+                const tx = Transaction.decode(Buffer.from(a.glob.encoded.slice(2), 'hex'))
+                const tokens = this.tokens.filter(t => t.gid === a.gid)
+                for (const c of tx.body.clauses) {
+                    const action = decodeAction({ to: c.to, value: c.value, data: c.data })
+                    if (action) {
+                        return describeAction(action, {
+                            t: (key, params) => this.$t(key, params ?? {}),
+                            token: address => tokens.find(t => t.address.toLowerCase() === address.toLowerCase()),
+                            collection: address => this.collections[address.toLowerCase()]?.name
+                        }).text
+                    }
+                }
+                const [first] = tx.body.clauses
+                if (tx.body.clauses.length === 1 && first && (!first.data || first.data === '0x') && BigInt(first.value) > 0n) {
+                    return this.$t('activities.label_sent_vet', { amount: formatUnits(BigInt(first.value), 18) })
+                }
+            } catch {
+                // not decodable: fall back to where it came from
+            }
+            try {
+                return a.glob.origin ? this.$t('activities.label_from_dapp', { host: new URL(a.glob.origin).host }) : ''
+            } catch {
+                return ''
+            }
+        },
         confirmText(activity: M.Activity): string {
             const receipt = activity.type === 'tx' ? activity.glob.receipt : null
             if (!receipt || activity.status === 'completed') {

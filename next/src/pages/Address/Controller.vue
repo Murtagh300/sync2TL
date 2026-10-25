@@ -10,6 +10,36 @@
                     :address="address"
                     :name="wallet.meta.name"
                 />
+                <div class="address-actions row no-wrap q-px-md q-pb-xs">
+                    <q-btn
+                        outline
+                        no-caps
+                        stack
+                        color="primary"
+                        icon="o_qr_code_2"
+                        :label="$t('address.action_receive')"
+                        @click="receive()"
+                    />
+                    <q-btn
+                        v-if="nftSupported"
+                        outline
+                        no-caps
+                        stack
+                        color="primary"
+                        icon="o_swap_vert"
+                        :label="$t('swap.title')"
+                        :to="{ name: 'swap', query: { wid: walletId, i: addressIndex } }"
+                    />
+                    <q-btn
+                        outline
+                        no-caps
+                        stack
+                        color="primary"
+                        icon="o_key"
+                        :label="$t('approvals.action_open')"
+                        :to="{ name: 'approvals', params: { walletId, addressIndex } }"
+                    />
+                </div>
                 <div class="row items-center no-wrap q-px-md q-pt-sm">
                     <q-tabs
                         v-model="tab"
@@ -103,6 +133,7 @@
                     :address="address"
                     :wallet-id="walletId"
                     :address-index="addressIndex"
+                    :gid="wallet.gid"
                     @total="nftTotal = $event"
                 />
             </page-content>
@@ -118,6 +149,7 @@ import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import NftGrid from './NftGrid.vue'
 import { visibleTokens } from 'src/utils/tokens'
+import ReceiveDialog from './ReceiveDialog.vue'
 
 export default defineComponent({
     components: {
@@ -161,10 +193,28 @@ export default defineComponent({
         address(): string {
             return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex)] : ''
         }
+    },
+    methods: {
+        receive() {
+            this.$dialog({
+                component: ReceiveDialog,
+                address: this.address,
+                symbols: this.tokenList.map(t => t.symbol)
+            }).catch(() => { })
+        }
     }
 })
 </script>
 <style lang="sass" scoped>
+.address-actions
+  gap: 8px
+  .q-btn
+    flex: 1 1 0
+    min-width: 0
+    padding: 6px 4px
+    border-radius: $radius
+    font-weight: 700
+
 .address-tabs
   font-weight: 800
   :deep(.q-tab)

@@ -3,6 +3,7 @@ import { delegateTable } from '../utils'
 import { genesises } from 'src/consts'
 import { TokenRegistry } from './token-registry'
 import { unique } from 'src/utils/array'
+import { setContacts, type Contact } from 'src/utils/names'
 
 // the first node per network is the default; veblocks.net nodes are gone
 const presetNodes: M.Node[] = [
@@ -35,7 +36,7 @@ export function build(storage: Storage) {
         m => m
     )
     type Key = 'nodes' | 'activeNodeMap' | 'userMasterKeyGlob' |
-        'tokenRegistry' | 'activeTokenSymbols' | 'recentRecipients' | 'language' | 'bio-pass-on'
+        'tokenRegistry' | 'activeTokenSymbols' | 'recentRecipients' | 'language' | 'bio-pass-on' | 'contacts' | 'watchlist' | 'alerts' | 'alert-state'
 
     const getSubKey = async (key: Key, subKey: string) => {
         const row = (await t.all().where({ key, subKey }).query())[0]
@@ -125,6 +126,26 @@ export function build(storage: Storage) {
         },
         saveRecentRecipients(gid: string, val: string[]) {
             return setSubKey('recentRecipients', gid, JSON.stringify(val))
+        },
+        /** the address book, shared by all networks */
+        async getContacts(): Promise<Contact[]> {
+            return JSON.parse(await get('contacts') || '[]') as Contact[]
+        },
+        async saveContacts(list: Contact[]) {
+            await set('contacts', JSON.stringify(list))
+            setContacts(list)
+        },
+        /** small JSON settings: the watchlist, price alerts and what they last saw */
+        async getJSON<T>(key: 'watchlist' | 'alerts' | 'alert-state', fallback: T): Promise<T> {
+            const raw = await get(key)
+            try {
+                return raw ? JSON.parse(raw) as T : fallback
+            } catch {
+                return fallback
+            }
+        },
+        setJSON(key: 'watchlist' | 'alerts' | 'alert-state', value: unknown) {
+            return set(key, JSON.stringify(value))
         },
         getLanguage() {
             return get('language')

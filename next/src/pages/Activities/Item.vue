@@ -68,7 +68,7 @@
                     </q-item-label>
                 </q-item-section>
             </q-item>
-            <q-item v-if="entry.comment">
+            <q-item v-if="entry.comment && entry.comment !== entry.summary">
                 <q-item-section>
                     <q-item-label class="text-body2">
                         {{entry.comment}}
@@ -133,6 +133,8 @@ export type Entry = {
     walletName: string
     signer: string
     comment: string
+    /** what it did, in a few words */
+    summary: string
     time: number
     link: string
     status: 'reverted' | 'reverted?' | 'success' | 'success?' | 'sending' | 'expired'
@@ -148,6 +150,9 @@ export default defineComponent({
     },
     computed: {
         title(): string {
+            if (this.entry.summary) {
+                return this.entry.summary
+            }
             return this.entry.type === 'tx' ? this.$t('common.transaction').toString() : this.$t('common.certificate').toString()
         },
         icon(): { name: string, color: string } {

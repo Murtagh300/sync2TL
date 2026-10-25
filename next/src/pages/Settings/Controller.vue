@@ -40,6 +40,11 @@
                 <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_network')}}</div>
                 <q-list class="bvm-list q-mb-lg">
                     <item
+                        icon="o_contacts"
+                        :title="$t('contacts.title')"
+                        :to="{name: 'contacts'}"
+                    />
+                    <item
                         icon="o_toll"
                         :title="$t('settings.action_token_list')"
                         :to="{name: 'tokens-setting'}"

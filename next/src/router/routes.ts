@@ -13,6 +13,11 @@ import Sign from 'pages/Sign'
 import SignSuccess from 'pages/SignSuccess.vue'
 import Activities from 'pages/Activities'
 import Nft from 'pages/Nft'
+import Approvals from 'pages/Approvals'
+import Contacts from 'pages/Contacts'
+import Watchlist from 'pages/Watchlist'
+import Launchpad, { Launch } from 'pages/Launchpad'
+import Swap from 'pages/Swap'
 
 const routes: RouteRecordRaw[] = [
     {
@@ -35,6 +40,10 @@ const routes: RouteRecordRaw[] = [
             name: 'nft',
             component: Nft
         }, {
+            path: 'w/:walletId(\\d+)/:addressIndex(\\d+)/approvals',
+            name: 'approvals',
+            component: Approvals
+        }, {
             path: 'w/:walletId(\\d+)/backup',
             name: 'backup',
             component: Backup
@@ -46,6 +55,26 @@ const routes: RouteRecordRaw[] = [
             path: 'send',
             name: 'send',
             component: Send
+        }, {
+            path: 'swap',
+            name: 'swap',
+            component: Swap
+        }, {
+            path: 'launchpad',
+            name: 'launchpad',
+            component: Launchpad
+        }, {
+            path: 'launchpad/:slug',
+            name: 'launch',
+            component: Launch
+        }, {
+            path: 'watchlist',
+            name: 'watchlist',
+            component: Watchlist
+        }, {
+            path: 'contacts',
+            name: 'contacts',
+            component: Contacts
         }, {
             path: 'settings',
             name: 'settings',

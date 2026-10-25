@@ -6,6 +6,8 @@ import * as Wallet from './wallet'
 import * as Activity from './activity'
 import * as Bvm from './bvm'
 import { groupBy } from 'src/utils/array'
+import { configureNames, setContacts } from 'src/utils/names'
+import { genesises } from 'src/consts'
 
 export type Service = {
     bc: ReturnType<typeof Blockchain.build>
@@ -65,5 +67,15 @@ export default defineBoot(async ({ app }) => {
     })()
 
     instance = { bc, config, wallet, activity, bvm: Bvm.build() }
+
+    // names for addresses: contacts, and .vet names from mainnet
+    configureNames(() => {
+        try {
+            return bc(genesises.main.id).thor
+        } catch {
+            return null
+        }
+    })
+    config.getContacts().then(setContacts).catch(err => console.warn(err))
     app.config.globalProperties.$svc = instance
 })

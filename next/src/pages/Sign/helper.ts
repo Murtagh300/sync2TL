@@ -29,6 +29,8 @@ export type EstimateGasResult = {
     revertReason: string
     vmError: string
     baseGasPrice: string
+    /** the dry run, for what the transaction does to balances */
+    outputs: Connex.VM.Output[]
 }
 
 export async function estimateGas(
@@ -70,7 +72,8 @@ export async function estimateGas(
         reverted: lastOutput ? lastOutput.reverted : false,
         revertReason: lastOutput ? (lastOutput.revertReason || '') : '',
         vmError: lastOutput ? lastOutput.vmError : '',
-        baseGasPrice: bgp
+        baseGasPrice: bgp,
+        outputs
     }
 }
 

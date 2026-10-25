@@ -17,12 +17,20 @@
                 class="col q-pa-sm bg-page"
                 innerClass="q-gutter-y-sm"
             >
+                <simulation-card
+                    v-if="changes"
+                    :changes="changes"
+                    :gid="gid"
+                    :tokens="tokens"
+                    :collections="collections"
+                />
                 <clause-card
                     v-for="(c, i) in req.message"
                     :key="i"
                     :index="i"
                     :clause="c"
                     :tokens="tokens"
+                    :collections="collections"
                     @click="onClickClause(i, c)"
                 />
             </page-content>
@@ -91,12 +99,15 @@ import { randomBytes } from 'crypto'
 import ErrorTip from './ErrorTip.vue'
 import WarningListDialog from './WarningListDialog.vue'
 import InspectClauseDialog from './InspectClauseDialog.vue'
+import SimulationCard from './SimulationCard.vue'
+import { balanceChanges, type BalanceChanges } from 'src/utils/simulate'
+import type { BVM } from 'boot/services/bvm'
 
 export default defineComponent({
     extends: Common,
     // the Dialog plugin listens to these
     emits: ['ok', 'hide'],
-    components: { PageToolbar, PageContent, PageAction, SignerSelector, PrioritySelector, GasFeeBar, ClauseCard, ErrorTip },
+    components: { PageToolbar, PageContent, PageAction, SignerSelector, PrioritySelector, GasFeeBar, ClauseCard, ErrorTip, SimulationCard },
     props: {
         req: { type: Object as () => M.TxRequest, required: true }
     },
@@ -106,7 +117,8 @@ export default defineComponent({
             // async computed (see src/shims-async-computed.d.ts)
             delayedEstimation: null as EstimateGasResult | null,
             tokens: [] as M.TokenSpec[],
-            energyWarning: null as Error | null
+            energyWarning: null as Error | null,
+            collections: {} as Record<string, BVM.Collection>
         }
     },
     computed: {
@@ -147,6 +159,14 @@ export default defineComponent({
             this.energyWarning && ret.push(this.energyWarning)
             return ret
         },
+        /** what signing does to the signer's balances; none when the dry run fails */
+        changes(): BalanceChanges | null {
+            const est = this.estimation
+            if (!est || est.reverted) {
+                return null
+            }
+            return balanceChanges(est.outputs, this.signer)
+        },
         isDelegation(): boolean {
             return !!this.req.options.delegator
         },
@@ -170,6 +190,19 @@ export default defineComponent({
                 this.req.options.gas || 0,
                 this.signer,
                 this.req.options.delegator && this.req.options.delegator.signer)
+        },
+        collections: {
+            async get(): Promise<Record<string, BVM.Collection>> {
+                if (!this.$svc.bvm.supports(this.gid)) {
+                    return {}
+                }
+                try {
+                    return await this.$svc.bvm.collections()
+                } catch {
+                    return {}
+                }
+            },
+            default: {}
         },
         tokens: {
             async get(): Promise<M.TokenSpec[]> {

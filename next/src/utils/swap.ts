@@ -1,0 +1,129 @@
+import { fns, isKnownSwapRouter, ZERO_ADDRESS } from './actions'
+
+/**
+ * Swaps: the best route from VeTrade's quote service (it aggregates the VeChain DEXes
+ * through BetterSwap), and BetterSwap's on-chain aggregator when that service is down.
+ * Clauses from the service are checked before they reach the sign dialog, which then
+ * shows the balance changes of a dry run.
+ */
+
+const VETRADE = 'https://vetrade.vet/api'
+const VVET = '0x45429a2255e7248e57fce99e7239aed3f84b7a53'
+// BetterSwap aggregator: a Uniswap V2 router interface over all VeChain DEXes
+const AGGREGATOR = '0x23cbbf0265f55574490ab6eb1ed8730c71e23d6c'
+
+export type Clause = { to: string, value: string, data: string }
+
+export type Quote = {
+    amountOut: bigint
+    amountOutMin: bigint
+    clauses: Clause[]
+    /** who routes it */
+    source: 'VeTrade' | 'BetterSwap'
+}
+
+/** the address a swap service uses for a token; VET is the zero address */
+const tokenAddress = (address: string | null | undefined) => (address || ZERO_ADDRESS).toLowerCase()
+
+async function vetradeQuote(from: string, to: string, amountIn: bigint, slippageBps: number, account: string, signal?: AbortSignal): Promise<Quote> {
+    const params = new URLSearchParams({
+        amountIn: amountIn.toString(),
+        fromAddress: from,
+        toAddress: to,
+        slippageBps: String(slippageBps),
+        recipient: account,
+        accountAddress: account
+    })
+    const resp = await fetch(`${VETRADE}/quote/insight?${params}`, { signal })
+    const body = await resp.json() as { amountOut?: string, amountOutMin?: string, clauses?: { to: string, value: string | number, data: string }[], error?: string }
+    if (!resp.ok || !body.amountOut || body.amountOut === '0') {
+        throw new Error(body.error || 'no quote')
+    }
+    const clauses = (body.clauses || []).map(c => ({ to: c.to.toLowerCase(), value: BigInt(c.value || 0).toString(), data: c.data }))
+    checkClauses(clauses, from, amountIn)
+    return {
+        amountOut: BigInt(body.amountOut),
+        amountOutMin: BigInt(body.amountOutMin || body.amountOut),
+        clauses,
+        source: 'VeTrade'
+    }
+}
+
+/**
+ * a route from a service may only approve the input token to a known router and call
+ * known routers, sending at most the input amount of VET
+ */
+export function checkClauses(clauses: Clause[], from: string, amountIn: bigint) {
+    if (!clauses.length) {
+        throw new Error('empty route')
+    }
+    for (const c of clauses) {
+        const sel = c.data.slice(0, 10).toLowerCase()
+        if (c.to === from && from !== ZERO_ADDRESS && sel === fns.approve.signature) {
+            const spender = '0x' + c.data.slice(10 + 24, 10 + 64).toLowerCase()
+            const amount = BigInt('0x' + c.data.slice(10 + 64, 10 + 128))
+            if (!isKnownSwapRouter(spender) || amount > amountIn) {
+                throw new Error('route approves an unknown spender')
+            }
+            continue
+        }
+        if (!isKnownSwapRouter(c.to)) {
+            throw new Error('route calls an unknown contract')
+        }
+        const value = BigInt(c.value)
+        if (value !== 0n && !(from === ZERO_ADDRESS && value === amountIn)) {
+            throw new Error('route sends an unexpected amount')
+        }
+    }
+}
+
+async function aggregatorQuote(thor: Connex.Thor, from: string, to: string, amountIn: bigint, slippageBps: number, account: string): Promise<Quote> {
+    const path = [from === ZERO_ADDRESS ? VVET : from, to === ZERO_ADDRESS ? VVET : to]
+    const [out] = await thor.explain([{ to: AGGREGATOR, value: 0, data: fns.getAmountsOut.encode(amountIn.toString(), path) }]).execute()
+    if (!out || out.reverted) {
+        throw new Error('no route')
+    }
+    const amounts: string[] = fns.getAmountsOut.decode(out.data).amounts
+    const amountOut = BigInt(amounts[amounts.length - 1] || 0)
+    if (amountOut === 0n) {
+        throw new Error('no liquidity')
+    }
+    const amountOutMin = amountOut * BigInt(10000 - slippageBps) / 10000n
+    const deadline = Math.floor(Date.now() / 1000) + 20 * 60
+    let clauses: Clause[]
+    if (from === ZERO_ADDRESS) {
+        clauses = [{ to: AGGREGATOR, value: amountIn.toString(), data: fns.swapExactETHForTokens.encode(amountOutMin.toString(), path, account, deadline) }]
+    } else {
+        const swap = to === ZERO_ADDRESS
+            ? fns.swapExactTokensForETH.encode(amountIn.toString(), amountOutMin.toString(), path, account, deadline)
+            : fns.swapExactTokensForTokens.encode(amountIn.toString(), amountOutMin.toString(), path, account, deadline)
+        clauses = [
+            { to: from, value: '0', data: fns.approve.encode(AGGREGATOR, amountIn.toString()) },
+            { to: AGGREGATOR, value: '0', data: swap }
+        ]
+    }
+    return { amountOut, amountOutMin, clauses, source: 'BetterSwap' }
+}
+
+/** the best quote: VeTrade's service, or BetterSwap on-chain when it fails */
+export async function quote(
+    thor: Connex.Thor,
+    fromToken: string | null | undefined,
+    toToken: string | null | undefined,
+    amountIn: bigint,
+    slippageBps: number,
+    account: string,
+    signal?: AbortSignal
+): Promise<Quote> {
+    const from = tokenAddress(fromToken)
+    const to = tokenAddress(toToken)
+    try {
+        return await vetradeQuote(from, to, amountIn, slippageBps, account, signal)
+    } catch (err) {
+        if (signal?.aborted) {
+            throw err
+        }
+        console.warn('VeTrade quote:', err)
+        return aggregatorQuote(thor, from, to, amountIn, slippageBps, account)
+    }
+}

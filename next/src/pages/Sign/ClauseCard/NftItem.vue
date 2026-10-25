@@ -22,7 +22,7 @@
         >
             <div class="nft-op-name ellipsis">{{nft ? nft.name : `#${op.tokenId}`}}</div>
             <div class="text-muted ellipsis nft-op-sub">
-                {{nft ? nft.collection : ''}}
+                {{nft ? nft.collection : ''}}<template v-if="nft && nft.rank"> · {{$t('nft.label_rank')}} #{{nft.rank}}</template>
                 <template v-if="op.amount && op.amount !== '1'">× {{op.amount}}</template>
             </div>
             <div class="row no-wrap items-center q-mt-xs">

@@ -2,6 +2,7 @@
 // BlackVeMarket indexes VeChain mainnet only.
 import axios from 'axios'
 import { genesises } from 'src/consts'
+import { rememberMarket } from 'src/utils/actions'
 
 export namespace BVM {
     export type Trait = {
@@ -12,9 +13,34 @@ export namespace BVM {
         traitFloor?: string
     }
 
+    /** an offer on an NFT, made through its collection's marketplace contract */
+    export type Offer = {
+        id: string
+        index: number
+        /** 'listing': made on a live listing (saleId), otherwise a blind offer on the NFT */
+        type: string
+        isListed: boolean
+        saleId: string | null
+        buyer: string
+        amount: string
+        displayAmount: string
+        currency: string
+        paymentToken: string
+        date: string
+    }
+
     export type NFT = {
         tokenId: string
         contract: string
+        /** the collection's marketplace contract; the zero address when it trades nowhere */
+        maasContract?: string | null
+        saleId?: string | null
+        seller?: string | null
+        paymentToken?: string | null
+        /** the listing price in wei of paymentToken */
+        rawPrice?: string | null
+        offers?: Offer[]
+        offerCount?: number
         collectionSlug: string
         collection: string
         name: string
@@ -29,6 +55,8 @@ export namespace BVM {
         description?: string | null
         intelligence?: {
             lastSale?: { displayPrice: string, currency: string, timestamp?: string } | null
+            bestOffer?: { displayAmount?: string, currency?: string } | null
+            collection?: { floor: string, floorValue: number | null, floorCurrency: string | null } | null
         } | null
     }
 
@@ -41,11 +69,78 @@ export namespace BVM {
         floorCurrency: string | null
     }
 
+    export type Collection = {
+        slug: string
+        name: string
+        nftContract: string
+        maasContract: string
+        coverImage: string
+        floorValue: number | null
+        floorCurrency: string
+    }
+
+    export type LaunchPhase = {
+        /** the phase id the contract's mint(phaseId, quantity) takes */
+        index: number
+        label: string
+        kind: 'public' | 'allowlist' | string
+        state: 'live' | 'upcoming' | 'ended' | string
+        start: string | null
+        end: string | null
+        priceWei: string
+        /** the token paid with; null is VET */
+        payToken: string | null
+        paySymbol: string
+        perWallet: number
+        /** a price that changes as the phase sells; the wallet leaves those to the site */
+        steps: unknown[]
+        gates: unknown[]
+        burnToken: string | null
+    }
+
+    export type Launch = {
+        id: string
+        slug: string
+        name: string
+        description: string
+        coverImage: string
+        bannerImage?: string
+        contractAddress: string
+        maxSupply: number
+        publicSupply: number
+        publicMinted: number
+        mintedCount: number
+        minPriceSymbol?: string
+        minPriceWei?: string
+        state?: string
+        soldOut?: boolean
+        mintPaused?: boolean
+        nextChangeAt?: string | null
+        phases?: LaunchPhase[]
+        [k: string]: unknown
+    }
+
+    /** a market event: a new listing, a sale or an offer */
+    export type FeedItem = {
+        kind: 'listing' | 'sale' | 'offer'
+        id: string
+        name: string
+        image: string
+        contract: string
+        tokenId: string
+        collection: string
+        collectionSlug: string
+        price: string
+        time: number
+    }
+
+    export type DelegateStatus = { enabled: boolean, genesis: boolean, free: boolean, remainingTx: number }
+
     export type Holdings = {
         holdings: NFT[]
         ownedCollections: OwnedCollection[]
         pagination: { total: number, nextOffset: number, hasMore: boolean }
-        summary: { total: number, listed: number }
+        summary: { total: number, listed: number, offers?: number }
     }
 }
 
@@ -55,6 +150,26 @@ const baseURL = import.meta.env.BVM_API_URL || (import.meta.env.QUASAR_DEV ? '/b
 const http = axios.create({ baseURL, timeout: 20 * 1000 })
 
 export const marketURL = 'https://blackvemarket.com'
+
+let collectionsCache: { at: number, value: Record<string, BVM.Collection> } | null = null
+let collectionsLoading: Promise<Record<string, BVM.Collection>> | null = null
+
+async function loadCollections() {
+    const resp = await http.get<{ items: { collection: BVM.Collection, floorValue: number | null, floor: string }[] }>('/collections')
+    const value: Record<string, BVM.Collection> = {}
+    for (const item of resp.data.items || []) {
+        const c = item.collection
+        rememberMarket(c.maasContract)
+        value[c.nftContract.toLowerCase()] = {
+            ...c,
+            floorValue: item.floorValue,
+            // "0.65 VET"
+            floorCurrency: (item.floor || '').split(' ')[1] || 'VET'
+        }
+    }
+    collectionsCache = { at: Date.now(), value }
+    return value
+}
 
 export function build() {
     return {
@@ -81,6 +196,69 @@ export function build() {
         async vetName(address: string): Promise<string> {
             const resp = await http.get<{ vetName: string | null }>(`/wallet/${address.toLowerCase()}/vet-name`)
             return resp.data.vetName || ''
+        },
+        /** the collections BlackVeMarket trades, by NFT contract (lower case); cached for 10 minutes */
+        collections(): Promise<Record<string, BVM.Collection>> {
+            if (collectionsCache && collectionsCache.at > Date.now() - 10 * 60 * 1000) {
+                return Promise.resolve(collectionsCache.value)
+            }
+            // callers asking at the same time share one request
+            collectionsLoading = collectionsLoading || loadCollections().finally(() => { collectionsLoading = null })
+            return collectionsLoading
+        },
+        /** recent listings, sales and offers, newest first; for one collection when given */
+        async activity(collection?: string, limit = 12): Promise<BVM.FeedItem[]> {
+            type Raw = Record<string, string | null | undefined>
+            const resp = await http.get<Record<'listings' | 'sales' | 'offers', Raw[]>>('/activity', {
+                params: { limit, ...(collection ? { collection } : {}) }
+            })
+            const read = (kind: BVM.FeedItem['kind'], r: Raw): BVM.FeedItem => ({
+                kind,
+                id: `${kind}:${r.id}`,
+                name: r.name || `#${r.tokenId}`,
+                image: r.image || '',
+                contract: r.contract || '',
+                tokenId: r.tokenId || '',
+                collection: r.collection || '',
+                collectionSlug: r.collectionSlug || '',
+                price: kind === 'listing' ? (r.price || '') : `${r.displayAmount || ''} ${r.currency || ''}`.trim(),
+                time: Date.parse(r.timestamp || r.listedAt || '') || 0
+            })
+            const d = resp.data
+            return [
+                ...(d.listings || []).map(r => read('listing', r)),
+                ...(d.sales || []).map(r => read('sale', r)),
+                ...(d.offers || []).map(r => read('offer', r))
+            ].sort((a, b) => b.time - a.time)
+        },
+        /** the NFTs an address has listed */
+        async listings(address: string, limit = 12): Promise<BVM.NFT[]> {
+            const resp = await http.get<BVM.Holdings>(`/profile/${address.toLowerCase()}`, {
+                params: { limit, offset: 0, status: 'listed', sort: 'default' }
+            })
+            return resp.data.holdings.filter(n => n.listed)
+        },
+        /** the collection page on blackvemarket.com */
+        collectionPage(slug: string) {
+            return `${marketURL}/collection/${slug}`
+        },
+        /** launches open for minting, or about to open */
+        async launches(): Promise<BVM.Launch[]> {
+            const resp = await http.get<{ live?: BVM.Launch[], upcoming?: BVM.Launch[] }>('/launchpad/public')
+            return [...(resp.data.live || []), ...(resp.data.upcoming || [])]
+        },
+        /** whether BlackVeMarket pays the gas of this wallet's marketplace transactions */
+        async delegateStatus(address: string): Promise<BVM.DelegateStatus> {
+            try {
+                const resp = await http.get<BVM.DelegateStatus>('/delegate/status', { params: { wallet: address.toLowerCase() } })
+                return resp.data
+            } catch {
+                return { enabled: false, genesis: false, free: false, remainingTx: 0 }
+            }
+        },
+        /** the fee delegation service, for options.delegator */
+        delegatorURL() {
+            return new URL(baseURL.replace(/\/$/, '') + '/delegate/sign', window.location.href).href
         },
         /** the page of an NFT on blackvemarket.com */
         nftPage(contract: string, tokenId: string) {
