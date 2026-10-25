@@ -4,6 +4,7 @@
             <q-item-section class="bvm-label">{{$t('index.label_wallets')}}</q-item-section>
             <q-item-section side>
                 <q-btn
+                    :aria-label="$t('common.add')"
                     flat
                     round
                     dense
@@ -32,8 +33,16 @@
                 @click="$emit('select', wallet.id)"
             >
                 <q-item-section>
-                    <q-item-label lines="1">
-                      {{wallet.meta.name}}
+                    <q-item-label
+                        lines="1"
+                        class="row no-wrap items-center"
+                    >
+                        <wallet-mark
+                            :wallet="wallet"
+                            size="20px"
+                            class="q-mr-sm"
+                        />
+                        <span class="ellipsis">{{wallet.meta.name}}</span>
                     </q-item-label>
                     <q-item-label
                         v-if="wallet.gid !==mainnetGid"
@@ -49,9 +58,11 @@
 <script lang="ts">
 import { defineComponent, type ComponentPublicInstance } from 'vue'
 import { genesises } from 'src/consts'
+import WalletMark from 'src/components/WalletMark.vue'
 
 export default defineComponent({
     emits: ['select'],
+    components: { WalletMark },
     props: {
         wallets: { type: Array as () => M.Wallet[], required: true },
         current: Number

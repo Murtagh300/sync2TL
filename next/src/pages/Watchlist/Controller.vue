@@ -2,6 +2,7 @@
     <div class="fit column no-wrap">
         <page-toolbar :title="$t('watchlist.title')">
             <q-btn
+                :aria-label="$t('a11y.refresh')"
                 flat
                 round
                 icon="o_refresh"
@@ -52,6 +53,7 @@
                         />
                         <span class="ellipsis">{{collectionName(slug)}}</span>
                         <q-btn
+                            :aria-label="$t('common.close')"
                             flat
                             round
                             dense
@@ -71,6 +73,7 @@
                         />
                         <address-label :addr="w" />
                         <q-btn
+                            :aria-label="$t('common.close')"
                             flat
                             round
                             dense
@@ -97,10 +100,11 @@
                 >
                     <q-spinner-dots size="28px" />
                 </div>
-                <div
+                <empty-state
                     v-else-if="!feed.length"
-                    class="bvm-tile q-pa-lg text-center text-soft"
-                >{{list.collections.length || list.wallets.length ? $t('watchlist.msg_quiet') : $t('watchlist.msg_empty')}}</div>
+                    :icon="list.collections.length || list.wallets.length ? 'o_notifications_paused' : 'o_visibility'"
+                    :text="list.collections.length || list.wallets.length ? $t('watchlist.msg_quiet') : $t('watchlist.msg_empty')"
+                />
                 <q-list
                     v-else
                     class="bvm-list"
@@ -171,6 +175,7 @@
                         </q-item-section>
                         <q-item-section side>
                             <q-btn
+                                :aria-label="$t('common.delete')"
                                 flat
                                 round
                                 dense
@@ -206,6 +211,7 @@ import { defineComponent } from 'vue'
 import { address } from 'thor-devkit'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import EmptyState from 'components/EmptyState.vue'
 import AddressLabel from 'components/AddressLabel.vue'
 import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
 import CollectionPicker from './CollectionPicker.vue'
@@ -218,7 +224,7 @@ import type { BVM } from 'boot/services/bvm'
 
 // collections and wallets to follow on BlackVeMarket, and price alerts
 export default defineComponent({
-    components: { PageToolbar, PageContent, AddressLabel },
+    components: { EmptyState, PageToolbar, PageContent, AddressLabel },
     data: () => ({
         tab: 'feed' as 'feed' | 'alerts',
         list: emptyWatchlist(),

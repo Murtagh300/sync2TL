@@ -5,6 +5,7 @@
             :gid="wallet?.gid"
         >
             <q-btn
+                :aria-label="$t('a11y.options')"
                 flat
                 round
                 icon="o_tune"
@@ -34,6 +35,22 @@
             class="col"
             padding
         >
+            <!-- the pairs swapped lately, one tap away -->
+            <div
+                v-if="recentPairs.length"
+                class="row no-wrap q-gutter-x-xs q-mb-sm recent-pairs"
+            >
+                <q-chip
+                    v-for="p in recentPairs"
+                    :key="p.from + p.to"
+                    clickable
+                    dense
+                    outline
+                    :selected="false"
+                    class="q-ma-none q-mr-xs"
+                    @click="usePair(p)"
+                >{{p.from}} → {{p.to}}</q-chip>
+            </div>
             <!-- pay -->
             <div class="bvm-tile swap-box">
                 <div class="row items-center text-muted swap-box-head">
@@ -79,6 +96,7 @@
 
             <div class="row justify-center">
                 <q-btn
+                    :aria-label="$t('a11y.flip')"
                     round
                     unelevated
                     class="flip"
@@ -125,10 +143,29 @@
                     <q-space />
                     <span>{{formatUnits(quoteResult.amountOutMin, toToken?.decimals || 18)}} {{toSymbol}}</span>
                 </div>
-                <div class="row">
+                <div
+                    v-if="priceImpact !== null"
+                    class="row"
+                >
+                    <span class="text-muted">{{$t('swap.label_impact')}}</span>
+                    <q-space />
+                    <span :class="impactClass">{{priceImpact < 0.1 ? '< 0.1' : priceImpact.toFixed(1)}}%</span>
+                </div>
+                <div class="row no-wrap">
                     <span class="text-muted">{{$t('swap.label_route')}}</span>
                     <q-space />
-                    <span>{{quoteResult.source}} · {{slippageBps / 100}}%</span>
+                    <span class="text-right">{{routeText}} · {{slippageBps / 100}}%</span>
+                </div>
+                <div
+                    v-if="priceImpact !== null && priceImpact >= 3"
+                    class="bvm-tile impact-warning q-mt-sm"
+                    :class="impactClass"
+                >
+                    <q-icon
+                        name="o_warning"
+                        size="18px"
+                        class="q-mr-xs"
+                    />{{$t(priceImpact >= 10 ? 'swap.msg_impact_high' : 'swap.msg_impact', { pct: priceImpact.toFixed(1) })}}
                 </div>
             </div>
             <div
@@ -157,7 +194,8 @@ import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
 import TokenPick from './TokenPick.vue'
-import { quote, type Quote } from 'src/utils/swap'
+import { quote, type Quote, priceImpact, rememberPair, recentPairs, type Pair } from 'src/utils/swap'
+import { contractName, fns } from 'src/utils/actions'
 import { formatUnits, toWei } from 'src/utils/format'
 import { BigNumber } from 'bignumber.js'
 import { visibleTokens } from 'src/utils/tokens'
@@ -171,11 +209,15 @@ export default defineComponent({
     components: { PageToolbar, PageContent, PageAction, TokenPick, HelpTip },
     props: {
         wid: String,
-        i: String
+        i: String,
+        /** a pair to start with (the sign dialog links here when VTHO runs short) */
+        from: String,
+        to: String
     },
-    data: () => ({
-        fromSymbol: 'VET',
-        toSymbol: 'VTHO',
+    data: (vm) => ({
+        fromSymbol: vm.from || 'VET',
+        toSymbol: vm.to || (vm.from === 'VTHO' ? 'VET' : 'VTHO'),
+        recentPairs: recentPairs(),
         amount: '',
         slippageBps: 100,
         quoting: false,
@@ -252,6 +294,31 @@ export default defineComponent({
         receiveFiat(): string {
             return this.quoteResult && this.toToken ? this.fiatOf(this.quoteResult.amountOut, this.toToken) : ''
         },
+        /** how much worse than the market price, in %: null without prices for both sides */
+        priceImpact(): number | null {
+            const q = this.quoteResult
+            if (!q || !this.amountWei || !this.fromToken || !this.toToken) {
+                return null
+            }
+            const price = (t: M.TokenSpec) => this.stats[(t.address || '0x0000000000000000000000000000000000000000').toLowerCase()]?.price
+            return priceImpact(this.amountWei, this.fromToken.decimals, price(this.fromToken), q.amountOut, this.toToken.decimals, price(this.toToken))
+        },
+        impactClass(): string {
+            const p = this.priceImpact
+            return p === null || p < 3 ? '' : p < 10 ? 'text-warning' : 'text-negative'
+        },
+        /** who routes it, and the DEXes it goes through */
+        routeText(): string {
+            const q = this.quoteResult
+            if (!q) {
+                return ''
+            }
+            const dexes = [...new Set(q.clauses
+                .filter(c => !c.data.startsWith(fns.approve.signature))
+                .map(c => contractName(c.to))
+                .filter(n => n && n !== q.source))]
+            return dexes.length ? this.$t('swap.label_route_via', { source: q.source, dexes: dexes.join(', ') }) : q.source
+        },
         rate(): string {
             const q = this.quoteResult
             if (!q || !this.amountWei || !this.fromToken || !this.toToken) {
@@ -307,6 +374,10 @@ export default defineComponent({
             }
             this.amount = new BigNumber(max.toString()).div(new BigNumber(10).pow(t.decimals)).toFixed()
         },
+        usePair(p: Pair) {
+            this.fromSymbol = p.from
+            this.toSymbol = p.to
+        },
         flip() {
             const f = this.fromSymbol
             this.fromSymbol = this.toSymbol
@@ -358,6 +429,20 @@ export default defineComponent({
                 amount: this.amount, from: this.fromSymbol,
                 out: formatUnits(q.amountOut, this.toToken?.decimals || 18), to: this.toSymbol
             })
+            if (this.priceImpact !== null && this.priceImpact >= 10) {
+                try {
+                    await new Promise<void>((resolve, reject) => {
+                        this.$q.dialog({
+                            title: this.$t('swap.title_impact'),
+                            message: this.$t('swap.msg_impact_high', { pct: this.priceImpact!.toFixed(1) }),
+                            cancel: true,
+                            ok: { label: this.$t('swap.action_swap_anyway'), color: 'negative', flat: true }
+                        }).onOk(() => resolve()).onCancel(() => reject(new Error('cancelled')))
+                    })
+                } catch {
+                    return
+                }
+            }
             try {
                 await this.$signTx(w.gid, {
                     message: q.clauses.map(c => ({ ...c, comment })),
@@ -372,6 +457,8 @@ export default defineComponent({
                         { label: this.$t('swap.label_receive'), value: `≈ ${formatUnits(q.amountOut, this.toToken?.decimals || 18)} ${this.toSymbol}` }
                     ]
                 }).catch(() => { })
+                rememberPair({ from: this.fromSymbol, to: this.toSymbol })
+                this.recentPairs = recentPairs()
                 this.amount = ''
                 setTimeout(() => this.loadBalance(), 12 * 1000)
             } catch {
@@ -410,6 +497,15 @@ export default defineComponent({
   z-index: 1
   border: 1px solid $hairline-2
   background: $surface-2
+
+.recent-pairs
+  overflow-x: auto
+  scrollbar-width: none
+
+.impact-warning
+  padding: 8px 10px
+  font-size: 12px
+  line-height: 1.4
 
 .details
   font-size: 13px

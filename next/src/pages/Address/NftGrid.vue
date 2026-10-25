@@ -124,10 +124,26 @@
 
         <!-- the NFTs -->
         <div
-            v-if="hiddenCount"
-            class="q-px-md q-pb-sm"
+            v-if="hiddenCount || favoriteCount"
+            class="q-px-md q-pb-sm row q-gutter-x-xs"
         >
             <button
+                v-if="favoriteCount"
+                type="button"
+                class="chip"
+                :class="{ 'chip--active': onlyFavorites }"
+                :aria-pressed="onlyFavorites"
+                @click="onlyFavorites = !onlyFavorites"
+            >
+                <q-icon
+                    name="star"
+                    size="14px"
+                    color="amber"
+                />
+                {{$t('nft.label_favorites', { n: favoriteCount })}}
+            </button>
+            <button
+                v-if="hiddenCount"
                 type="button"
                 class="chip"
                 :class="{ 'chip--active': showHidden }"
@@ -179,6 +195,13 @@
                             v-if="nft.rank"
                             class="nft-rank"
                         >#{{nft.rank}}</div>
+                        <q-icon
+                            v-if="isFavoriteNft(nft)"
+                            name="star"
+                            class="nft-star"
+                            size="18px"
+                            :aria-label="$t('nft.label_favorite')"
+                        />
                     </q-img>
                     <div class="nft-body">
                         <div class="nft-name ellipsis">{{nft.name}}</div>
@@ -260,6 +283,15 @@
                 class="text-muted"
             />
             <div class="q-mt-sm">{{$t('nft.msg_empty')}}</div>
+            <q-btn
+                outline
+                no-caps
+                color="primary"
+                class="q-mt-md"
+                icon="o_storefront"
+                :label="$t('nft.action_explore')"
+                @click="openURL(marketURL)"
+            />
             <div
                 v-if="ideas.length"
                 class="ideas q-mt-md"
@@ -344,13 +376,13 @@ import { canTrade, listClauses, listingCurrencies, sendClauses, signMarketTx } f
 import { toWei } from 'src/utils/format'
 import { readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 import { navigateWithHero } from 'src/utils/hero'
-import { isHidden, loadHidden, nftKey, saveHidden, type HiddenNfts } from 'src/utils/hidden-nfts'
+import { isFavorite, isHidden, loadHidden, nftKey, saveHidden, toggleFavorite, type HiddenNfts } from 'src/utils/hidden-nfts'
 import { shareCard } from 'src/utils/share-card'
 import GalleryDialog from 'components/GalleryDialog.vue'
 import { haptic } from 'src/utils/prefs'
 import SuccessDialog from 'components/SuccessDialog.vue'
 import RecipientCheckDialog from 'pages/Send/RecipientCheckDialog.vue'
-import { isKnownRecipient, rememberRecipient } from 'src/utils/recipient'
+import { findLookalike, isKnownRecipient, rememberRecipient } from 'src/utils/recipient'
 
 // one transaction carries at most this many NFTs, as on blackvemarket.com
 const MAX_BATCH = 30
@@ -384,12 +416,21 @@ export default defineComponent({
         hiddenPrefs: { hidden: [], shown: [] } as HiddenNfts,
         verified: null as Set<string> | null,
         showHidden: false,
+        onlyFavorites: false,
         selected: [] as BVM.NFT[],
         marketURL
     }),
     computed: {
         visibleItems(): BVM.NFT[] {
-            return this.showHidden ? this.items : this.items.filter(n => !this.isHiddenNft(n))
+            const shown = this.showHidden ? this.items : this.items.filter(n => !this.isHiddenNft(n))
+            if (this.onlyFavorites) {
+                return shown.filter(n => this.isFavoriteNft(n))
+            }
+            // starred ones first, otherwise in the order asked for
+            return [...shown.filter(n => this.isFavoriteNft(n)), ...shown.filter(n => !this.isFavoriteNft(n))]
+        },
+        favoriteCount(): number {
+            return this.items.filter(n => this.isFavoriteNft(n)).length
         },
         hiddenCount(): number {
             return this.items.filter(n => this.isHiddenNft(n)).length
@@ -467,6 +508,9 @@ export default defineComponent({
             const actions: Action[] = []
             if (!nft.listed && canTrade(nft)) actions.push({ label: this.$t('market.action_list'), icon: 'o_sell', id: 'list' })
             if (!nft.listed) actions.push({ label: this.$t('nft.action_send'), icon: 'o_north_east', id: 'send' })
+            actions.push(this.isFavoriteNft(nft)
+                ? { label: this.$t('nft.action_unfavorite'), icon: 'star', id: 'favorite' }
+                : { label: this.$t('nft.action_favorite'), icon: 'star_outline', id: 'favorite' })
             actions.push({ label: this.$t('share.action'), icon: 'o_ios_share', id: 'share' })
             actions.push({ label: this.$t('nft.action_hide'), icon: 'o_visibility_off', id: 'hide' })
             actions.push({ label: this.$t('nft.action_view_market'), icon: 'o_open_in_new', id: 'market' })
@@ -474,6 +518,7 @@ export default defineComponent({
                 switch (a.id) {
                     case 'list': void this.bulkList([nft]); break
                     case 'send': void this.bulkSend([nft]); break
+                    case 'favorite': void this.favorite(nft); break
                     case 'share': void shareCard({ title: nft.name, subtitle: nft.collection, image: nft.image }).catch(() => { }); break
                     case 'hide': void this.hideNft(nft); break
                     case 'market': openURL(this.$svc.bvm.nftPage(nft.contract, nft.tokenId)); break
@@ -488,6 +533,14 @@ export default defineComponent({
             await saveHidden(this.$svc, h)
             this.hiddenPrefs = h
             this.$q.notify(this.$t('nft.msg_hidden'))
+        },
+        async favorite(nft: BVM.NFT) {
+            const { prefs, favorite } = await toggleFavorite(this.$svc, nft)
+            this.hiddenPrefs = prefs
+            haptic(favorite ? 'success' : 'tap')
+        },
+        isFavoriteNft(nft: BVM.NFT) {
+            return isFavorite(this.hiddenPrefs, nft)
         },
         isHiddenNft(nft: BVM.NFT) {
             return isHidden(this.hiddenPrefs, this.verified, nft)
@@ -549,7 +602,7 @@ export default defineComponent({
                 }
                 to = (await this.$dialog<string>({ component: PromptDialog, opts })).trim()
                 if (!await isKnownRecipient(this.$svc, this.gid, to)) {
-                    await this.$dialog({ component: RecipientCheckDialog, to })
+                    await this.$dialog({ component: RecipientCheckDialog, to, imitates: await findLookalike(this.$svc, this.gid, to) })
                 }
             } catch {
                 return
@@ -716,6 +769,13 @@ export default defineComponent({
   border-radius: $radius-lg
   background: rgba(17, 20, 19, 0.96)
   backdrop-filter: blur(6px)
+
+.nft-star
+  position: absolute
+  top: 6px
+  right: 6px
+  color: #fcd34d
+  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7))
 
 .nft-hidden-tag
   font-size: 11px

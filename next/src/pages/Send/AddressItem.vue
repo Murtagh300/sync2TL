@@ -6,7 +6,10 @@
             <address-avatar size="md" :addr="address" />
         </q-item-section>
         <q-item-section>
-            <address-label :addr="address"/>
+            <address-label
+                no-icon
+                :addr="address"
+            />
         </q-item-section>
     </q-item>
 </template>

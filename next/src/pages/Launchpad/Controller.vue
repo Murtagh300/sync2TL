@@ -29,10 +29,14 @@
                         @click="load()"
                     />
                 </div>
-                <div
+                <empty-state
                     v-else-if="!launches.length"
-                    class="bvm-tile q-pa-lg text-center text-soft"
-                >{{$t('launchpad.msg_none')}}</div>
+                    icon="o_rocket_launch"
+                    :text="$t('launchpad.msg_none')"
+                    :action="$t('nft.action_explore')"
+                    action-icon="o_open_in_new"
+                    @action="openMarket()"
+                />
                 <div
                     v-else
                     class="launch-grid"
@@ -77,6 +81,9 @@
 import { defineComponent } from 'vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import EmptyState from 'components/EmptyState.vue'
+import { openURL } from 'src/utils/open-url'
+import { marketURL } from 'boot/services/bvm'
 import { formatUnits } from 'src/utils/format'
 import type { BVM } from 'boot/services/bvm'
 
@@ -87,7 +94,7 @@ export function launchState(l: BVM.Launch): 'live' | 'upcoming' | 'soldout' {
 
 // what is minting on the BlackVeMarket launchpad
 export default defineComponent({
-    components: { PageToolbar, PageContent },
+    components: { EmptyState, PageToolbar, PageContent },
     data: () => ({
         loading: true,
         error: false,
@@ -97,6 +104,9 @@ export default defineComponent({
         void this.load()
     },
     methods: {
+        openMarket() {
+            openURL(marketURL)
+        },
         state: launchState,
         price(wei: string) {
             return formatUnits(wei, 18)

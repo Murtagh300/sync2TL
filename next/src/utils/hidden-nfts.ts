@@ -10,6 +10,8 @@ export type HiddenNfts = {
     hidden: string[]
     /** contract:tokenId of unverified NFTs the user chose to show */
     shown: string[]
+    /** contract:tokenId the user starred: first in the grid, and a filter of their own */
+    favorites?: string[]
 }
 
 export const nftKey = (contract: string, tokenId: string) => `${contract.toLowerCase()}:${tokenId}`
@@ -20,6 +22,21 @@ export function loadHidden(svc: Service): Promise<HiddenNfts> {
 
 export function saveHidden(svc: Service, value: HiddenNfts) {
     return svc.config.setJSON('hidden-nfts', value)
+}
+
+export function isFavorite(h: HiddenNfts, nft: { contract: string, tokenId: string }) {
+    return (h.favorites || []).includes(nftKey(nft.contract, nft.tokenId))
+}
+
+/** star or unstar an NFT; returns the new state */
+export async function toggleFavorite(svc: Service, nft: { contract: string, tokenId: string }): Promise<{ prefs: HiddenNfts, favorite: boolean }> {
+    const key = nftKey(nft.contract, nft.tokenId)
+    const h = await loadHidden(svc)
+    const list = h.favorites || []
+    const favorite = !list.includes(key)
+    h.favorites = favorite ? [key, ...list] : list.filter(k => k !== key)
+    await saveHidden(svc, h)
+    return { prefs: h, favorite }
 }
 
 /** whether an NFT stays out of the grid */

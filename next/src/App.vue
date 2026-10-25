@@ -13,6 +13,7 @@ import { dueScheduled } from 'src/utils/payments'
 import dayjs from 'dayjs'
 // import more locales here
 import 'dayjs/locale/zh-cn'
+import 'dayjs/locale/nl'
 
 /**
  * parse connex request url and return the request src
@@ -55,12 +56,13 @@ export default defineComponent({
             const wanted = (newVal || navigator.language).toLowerCase()
             const lang = this.$i18n.availableLocales.includes(wanted)
                 ? wanted
-                : wanted.startsWith('zh') ? 'zh-cn' : 'en-us'
+                : wanted.startsWith('zh') ? 'zh-cn' : wanted.startsWith('nl') ? 'nl-nl' : 'en-us'
             this.$i18n.locale = lang
 
             // should set to default first
             dayjs.locale('en')
-            dayjs.locale(lang)
+            // dayjs names Dutch 'nl'
+            dayjs.locale(lang === 'nl-nl' ? 'nl' : lang)
         }
     },
     methods: {

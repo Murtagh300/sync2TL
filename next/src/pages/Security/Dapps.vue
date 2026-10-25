@@ -6,10 +6,14 @@
             padding
         >
             <p class="text-soft">{{$t('dapps.msg_intro')}}</p>
-            <div
+            <empty-state
                 v-if="!dapps.length"
-                class="bvm-tile q-pa-lg text-center text-soft"
-            >{{$t('dapps.msg_none')}}</div>
+                icon="o_apps"
+                :text="$t('dapps.msg_none')"
+                :action="$t('empty.action_discover')"
+                action-icon="o_explore"
+                @action="$router.push({ name: 'index' })"
+            />
             <q-list
                 v-else
                 class="bvm-list"
@@ -52,12 +56,13 @@
 import { defineComponent } from 'vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import EmptyState from 'components/EmptyState.vue'
 import { dappsFromActivity, type DappUse } from 'src/utils/dapps'
 import { formatDate } from 'src/utils/format'
 
 // the sites the wallet signed for; forgetting one removes its records from this device
 export default defineComponent({
-    components: { PageToolbar, PageContent },
+    components: { EmptyState, PageToolbar, PageContent },
     data: () => ({
         dapps: [] as DappUse[]
     }),

@@ -10,6 +10,7 @@
         <div class="col q-ml-md" style="min-width: 0">
             <div class="head-name ellipsis">{{name}}</div>
             <address-label
+                no-icon
                 class="text-muted"
                 :addr="address"
             />

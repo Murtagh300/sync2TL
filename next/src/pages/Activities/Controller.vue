@@ -38,9 +38,7 @@
             </q-btn>
         </page-toolbar>
         <page-content class="col">
-            <q-pull-to-refresh
-                color="primary"
-                bg-color="dark"
+            <pull-refresh
                 @refresh="refresh"
             >
                 <template v-if="groups.length">
@@ -83,25 +81,24 @@
                         </q-item-section>
                     </q-item>
                 </q-list>
-                <div
+                <empty-state
                     v-else
-                    class="text-center q-px-xl q-py-xl column items-center"
-                >
-                    <q-icon
-                        name="o_receipt_long"
-                        size="40px"
-                        class="text-muted"
-                    />
-                    <p class="q-mt-md text-soft">{{$t('activities.msg_not_found')}}</p>
-                </div>
-            </q-pull-to-refresh>
+                    icon="o_receipt_long"
+                    :text="$t('activities.msg_not_found')"
+                    :action="$t('empty.action_home')"
+                    action-icon="o_home"
+                    @action="$router.push({ name: 'index' })"
+                />
+            </pull-refresh>
         </page-content>
     </div>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import PullRefresh from 'components/PullRefresh.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import EmptyState from 'components/EmptyState.vue'
 import ActivityRow, { type ActivityRow as Row } from './Row.vue'
 import { Transaction } from 'thor-devkit'
 import { decodeAction } from 'src/utils/actions'
@@ -125,7 +122,7 @@ const ZERO = '0x0000000000000000000000000000000000000000'
 
 // what happened on the wallets, newest first, by day: signed by you and sent to you
 export default defineComponent({
-    components: { PageToolbar, PageContent, ActivityRow },
+    components: { EmptyState, PullRefresh, PageToolbar, PageContent, ActivityRow },
     data: () => ({
         loading: true,
         list: [] as M.Activity[],

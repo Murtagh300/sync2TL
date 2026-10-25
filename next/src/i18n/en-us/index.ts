@@ -113,6 +113,8 @@ export default {
         label_input_password: 'Enter your BlackVault password'
     },
     settings: {
+        label_shake_hide: 'Shake to hide balances',
+        msg_motion_denied: 'BlackVault may not read the motion sensor. Allow motion access for this site in your browser settings.',
         title: 'Settings',
         action_change_password: 'Change password',
         action_token_list: 'Tokens',
@@ -181,7 +183,11 @@ export default {
         status_unlisted: 'Not listed',
         label_selected_short: 'selected',
         msg_viewer_hint: 'Double tap to zoom · swipe for the next one',
-        label_hidden: 'Hidden ({n})',
+        label_hidden: 'Hidden and spam ({n})',
+        label_favorites: 'Favorites ({n})',
+        label_favorite: 'Favorite',
+        action_favorite: 'Add to favorites',
+        action_unfavorite: 'Remove from favorites',
         label_hidden_one: 'Hidden',
         label_unverified: 'Unverified collection',
         action_hide_hidden: 'Hide them again',
@@ -326,7 +332,13 @@ export default {
         msg_insufficient: 'Not enough {symbol}',
         msg_no_route: 'No route for this pair right now',
         msg_done: 'Swapped once the transaction is confirmed',
-        comment: 'Swap {amount} {from} for {out} {to}'
+        comment: 'Swap {amount} {from} for {out} {to}',
+        label_impact: 'Price impact',
+        label_route_via: '{source} via {dexes}',
+        title_impact: 'High price impact',
+        msg_impact: 'You get {pct}% less than the market price: the pool is small for this amount.',
+        msg_impact_high: 'You get {pct}% less than the market price. Swap a smaller amount, or in parts.',
+        action_swap_anyway: 'Swap anyway'
     },
     home: {
         label_all_wallets: 'All wallets',
@@ -362,6 +374,65 @@ export default {
         msg_hint: 'Search your contacts, tokens, BlackVeMarket collections, .vet names and addresses.',
         msg_nothing: 'Nothing found for “{q}”'
     },
+    payout: {
+        title: 'Pay many',
+        msg_intro: 'Pay a list of addresses at once: rewards, an airdrop, splitting a bill. One line per address.',
+        label_token: 'Pay in',
+        label_list: 'Addresses and amounts',
+        hint_list: 'address or .vet name, amount, note (optional)',
+        action_load: 'Load a CSV file',
+        action_clear: 'Clear',
+        err_address: 'Line {line}: not a valid address',
+        err_amount: 'Line {line}: not a valid amount',
+        err_name: 'Line {line}: {name} points to no address',
+        err_more: 'and {n} more',
+        err_file: 'That file is too large for a list of payments',
+        label_recipients: '{n} recipients',
+        msg_batches: 'Paid in {n} transactions of up to 100 each',
+        label_lookalike: 'Look-alike of an address you know',
+        label_duplicate: 'More than once in the list',
+        action_show_all: 'Show all {n}',
+        msg_empty: 'Paste a list, or load one from a spreadsheet saved as CSV.',
+        action_pay: 'Pay {n} addresses',
+        label_batch: 'Transaction {n} of {of}',
+        comment: 'Pay {n} addresses in {symbol}',
+        msg_lookalikes: '{n} address(es) in the list start and end like one you know, but are different. Check them before paying.',
+        title_done: 'Payments sent',
+        msg_done: '{n} of {of} payments are on their way.'
+    },
+    scanner: {
+        action_image: 'From an image',
+        msg_no_camera: 'No camera available. Choose a screenshot or photo with the QR code.',
+        msg_no_code: 'No QR code found in this image'
+    },
+    walletLook: {
+        action: 'Color and emoji',
+        msg: 'Tell your wallets apart at a glance.',
+        label_color: 'Color',
+        label_emoji: 'Emoji',
+        label_custom: 'Or type any emoji',
+        action_reset: 'Use the address pattern'
+    },
+    a11y: {
+        back: 'Back',
+        more: 'More options',
+        options: 'Options',
+        refresh: 'Refresh',
+        open_external: 'Open in the browser',
+        less: 'Fewer',
+        flip: 'Swap the two tokens'
+    },
+    empty: {
+        action_home: 'Send or receive from home',
+        action_add_liquidity: 'Add liquidity on BetterSwap',
+        action_discover: 'Discover apps on home'
+    },
+    approvalReminder: {
+        msg: '{spender} can still spend {amount} of yours. Revoke what is left?',
+        label_tokens: 'tokens',
+        action_revoke: 'Revoke',
+        comment: 'Revoke the rest of an approval: {amount} for {spender}'
+    },
     txStatus: {
         msg_pending: '{label} · waiting for the chain',
         msg_pending_many: '{n} transactions waiting for the chain',
@@ -372,7 +443,12 @@ export default {
         title: 'New address',
         message: 'You have not sent to this address before. Check the start and end against what you were given.',
         hint: 'Scammers use addresses that look alike in the middle. Compare the large characters.',
-        action_continue: 'The address is right'
+        action_continue: 'The address is right',
+        title_lookalike: 'Look-alike address',
+        message_lookalike: 'This address starts and ends like one you have used, but it is a different address. Scammers send tiny amounts from such addresses so you copy them from your history.',
+        label_sending_to: 'You are sending to',
+        label_known: 'The address you know (differences in red)',
+        action_continue_anyway: 'Send anyway'
     },
     offline: {
         title: 'Offline',
@@ -716,6 +792,9 @@ export default {
         msg_wallet_not_found: 'Wallet not found'
     },
     sign: {
+        title_vtho_short: 'Not enough VTHO for the fee',
+        msg_vtho_short: 'The fee is {need} VTHO; this address has {have}.',
+        action_get_vtho: 'Get VTHO',
         title: 'Request',
         msg_loading_content: 'Loading the request…',
         msg_loading_failed: 'Could not load the request',

@@ -37,6 +37,7 @@
                 </q-menu>
             </q-btn>
             <q-btn
+                :aria-label="$t('common.add')"
                 flat
                 round
                 icon="add"
@@ -88,6 +89,7 @@
                             lines="1"
                         >
                             <address-label
+                                no-icon
                                 :addr="c.address"
                                 no-name
                             />
@@ -95,6 +97,7 @@
                     </q-item-section>
                     <q-item-section side>
                         <q-btn
+                            :aria-label="$t('common.delete')"
                             flat
                             round
                             dense

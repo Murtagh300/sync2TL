@@ -5,6 +5,7 @@
             :gid="gid"
         >
             <q-btn
+                :aria-label="$t('a11y.more')"
                 flat
                 icon="more_horiz"
                 round

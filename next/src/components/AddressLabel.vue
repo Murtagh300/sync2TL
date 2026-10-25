@@ -1,6 +1,13 @@
 <template>
     <div class="inline-block address">
         <template v-if="test(addr)">
+            <!-- the same pattern for the same address everywhere: a look-alike shows a different one -->
+            <img
+                v-if="!noIcon"
+                class="address-icon"
+                :src="icon"
+                alt=""
+            >
             <span
                 v-if="name"
                 class="address-name"
@@ -20,13 +27,16 @@
 import { defineComponent } from 'vue'
 import { address } from 'thor-devkit'
 import { nameOf } from 'src/utils/names'
+import { identicon } from 'src/utils/identicon'
 
 export default defineComponent({
     props: {
         addr: String as () => string | null,
         full: Boolean,
         /** show the address even when it has a name */
-        noName: Boolean
+        noName: Boolean,
+        /** leave out the identicon (where an avatar of the address is already shown) */
+        noIcon: Boolean
     },
     computed: {
         checksumed(): string {
@@ -35,6 +45,9 @@ export default defineComponent({
         /** a contact or .vet name; never in full mode, which is for checking the address itself */
         name(): string {
             return this.full || this.noName ? '' : nameOf(this.addr)
+        },
+        icon(): string {
+            return identicon(this.addr || '')
         },
         isVetName(): boolean {
             return this.name.endsWith('.vet')
@@ -65,6 +78,13 @@ export default defineComponent({
     white-space: inherit;
     overflow: inherit;
     vertical-align: middle;
+}
+.address-icon {
+    width: 1.05em;
+    height: 1.05em;
+    margin-right: 0.3em;
+    border-radius: 50%;
+    vertical-align: -0.15em;
 }
 .address-name {
     font-weight: 700;

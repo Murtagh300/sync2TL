@@ -40,6 +40,31 @@
                     :error="criticalError"
                 />
                 <template v-else>
+                    <!-- short of VTHO: say how much, and get it in one tap -->
+                    <div
+                        v-if="vthoShort"
+                        class="bvm-tile vtho-short row no-wrap items-center q-mb-sm"
+                    >
+                        <q-icon
+                            name="o_local_gas_station"
+                            color="warning"
+                            size="22px"
+                        />
+                        <div class="col q-mx-sm">
+                            <div class="text-weight-bold">{{$t('sign.title_vtho_short')}}</div>
+                            <div class="text-muted">{{$t('sign.msg_vtho_short', vthoShort)}}</div>
+                        </div>
+                        <q-btn
+                            v-if="!isDelegation"
+                            outline
+                            dense
+                            no-caps
+                            color="primary"
+                            class="q-px-sm"
+                            :label="$t('sign.action_get_vtho')"
+                            @click="getVtho()"
+                        />
+                    </div>
                     <error-tip
                         v-if="warnings.length > 0"
                         type="warning"
@@ -120,7 +145,7 @@ export default defineComponent({
             // async computed (see src/shims-async-computed.d.ts)
             delayedEstimation: null as EstimateGasResult | null,
             tokens: [] as M.TokenSpec[],
-            energyWarning: null as Error | null,
+            energy: null as { balance: string, fee: string } | null,
             collections: {} as Record<string, BVM.Collection>
         }
     },
@@ -164,6 +189,20 @@ export default defineComponent({
             }
             this.energyWarning && ret.push(this.energyWarning)
             return ret
+        },
+        energyWarning(): Error | null {
+            return this.vthoShort
+                ? { name: this.$t('sign.label_insufficient_vtho').toString(), message: this.$t('sign.msg_insufficient_vtho').toString() }
+                : null
+        },
+        /** the fee and what the gas payer has, in VTHO, when it isn't enough */
+        vthoShort(): { need: string, have: string } | null {
+            const e = this.energy
+            if (!e || new BigNumber(e.balance).isGreaterThanOrEqualTo(e.fee)) {
+                return null
+            }
+            const vtho = (wei: string) => BigNumber.max(new BigNumber(wei), 0).div(1e18).toFormat(2)
+            return { need: vtho(e.fee), have: vtho(e.balance) }
         },
         /** what signing does to the signer's balances; none when the dry run fails */
         changes(): BalanceChanges | null {
@@ -217,7 +256,8 @@ export default defineComponent({
             },
             default: []
         },
-        async energyWarning(): Promise<Error | null> {
+        /** the gas payer's VTHO (less what this transaction sends) and the fee */
+        async energy(): Promise<{ balance: string, fee: string } | null> {
             const est = this.estimation
             const fee = this.fee
             if (!est || !fee || (this.req.options.delegator && !this.req.options.delegator.signer)) {
@@ -241,13 +281,22 @@ export default defineComponent({
                     }
                 }
             }
-            if (energyBalance.isLessThan(fee)) {
-                return { name: this.$t('sign.label_insufficient_vtho').toString(), message: this.$t('sign.msg_insufficient_vtho').toString() }
-            }
-            return null
+            return { balance: energyBalance.toFixed(0), fee }
         }
     },
     methods: {
+        /** to the swap page, VET to VTHO for this address (the transaction is dropped) */
+        getVtho() {
+            const w = this.wallet
+            if (!w) {
+                return
+            }
+            this.hide()
+            void this.$router.push({
+                name: 'swap',
+                query: { wid: String(w.id), i: String(w.meta.addresses.indexOf(this.signer)), from: 'VET', to: 'VTHO' }
+            })
+        },
         // method is REQUIRED by $q.dialog
         show() { (this.$refs.dialog as QDialog).show() },
         // method is REQUIRED by $q.dialog
@@ -367,3 +416,8 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.vtho-short
+  padding: 10px 12px
+  font-size: 13px
+</style>

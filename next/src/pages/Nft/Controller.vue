@@ -8,6 +8,17 @@
                 v-if="nft"
                 flat
                 round
+                :icon="favorite ? 'star' : 'star_outline'"
+                :color="favorite ? 'amber' : undefined"
+                :aria-label="$t(favorite ? 'nft.action_unfavorite' : 'nft.action_favorite')"
+                :aria-pressed="favorite"
+                @click="toggleFavorite()"
+            />
+            <q-btn
+                :aria-label="$t('a11y.more')"
+                v-if="nft"
+                flat
+                round
                 icon="more_vert"
             >
                 <q-menu
@@ -50,6 +61,7 @@
                 </q-menu>
             </q-btn>
             <q-btn
+                :aria-label="$t(watching ? 'collection.action_watching' : 'collection.action_watch')"
                 v-if="nft"
                 flat
                 round
@@ -397,15 +409,15 @@ import { genesises } from 'src/consts'
 import NftViewer, { type ViewerItem } from './NftViewer.vue'
 import SuccessDialog from 'components/SuccessDialog.vue'
 import RecipientCheckDialog from 'pages/Send/RecipientCheckDialog.vue'
-import { isKnownRecipient, rememberRecipient } from 'src/utils/recipient'
+import { findLookalike, isKnownRecipient, rememberRecipient } from 'src/utils/recipient'
 import { acceptOfferClauses, cancelListingClauses, canTrade, listClauses, listingCurrencies, repriceClauses, signMarketTx, type Clause } from 'src/utils/market'
 import { toWei } from 'src/utils/format'
 import { emptyWatchlist, type Watchlist } from 'src/utils/alerts'
 import { heroHint, HERO_NAME } from 'src/utils/hero'
-import { isHidden, loadHidden, nftKey, saveHidden } from 'src/utils/hidden-nfts'
+import { isFavorite, isHidden, loadHidden, nftKey, saveHidden, toggleFavorite } from 'src/utils/hidden-nfts'
 import { shareCard } from 'src/utils/share-card'
 import { listingSuggestions, traitHighlights } from 'src/utils/pricing'
-import { prefs } from 'src/utils/prefs'
+import { haptic, prefs } from 'src/utils/prefs'
 import type { BVM } from 'boot/services/bvm'
 
 const erc721TransferFrom = new abi.Function({
@@ -453,6 +465,7 @@ export default defineComponent({
         prefs,
         activity: [] as BVM.ActivityEntry[],
         hidden: false,
+        favorite: false,
         heroName: HERO_NAME,
         // async computed (see src/shims-async-computed.d.ts)
         wallet: null as M.Wallet | null,
@@ -471,6 +484,7 @@ export default defineComponent({
                 this.watching = list.collections.includes(nft.collectionSlug)
                 const [h, cols] = await Promise.all([loadHidden(this.$svc), this.$svc.bvm.collections().catch(() => null)])
                 this.hidden = isHidden(h, cols ? new Set(Object.values(cols).map(c => c.slug)) : null, nft)
+                this.favorite = isFavorite(h, nft)
                 return nft
             } catch (err) {
                 console.warn('BlackVeMarket nft:', err)
@@ -564,6 +578,13 @@ export default defineComponent({
             try {
                 await shareCard({ title: nft.name, subtitle: nft.collection, image: nft.image }, this.$svc.bvm.nftPage(nft.contract, nft.tokenId))
             } catch { }
+        },
+        async toggleFavorite() {
+            if (!this.nft) {
+                return
+            }
+            this.favorite = (await toggleFavorite(this.$svc, this.nft)).favorite
+            haptic(this.favorite ? 'success' : 'tap')
         },
         async toggleHidden() {
             const nft = this.nft
@@ -753,7 +774,7 @@ export default defineComponent({
                 }
                 to = (await this.$dialog<string>({ component: PromptDialog, opts })).trim()
                 if (!await isKnownRecipient(this.$svc, wallet.gid, to)) {
-                    await this.$dialog({ component: RecipientCheckDialog, to })
+                    await this.$dialog({ component: RecipientCheckDialog, to, imitates: await findLookalike(this.$svc, wallet.gid, to) })
                 }
             } catch {
                 return

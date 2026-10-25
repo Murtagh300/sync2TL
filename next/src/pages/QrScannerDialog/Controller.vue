@@ -9,6 +9,7 @@
     >
         <div class="fit overflow-hidden">
             <q-btn
+                :aria-label="$t('common.close')"
                 size="lg"
                 class="q-ml-md float-left"
                 style="z-index: 1111"
@@ -18,10 +19,41 @@
                 icon="close"
                 text-color="white" @click="hide()" />
             <Scanner
+                v-if="!cameraError"
                 class="fit"
                 @input="onScanned"
                 @error="onError"
             />
+            <div
+                v-else
+                class="fit flex flex-center column text-center q-pa-lg bg-black text-white"
+            >
+                <q-icon
+                    name="o_no_photography"
+                    size="40px"
+                />
+                <div class="q-mt-sm">{{$t('scanner.msg_no_camera')}}</div>
+            </div>
+            <!-- a QR code in a screenshot or photo -->
+            <q-btn
+                class="scan-image"
+                unelevated
+                rounded
+                no-caps
+                color="dark"
+                text-color="white"
+                icon="o_image"
+                :loading="reading"
+                :label="$t('scanner.action_image')"
+                @click="($refs.file as HTMLInputElement).click()"
+            />
+            <input
+                ref="file"
+                type="file"
+                accept="image/*"
+                class="hidden"
+                @change="fromImage"
+            >
         </div>
     </q-dialog>
 </template>
@@ -30,11 +62,16 @@
 import { defineComponent } from 'vue'
 import Scanner from './Scanner.vue'
 import { QDialog } from 'quasar'
+import { QrScanner } from 'src/utils/qr-scanner'
 
 export default defineComponent({
     // the Dialog plugin listens to these
     emits: ['ok', 'hide'],
     components: { Scanner },
+    data: () => ({
+        cameraError: false,
+        reading: false
+    }),
     methods: {
         // method is REQUIRED by $q.dialog
         show() { (this.$refs.dialog as QDialog).show() },
@@ -48,8 +85,26 @@ export default defineComponent({
             this.ok(code)
         },
         onError(err: Error) {
+            // no camera (desktop) or no permission: an image still works
             console.warn(err)
-            this.hide()
+            this.cameraError = true
+        },
+        async fromImage(e: Event) {
+            const input = e.target as HTMLInputElement
+            const file = input.files?.[0]
+            input.value = ''
+            if (!file) {
+                return
+            }
+            this.reading = true
+            try {
+                const result = await QrScanner.scanImage(file, { returnDetailedScanResult: true })
+                this.ok(result.data)
+            } catch {
+                this.$q.notify({ message: this.$t('scanner.msg_no_code'), color: 'negative' })
+            } finally {
+                this.reading = false
+            }
         },
         onShow() {
             // make the backdrop invisible
@@ -62,3 +117,12 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.scan-image
+  position: absolute
+  left: 50%
+  bottom: calc(32px + env(safe-area-inset-bottom))
+  transform: translateX(-50%)
+  z-index: 1111
+  border: 1px solid rgba(255, 255, 255, 0.25)
+</style>

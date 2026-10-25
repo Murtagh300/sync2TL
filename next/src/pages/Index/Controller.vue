@@ -39,6 +39,7 @@
                     @click="$router.push({ name: 'search' })"
                 />
                 <q-btn
+                    :aria-label="$t('a11y.more')"
                     v-if="wallet"
                     flat
                     round
@@ -47,10 +48,8 @@
                     <option-menu :wallet="wallet" />
                 </q-btn>
             </div>
-            <q-pull-to-refresh
+            <pull-refresh
                 class="col home-scroll overflow-auto"
-                color="primary"
-                bg-color="dark"
                 @refresh="refresh"
             >
                 <div class="home-page q-mx-auto q-px-md q-pb-lg">
@@ -136,13 +135,14 @@
                         />
                     </div>
                 </div>
-            </q-pull-to-refresh>
+            </pull-refresh>
             <home-tour v-if="wallet" />
         </template>
     </div>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import PullRefresh from 'components/PullRefresh.vue'
 import BackupTip from './BackupTip.vue'
 import UpgradeTip from './UpgradeTip.vue'
 import AddressCardList from './AddressCardList.vue'
@@ -161,7 +161,7 @@ import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { haptic } from 'src/utils/prefs'
 
 export default defineComponent({
-    components: { BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, BalancePulse, HomeWidgets, HomeTour },
+    components: { PullRefresh, BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, BalancePulse, HomeWidgets, HomeTour },
     data: () => {
         return {
             selection,

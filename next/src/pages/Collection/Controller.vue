@@ -2,6 +2,7 @@
     <div class="fit column no-wrap">
         <page-toolbar :title="summary ? summary.collection.name : $t('search.label_collections')">
             <q-btn
+                :aria-label="$t('a11y.open_external')"
                 flat
                 round
                 icon="o_open_in_new"

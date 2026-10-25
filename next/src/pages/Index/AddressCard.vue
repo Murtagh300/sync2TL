@@ -12,6 +12,7 @@
             <div class="q-ml-sm col">
                 <div class="card-index bvm-display">#{{index + 1}}</div>
                 <address-label
+                    no-icon
                     class="text-muted"
                     :addr="address"
                     style="font-size: 12px"

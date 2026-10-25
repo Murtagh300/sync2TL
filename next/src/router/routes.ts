@@ -26,6 +26,7 @@ import Collection from 'pages/Collection'
 import Notifications from 'pages/Notifications'
 import Portfolio from 'pages/Portfolio'
 import Payments from 'pages/Payments'
+import Payout from 'pages/Payout'
 import Liquidity from 'pages/Liquidity'
 import Emergency from 'pages/Emergency'
 import Security, { Dapps } from 'pages/Security'
@@ -114,6 +115,10 @@ const routes: RouteRecordRaw[] = [
             path: 'search',
             name: 'search',
             component: Search
+        }, {
+            path: 'payout',
+            name: 'payout',
+            component: Payout
         }, {
             path: 'swap',
             name: 'swap',

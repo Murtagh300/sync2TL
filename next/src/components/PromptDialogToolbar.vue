@@ -1,6 +1,7 @@
 <template>
     <q-toolbar>
         <q-btn
+            :aria-label="$t('common.close')"
             v-show="!$q.screen.xs"
             flat
             dense

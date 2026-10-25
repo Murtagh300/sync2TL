@@ -89,6 +89,14 @@ body
   font-variant-numeric: tabular-nums
   letter-spacing: -0.01em
 
+// privacy mode: amounts that aren't already dots are blurred
+.bv-private .bvm-amount,
+.bv-private .bvm-private
+  filter: blur(7px)
+  user-select: none
+  @media (prefers-reduced-motion: no-preference)
+    transition: filter 0.2s
+
 // the site's section labels ("For sale now", "Launchpad"): small, mint, tracked
 .bvm-label,
 .q-item__label--header

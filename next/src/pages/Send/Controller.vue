@@ -161,7 +161,7 @@ import type { Contact } from 'src/utils/names'
 import type { PaymentRequest } from 'src/utils/payment-request'
 import SuccessDialog from 'components/SuccessDialog.vue'
 import RecipientCheckDialog from './RecipientCheckDialog.vue'
-import { isKnownRecipient } from 'src/utils/recipient'
+import { findLookalike, isKnownRecipient } from 'src/utils/recipient'
 import { nameOf } from 'src/utils/names'
 
 export default defineComponent({
@@ -406,7 +406,8 @@ export default defineComponent({
             }
             if (!await isKnownRecipient(this.$svc, this.wallet!.gid, this.recipient!)) {
                 try {
-                    await this.$dialog({ component: RecipientCheckDialog, to: this.recipient! })
+                    const imitates = await findLookalike(this.$svc, this.wallet!.gid, this.recipient!)
+                    await this.$dialog({ component: RecipientCheckDialog, to: this.recipient!, imitates })
                 } catch {
                     return
                 }

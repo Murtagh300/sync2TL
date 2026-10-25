@@ -41,6 +41,18 @@ export default defineComponent({
             ]
         }
     },
+    watch: {
+        // opened from an app icon shortcut (src-pwa/manifest.json), fresh or already running: run it once
+        '$route.query.do': {
+            handler(value: unknown) {
+                const key = String(value || '') as Key
+                if (['send', 'receive', 'scan'].includes(key)) {
+                    void this.$router.replace({ query: {} }).then(() => this.run(key))
+                }
+            },
+            immediate: true
+        }
+    },
     methods: {
         async run(key: Key) {
             haptic()

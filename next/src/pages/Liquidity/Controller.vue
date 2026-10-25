@@ -28,10 +28,14 @@
                     @click="load()"
                 />
             </div>
-            <div
+            <empty-state
                 v-else-if="!positions.length"
-                class="bvm-tile q-pa-lg text-center text-soft"
-            >{{$t('liquidity.msg_none')}}</div>
+                icon="o_water_drop"
+                :text="$t('liquidity.msg_none')"
+                :action="$t('empty.action_add_liquidity')"
+                action-icon="o_open_in_new"
+                @action="openURL('https://www.betterswap.io/pools')"
+            />
             <template v-else>
                 <div
                     v-if="totalUsd"
@@ -95,6 +99,7 @@
 import { defineComponent } from 'vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import EmptyState from 'components/EmptyState.vue'
 import { findPositions, type Position } from 'src/utils/liquidity'
 import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { money, prefs } from 'src/utils/prefs'
@@ -103,7 +108,7 @@ import { genesises } from 'src/consts'
 
 // the liquidity the wallet provides on BetterSwap and VeTrade
 export default defineComponent({
-    components: { PageToolbar, PageContent },
+    components: { EmptyState, PageToolbar, PageContent },
     data: () => ({
         loading: true,
         error: false,

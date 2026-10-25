@@ -14,7 +14,8 @@ import PopSheets, { Sheet } from 'src/components/PopSheets.vue'
 // maps lang to lang's localized display name
 const displayNames: Record<string, string> = {
     'en-us': 'English (U.S.)',
-    'zh-cn': '中文 (中国)'
+    'zh-cn': '中文 (中国)',
+    'nl-nl': 'Nederlands'
 }
 
 type Item = {

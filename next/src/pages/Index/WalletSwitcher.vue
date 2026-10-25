@@ -12,9 +12,9 @@
         >
             <img :src="profile.avatar">
         </q-avatar>
-        <address-avatar
+        <wallet-mark
             v-else-if="wallet"
-            :addr="wallet.meta.addresses[0]"
+            :wallet="wallet"
             size="32px"
         />
         <div
@@ -33,6 +33,7 @@
                 <template v-if="profile && profile.displayName">@{{profile.displayName}}</template>
                 <address-label
                     v-else
+                    no-icon
                     :addr="wallet.meta.addresses[0]"
                 />
             </div>
@@ -73,8 +74,8 @@
                     @click="$emit('select', w.id)"
                 >
                     <q-item-section avatar>
-                        <address-avatar
-                            :addr="w.meta.addresses[0]"
+                        <wallet-mark
+                            :wallet="w"
                             size="30px"
                         />
                     </q-item-section>
@@ -114,13 +115,13 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
-import AddressAvatar from 'components/AddressAvatar.vue'
+import WalletMark from 'components/WalletMark.vue'
 import AddressLabel from 'components/AddressLabel.vue'
 import type { BVM } from 'boot/services/bvm'
 
 // the current wallet, and a menu to change it
 export default defineComponent({
-    components: { AddressAvatar, AddressLabel },
+    components: { WalletMark, AddressLabel },
     props: {
         wallet: Object as () => M.Wallet | null,
         wallets: { type: Array as () => M.Wallet[], default: () => [] },

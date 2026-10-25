@@ -115,6 +115,17 @@
                             color="primary"
                         />
                     </item>
+                    <item
+                        v-if="motionSupported"
+                        icon="o_vibration"
+                        :title="$t('settings.label_shake_hide')"
+                    >
+                        <q-toggle
+                            :model-value="prefs.shakeToHide"
+                            color="primary"
+                            @update:model-value="setShake"
+                        />
+                    </item>
                     <q-item>
                         <q-item-section avatar>
                             <q-avatar icon="o_format_size" />
@@ -195,6 +206,7 @@ import { kdfEncrypt } from 'src/core/vault'
 import { openURL } from 'src/utils/open-url'
 import { marketURL } from 'boot/services/bvm'
 import { accents, applyAccent, haptic, prefs, type Accent } from 'src/utils/prefs'
+import { motionSupported, requestMotion } from 'src/utils/shake'
 
 export default defineComponent({
     components: { Item, LanguageListPopup, PageToolbar, PageContent },
@@ -214,6 +226,7 @@ export default defineComponent({
         }
     },
     computed: {
+        motionSupported: () => motionSupported(),
         lockOptions(): { label: string, value: number }[] {
             return [
                 { label: this.$t('settings.lock_now'), value: 0 },
@@ -225,6 +238,13 @@ export default defineComponent({
         }
     },
     methods: {
+        async setShake(on: boolean) {
+            const granted = on && await requestMotion()
+            prefs.shakeToHide = granted
+            if (on && !granted) {
+                this.$q.notify({ message: this.$t('settings.msg_motion_denied'), color: 'negative' })
+            }
+        },
         // TODO faceID
         async toggleBioPass(newVal: boolean) {
             const bioPass = this.bioPass

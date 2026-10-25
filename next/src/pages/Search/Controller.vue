@@ -35,6 +35,7 @@
                     >
                         <div class="text-weight-bold ellipsis">{{resolvedName || q}}</div>
                         <address-label
+                            no-icon
                             class="text-muted"
                             :addr="resolved || q"
                             no-name
@@ -69,6 +70,7 @@
                                 <q-item-label>{{c.name}}</q-item-label>
                                 <q-item-label caption>
                                     <address-label
+                                        no-icon
                                         :addr="c.address"
                                         no-name
                                     />

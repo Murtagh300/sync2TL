@@ -1,16 +1,36 @@
 import type { Service } from 'boot/services'
 
-/** whether the wallet has dealt with an address before: own addresses, contacts, recent recipients */
-export async function isKnownRecipient(svc: Service, gid: string, address: string): Promise<boolean> {
-    const a = address.toLowerCase()
+/** addresses the wallet has dealt with: own addresses, contacts, recent recipients (lower case) */
+async function knownAddresses(svc: Service, gid: string): Promise<string[]> {
     const [wallets, contacts, recent] = await Promise.all([
         svc.wallet.all(),
         svc.config.getContacts(),
         svc.config.getRecentRecipients(gid)
     ])
-    return wallets.some(w => w.meta.addresses.some(x => x.toLowerCase() === a)) ||
-        contacts.some(c => c.address.toLowerCase() === a) ||
-        recent.some(r => r.toLowerCase() === a)
+    return [
+        ...wallets.flatMap(w => w.meta.addresses),
+        ...contacts.map(c => c.address),
+        ...recent
+    ].map(a => a.toLowerCase())
+}
+
+/** whether the wallet has dealt with an address before */
+export async function isKnownRecipient(svc: Service, gid: string, address: string): Promise<boolean> {
+    return (await knownAddresses(svc, gid)).includes(address.toLowerCase())
+}
+
+/**
+ * address poisoning: a scammer makes an address with the same start and end as one you
+ * use, and hopes you copy it from your history. Returns the known address it imitates.
+ */
+export function lookalike(address: string, known: string[]): string | null {
+    const a = address.toLowerCase()
+    const edges = (x: string) => x.slice(2, 6) + x.slice(-4)
+    return known.find(k => k !== a && edges(k) === edges(a)) || null
+}
+
+export async function findLookalike(svc: Service, gid: string, address: string): Promise<string | null> {
+    return lookalike(address, await knownAddresses(svc, gid))
 }
 
 /** remember an address as a recipient, so it is not asked about again */

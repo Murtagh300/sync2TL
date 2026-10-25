@@ -55,6 +55,7 @@ import TxStatusBar from 'components/TxStatusBar.vue'
 import OfflineBar from 'components/OfflineBar.vue'
 import AppLock from 'components/AppLock.vue'
 import { applyAccent, applyDisplay } from 'src/utils/prefs'
+import { setupPrivacyClass, setupShake } from 'src/utils/shake'
 
 export default defineComponent({
     name: 'Main',
@@ -84,6 +85,8 @@ export default defineComponent({
     created() {
         applyAccent()
         applyDisplay()
+        setupPrivacyClass()
+        setupShake()
     },
     async mounted() {
         this.initialized = await this.$svc.config.getUserMasterKeyGlob().then(r => !!r)

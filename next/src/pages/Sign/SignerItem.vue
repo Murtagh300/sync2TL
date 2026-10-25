@@ -11,7 +11,10 @@
         </q-item-section>
         <q-item-section no-wrap>
             <q-item-label class="ellipsis">
-                <address-label :addr="text" />
+                <address-label
+                    no-icon
+                    :addr="text"
+                />
             </q-item-label>
             <q-item-label
                 class="ellipsis"

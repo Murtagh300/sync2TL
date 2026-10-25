@@ -89,6 +89,7 @@
                         <q-space />
                         <span class="ellipsis tx-id">{{txId.slice(0, 10)}}…{{txId.slice(-8)}}</span>
                         <q-btn
+                            :aria-label="$t('common.copy')"
                             flat
                             round
                             dense

@@ -6,6 +6,7 @@ import { defineComponent } from 'vue'
 import { Vault } from 'core/vault'
 import PopSheets, { Sheet } from 'src/components/PopSheets.vue'
 import PromptDialog, { PromptOptions } from './PromptDialog.vue'
+import WalletLookDialog, { type WalletLook } from './WalletLookDialog.vue'
 
 const MAX_ADDRESS = 10
 
@@ -28,6 +29,10 @@ export default defineComponent({
             {
                 label: this.$t('index.action_rename').toString(),
                 action: () => this.rename()
+            },
+            {
+                label: this.$t('walletLook.action').toString(),
+                action: () => this.look()
             },
             {
                 label: this.$t('common.delete').toString(),
@@ -90,6 +95,13 @@ export default defineComponent({
                         message: this.$t('common.something_wrong').toString()
                     })
                 }
+            } catch { }
+        },
+        async look() {
+            const wallet = this.wallet
+            try {
+                const look = await this.$dialog<WalletLook>({ component: WalletLookDialog, wallet })
+                await this.$svc.wallet.update(wallet.id, { ...wallet.meta, color: look.color || undefined, emoji: look.emoji || undefined })
             } catch { }
         },
         async delete() {

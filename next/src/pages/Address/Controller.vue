@@ -62,6 +62,7 @@
                         />
                     </q-tabs>
                     <q-btn
+                        :aria-label="$t('a11y.options')"
                         v-show="tab === 'tokens'"
                         class="q-ml-auto"
                         :to="{name: 'tokens-setting'}"

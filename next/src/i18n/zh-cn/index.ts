@@ -112,6 +112,8 @@ export default {
         label_input_password: '输入密码以解锁'
     },
     settings: {
+        label_shake_hide: '摇一摇隐藏余额',
+        msg_motion_denied: 'BlackVault 无法读取运动传感器。请在浏览器设置中允许此网站访问运动数据。',
         title: '设置',
         action_change_password: '更改密码',
         action_token_list: '代币管理',
@@ -180,7 +182,11 @@ export default {
         status_unlisted: '未挂售',
         label_selected_short: '已选',
         msg_viewer_hint: '双击放大 · 左右滑动切换',
-        label_hidden: '已隐藏 ({n})',
+        label_hidden: '已隐藏和垃圾 ({n})',
+        label_favorites: '收藏 ({n})',
+        label_favorite: '收藏',
+        action_favorite: '加入收藏',
+        action_unfavorite: '取消收藏',
         label_hidden_one: '已隐藏',
         label_unverified: '未验证的系列',
         action_hide_hidden: '重新隐藏',
@@ -325,7 +331,13 @@ export default {
         msg_insufficient: '{symbol} 不足',
         msg_no_route: '暂无该交易对的兑换路径',
         msg_done: '交易确认后完成兑换',
-        comment: '用 {amount} {from} 兑换 {out} {to}'
+        comment: '用 {amount} {from} 兑换 {out} {to}',
+        label_impact: '价格影响',
+        label_route_via: '{source}，经由 {dexes}',
+        title_impact: '价格影响较大',
+        msg_impact: '您得到的比市场价少 {pct}%：对此金额而言流动性池较小。',
+        msg_impact_high: '您得到的比市场价少 {pct}%。请减少金额或分批兑换。',
+        action_swap_anyway: '仍然兑换'
     },
     home: {
         label_all_wallets: '全部钱包',
@@ -361,6 +373,65 @@ export default {
         msg_hint: '搜索联系人、代币、BlackVeMarket 系列、.vet 名称和地址。',
         msg_nothing: '未找到“{q}”'
     },
+    payout: {
+        title: '批量付款',
+        msg_intro: '一次向多个地址付款：奖励、空投、分账。每行一个地址。',
+        label_token: '付款币种',
+        label_list: '地址和金额',
+        hint_list: '地址或 .vet 名称，金额，备注（可选）',
+        action_load: '加载 CSV 文件',
+        action_clear: '清除',
+        err_address: '第 {line} 行：地址无效',
+        err_amount: '第 {line} 行：金额无效',
+        err_name: '第 {line} 行：{name} 未指向任何地址',
+        err_more: '还有 {n} 项',
+        err_file: '该文件对于付款列表来说太大',
+        label_recipients: '{n} 个收款人',
+        msg_batches: '分 {n} 笔交易支付，每笔最多 100 个',
+        label_lookalike: '与您认识的地址相似',
+        label_duplicate: '在列表中出现多次',
+        action_show_all: '显示全部 {n} 个',
+        msg_empty: '粘贴一个列表，或从另存为 CSV 的表格中加载。',
+        action_pay: '向 {n} 个地址付款',
+        label_batch: '第 {n} 笔交易，共 {of} 笔',
+        comment: '以 {symbol} 向 {n} 个地址付款',
+        msg_lookalikes: '列表中有 {n} 个地址的开头和结尾与您认识的地址相同，但并不相同。付款前请核对。',
+        title_done: '付款已发送',
+        msg_done: '{of} 笔中的 {n} 笔付款正在途中。'
+    },
+    scanner: {
+        action_image: '从图片识别',
+        msg_no_camera: '没有可用的摄像头。请选择带有二维码的截图或照片。',
+        msg_no_code: '此图片中未找到二维码'
+    },
+    walletLook: {
+        action: '颜色和表情',
+        msg: '一眼区分您的钱包。',
+        label_color: '颜色',
+        label_emoji: '表情',
+        label_custom: '或输入任意表情',
+        action_reset: '使用地址图案'
+    },
+    a11y: {
+        back: '返回',
+        more: '更多选项',
+        options: '选项',
+        refresh: '刷新',
+        open_external: '在浏览器中打开',
+        less: '减少',
+        flip: '交换两个代币'
+    },
+    empty: {
+        action_home: '从首页发送或接收',
+        action_add_liquidity: '在 BetterSwap 添加流动性',
+        action_discover: '在首页发现应用'
+    },
+    approvalReminder: {
+        msg: '{spender} 仍可花费您的 {amount}。撤销剩余的授权吗？',
+        label_tokens: '代币',
+        action_revoke: '撤销',
+        comment: '撤销剩余授权：{spender} 的 {amount}'
+    },
     txStatus: {
         msg_pending: '{label} · 等待上链',
         msg_pending_many: '{n} 笔交易等待上链',
@@ -371,7 +442,12 @@ export default {
         title: '新地址',
         message: '你从未向此地址转账。请核对开头和结尾是否与对方提供的一致。',
         hint: '诈骗者会使用中间相似的地址，请比对放大的字符。',
-        action_continue: '地址无误'
+        action_continue: '地址无误',
+        title_lookalike: '相似地址',
+        message_lookalike: '此地址的开头和结尾与您用过的地址相同，但它是另一个地址。骗子会从这类地址发送小额转账，让您从历史记录中复制它。',
+        label_sending_to: '您将发送到',
+        label_known: '您认识的地址（红色为不同之处）',
+        action_continue_anyway: '仍然发送'
     },
     offline: {
         title: '离线',
@@ -715,6 +791,9 @@ export default {
         msg_wallet_not_found: '找不到钱包'
     },
     sign: {
+        title_vtho_short: 'VTHO 不足以支付手续费',
+        msg_vtho_short: '手续费为 {need} VTHO；此地址有 {have}。',
+        action_get_vtho: '获取 VTHO',
         title: '签名',
         msg_loading_content: '内容加载中...',
         msg_loading_failed: '加载失败',

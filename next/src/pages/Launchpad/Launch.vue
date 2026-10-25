@@ -74,6 +74,7 @@
                     <template v-if="mintable">
                         <div class="row no-wrap items-center">
                             <q-btn
+                                :aria-label="$t('a11y.less')"
                                 round
                                 outline
                                 dense
@@ -83,6 +84,7 @@
                             />
                             <div class="bvm-display quantity text-center col">{{quantity}}</div>
                             <q-btn
+                                :aria-label="$t('common.add')"
                                 round
                                 outline
                                 dense

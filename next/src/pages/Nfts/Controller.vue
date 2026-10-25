@@ -35,9 +35,7 @@
                         <span class="q-ml-xs">#{{i + 1}}</span>
                     </button>
                 </div>
-                <q-pull-to-refresh
-                    color="primary"
-                    bg-color="dark"
+                <pull-refresh
                     @refresh="refresh"
                 >
                 <nft-grid
@@ -48,7 +46,7 @@
                     :address-index="String(index)"
                     :gid="wallet.gid"
                 />
-                </q-pull-to-refresh>
+                </pull-refresh>
             </template>
             <div
                 v-else
@@ -59,6 +57,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import PullRefresh from 'components/PullRefresh.vue'
 import PageContent from 'components/PageContent.vue'
 import AddressAvatar from 'components/AddressAvatar.vue'
 import NftGrid from 'pages/Address/NftGrid.vue'
@@ -66,7 +65,7 @@ import { selectedWallet } from 'src/utils/selection'
 
 // all NFTs of the selected wallet, one address at a time
 export default defineComponent({
-    components: { PageContent, AddressAvatar, NftGrid },
+    components: { PullRefresh, PageContent, AddressAvatar, NftGrid },
     data: () => ({
         index: 0,
         // async computed (see src/shims-async-computed.d.ts)

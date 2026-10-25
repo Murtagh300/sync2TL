@@ -20,6 +20,9 @@ declare namespace M {
             type: 'hd'
             addresses: string[]
             backedUp?: boolean
+            /** a color key (src/utils/wallet-look.ts) and an emoji to tell wallets apart */
+            color?: string
+            emoji?: string
         }
     }
 

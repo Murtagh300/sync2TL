@@ -1,6 +1,7 @@
 <template>
     <q-toolbar class="q-px-xs">
         <q-btn
+            :aria-label="$t(icon === 'close' ? 'common.close' : 'a11y.back')"
             flat
             round
             :icon="icon || 'chevron_left'"

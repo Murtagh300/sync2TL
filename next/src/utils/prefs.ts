@@ -27,12 +27,14 @@ type Prefs = {
     highContrast: boolean
     /** an NFT image behind the home screen ('' for none) */
     homeBackground: string
+    /** shake the phone to hide or show balances */
+    shakeToHide: boolean
 }
 
 const KEY = 'bv-prefs'
 
 function load(): Prefs {
-    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, highContrast: false, homeBackground: '' }
+    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, highContrast: false, homeBackground: '', shakeToHide: false }
     try {
         return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') as Partial<Prefs> }
     } catch {
@@ -67,12 +69,12 @@ export function applyDisplay() {
 watch(() => [prefs.textScale, prefs.highContrast], () => applyDisplay())
 
 /** a short vibration on devices that have one, for confirmations */
-export function haptic(kind: 'tap' | 'success' | 'warning' = 'tap') {
+export function haptic(kind: 'tap' | 'success' | 'warning' | 'error' = 'tap') {
     if (!prefs.haptics || typeof navigator.vibrate !== 'function') {
         return
     }
     try {
-        navigator.vibrate(kind === 'success' ? [12, 60, 18] : kind === 'warning' ? [30, 40, 30] : 10)
+        navigator.vibrate(kind === 'success' ? [12, 60, 18] : kind === 'warning' ? [30, 40, 30] : kind === 'error' ? [40, 30, 40, 30, 40] : 10)
     } catch { }
 }
 

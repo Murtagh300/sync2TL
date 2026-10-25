@@ -5,6 +5,7 @@
             :gid="wallet?.gid"
         >
             <q-btn
+                :aria-label="$t('a11y.refresh')"
                 flat
                 round
                 icon="o_refresh"

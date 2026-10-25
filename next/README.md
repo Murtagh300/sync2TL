@@ -202,6 +202,28 @@ Production needs CORS on the BlackVeMarket API for the wallet's origin on: `/api
 - **Emergency plan** (`pages/Emergency`): a checklist for your family and a printable letter with wallets,
   addresses and restore steps; never the recovery words.
 
+## Safety you can see, paying many, Dutch
+
+- **Identicons** (`utils/identicon.ts`): every address label carries its picasso pattern, so a look-alike shows a
+  different one. **Look-alike warning** (`utils/recipient.ts`): an address with the same start and end as one you
+  know (own, contacts, recent) gets a red warning with the differences marked, when sending tokens, NFTs or a payout.
+- **Privacy mode**: hidden balances also blur amounts outside AmountLabel; optionally shake the phone to toggle
+  (`utils/shake.ts`, asks motion permission where the browser wants that).
+- **Approval reminder** (`utils/leftover-approvals.ts`): after a confirmed transaction, a token approval it left
+  unused is offered for revoking. **VTHO check**: the sign dialog says how much VTHO the fee needs and links to a
+  VET → VTHO swap.
+- **Swap**: price impact (warning at 3%, confirmation at 10%), the DEXes a route goes through, recent pairs.
+- **Pay many** (`pages/Payout`, `utils/payout.ts`): paste or load a CSV of "address or name.vet, amount, note";
+  checked line by line, duplicates and look-alikes marked, paid in transactions of up to 100 clauses.
+- **App icon**: shortcuts for Send, Receive and Scan (`src-pwa/manifest.json`, `?do=` on home) and the unread count
+  as a badge. The scanner reads a QR code from an image (also when there is no camera).
+- **Status bar**: elapsed time and progress while a transaction waits; tap to open it.
+- **NFTs**: favorites (star, first in the grid, a filter of their own) next to the hidden-and-spam folder.
+- **Wallet color and emoji** (`components/WalletMark.vue`), set from the wallet's options.
+- **Nederlands** (`i18n/nl-nl`): the whole app in Dutch; a test keeps its keys and placeholders in step with English.
+- **Empty states** with a next step (`components/EmptyState.vue`) and screen-reader labels on icon-only buttons.
+- Pull to refresh shows the BVM mark (`components/PullRefresh.vue`).
+
 ## Security
 
 Reviewed internally on 2026-10-25: see [SECURITY-AUDIT.md](SECURITY-AUDIT.md) for the findings, the fixes,

@@ -20,7 +20,10 @@
             </q-item-section>
             <q-item-section avatar>
                 <q-item-label class="ellipsis">
-                    <address-label :addr="op.to" />
+                    <address-label
+                        no-icon
+                        :addr="op.to"
+                    />
                 </q-item-label>
             </q-item-section>
         </q-item>

@@ -7,10 +7,71 @@
   "theme_color": "#080a09",
   "display": "standalone",
   "icons": [
-    { "src": "icons/icon-128x128.png", "sizes": "128x128", "type": "image/png" },
-    { "src": "icons/icon-192x192.png", "sizes": "192x192", "type": "image/png" },
-    { "src": "icons/icon-256x256.png", "sizes": "256x256", "type": "image/png" },
-    { "src": "icons/icon-384x384.png", "sizes": "384x384", "type": "image/png" },
-    { "src": "icons/icon-512x512.png", "sizes": "512x512", "type": "image/png" }
+    {
+      "src": "icons/icon-128x128.png",
+      "sizes": "128x128",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-192x192.png",
+      "sizes": "192x192",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-256x256.png",
+      "sizes": "256x256",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-384x384.png",
+      "sizes": "384x384",
+      "type": "image/png"
+    },
+    {
+      "src": "icons/icon-512x512.png",
+      "sizes": "512x512",
+      "type": "image/png"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Send",
+      "short_name": "Send",
+      "description": "Send VET or tokens",
+      "url": "./#/?do=send",
+      "icons": [
+        {
+          "src": "icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Receive",
+      "short_name": "Receive",
+      "description": "Show your address",
+      "url": "./#/?do=receive",
+      "icons": [
+        {
+          "src": "icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Scan",
+      "short_name": "Scan",
+      "description": "Scan a QR code",
+      "url": "./#/?do=scan",
+      "icons": [
+        {
+          "src": "icons/icon-192x192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    }
   ]
 }

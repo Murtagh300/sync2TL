@@ -57,6 +57,7 @@
                         </q-item-section>
                         <q-item-section side>
                             <q-btn
+                                :aria-label="$t('common.delete')"
                                 flat
                                 round
                                 dense

@@ -55,6 +55,11 @@
                     :to="{ name: 'payments' }"
                 />
                 <more-item
+                    icon="o_groups"
+                    :title="$t('payout.title')"
+                    :to="{ name: 'payout' }"
+                />
+                <more-item
                     icon="o_contacts"
                     :title="$t('contacts.title')"
                     :to="{ name: 'contacts' }"

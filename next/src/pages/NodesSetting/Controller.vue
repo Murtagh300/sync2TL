@@ -2,6 +2,7 @@
     <div class="fit column no-wrap">
         <page-toolbar :title="$t('settings.action_nodes')">
             <q-btn
+                :aria-label="$t('common.add')"
                 class="q-ml-auto"
                 flat
                 round
@@ -41,6 +42,7 @@
                                 side
                             >
                                 <q-btn
+                                    :aria-label="$t('common.delete')"
                                     @click.prevent.stop="onDelete(node)"
                                     flat
                                     dense

@@ -124,6 +124,41 @@ async function aggregatorQuote(thor: Connex.Thor, from: string, to: string, amou
     return { amountOut, amountOutMin, clauses, source: 'BetterSwap' }
 }
 
+/**
+ * price impact in %: how much less the output is worth than the input at market prices.
+ * null when a price is missing; never below 0 (a route can beat the listed price).
+ */
+export function priceImpact(amountIn: bigint, decimalsIn: number, priceIn: number | undefined, amountOut: bigint, decimalsOut: number, priceOut: number | undefined): number | null {
+    if (!priceIn || !priceOut) {
+        return null
+    }
+    const valueIn = Number(amountIn) / 10 ** decimalsIn * priceIn
+    const valueOut = Number(amountOut) / 10 ** decimalsOut * priceOut
+    if (!(valueIn > 0)) {
+        return null
+    }
+    return Math.max(0, (1 - valueOut / valueIn) * 100)
+}
+
+export type Pair = { from: string, to: string }
+const PAIRS_KEY = 'bv-swap-pairs'
+
+/** the pairs swapped lately, newest first */
+export function recentPairs(): Pair[] {
+    try {
+        return (JSON.parse(localStorage.getItem(PAIRS_KEY) || '[]') as Pair[]).slice(0, 5)
+    } catch {
+        return []
+    }
+}
+
+export function rememberPair(p: Pair) {
+    const list = [p, ...recentPairs().filter(x => x.from !== p.from || x.to !== p.to)].slice(0, 5)
+    try {
+        localStorage.setItem(PAIRS_KEY, JSON.stringify(list))
+    } catch { }
+}
+
 /** the best quote: VeTrade's service, or BetterSwap on-chain when it fails */
 export async function quote(
     thor: Connex.Thor,

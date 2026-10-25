@@ -39,6 +39,17 @@ watch(() => notifications.list, list => {
 
 export const unreadCount = computed(() => notifications.list.filter(n => !n.read).length)
 
+// the unread count on the app icon, where the installed app supports it
+type Badging = { setAppBadge?: (n?: number) => Promise<void>, clearAppBadge?: () => Promise<void> }
+watch(unreadCount, n => {
+    const nav = (typeof navigator !== 'undefined' ? navigator : {}) as Badging
+    if (n > 0) {
+        nav.setAppBadge?.(n).catch(() => { })
+    } else {
+        nav.clearAppBadge?.().catch(() => { })
+    }
+}, { immediate: true })
+
 /** add one; the same id twice is kept once */
 export function notify(n: Omit<AppNotification, 'time' | 'read'> & { time?: number }) {
     if (notifications.list.some(x => x.id === n.id)) {
