@@ -92,6 +92,8 @@ export function describeAction(a: Action, ctx: DescribeContext): ActionText {
             return { icon: 'o_local_offer', text: t('action.collection_offer', { amount: money(ctx, a.price, a.paymentToken), n: a.quantity, collection: ctx.collection(a.contract) || short(a.contract) }), risk: 'ok' }
         case 'mint':
             return { icon: 'o_auto_awesome', text: t('action.mint', { n: a.quantity, collection: ctx.collection(a.contract) || short(a.contract) }), risk: 'ok' }
+        case 'message':
+            return { icon: 'o_lock', text: t('action.message', { to: who(a.to) }), risk: 'ok' }
         case 'swap':
             return { icon: 'o_swap_vert', text: t('action.swap', { router: who(a.router) }), risk: 'ok' }
     }

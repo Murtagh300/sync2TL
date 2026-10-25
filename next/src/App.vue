@@ -9,6 +9,7 @@ import '@fontsource-variable/geist'
 import { listen } from 'src/utils/external-url'
 import { checkAlerts, notifySystem } from 'src/utils/alerts'
 import { notify as addNotification } from 'src/utils/notifications'
+import { dueScheduled } from 'src/utils/payments'
 import dayjs from 'dayjs'
 // import more locales here
 import 'dayjs/locale/zh-cn'
@@ -64,6 +65,14 @@ export default defineComponent({
     },
     methods: {
         async runAlerts() {
+            for (const s of dueScheduled()) {
+                addNotification({
+                    id: `due:${s.id}:${s.next}`,
+                    kind: 'out',
+                    title: this.$t('payments.msg_due', { amount: `${s.amount} ${s.symbol}`, note: s.note || s.to.slice(0, 10) }),
+                    route: { name: 'send', query: { wid: String(s.walletId), i: String(s.addressIndex), to: s.to, amount: s.amount, symbol: s.symbol, schedule: s.id } }
+                })
+            }
             try {
                 const fired = await checkAlerts(this.$svc, (key, params) => this.$t(key, params ?? {}))
                 for (const m of fired) {

@@ -5,6 +5,8 @@ import { balanceKey, readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 function serve(gid: string, pool: ReturnType<typeof createPool>) {
     return {
         get thor() { return pool.get(gid).thor },
+        /** the node this network talks to (for raw transactions) */
+        get nodeUrl() { return pool.resoleNode(gid).url },
         /** the balance; the last one seen is kept for cachedBalance */
         balanceOf(addr: string, spec: M.TokenSpec): Promise<string> {
             return this.fetchBalance(addr, spec).then(v => {

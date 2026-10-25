@@ -30,6 +30,20 @@
                         />
                     </div>
                     <div
+                        v-if="suggestions && suggestions.length"
+                        class="row q-gutter-xs q-mt-xs"
+                    >
+                        <q-chip
+                            v-for="s in suggestions"
+                            :key="s.key"
+                            clickable
+                            outline
+                            color="primary"
+                            class="suggestion"
+                            @click="use(s)"
+                        >{{$t(`rarity.suggest_${s.key}`)}} · {{s.price}} {{s.currency}}</q-chip>
+                    </div>
+                    <div
                         v-if="floor"
                         class="text-muted list-floor"
                     >{{$t('market.label_floor')}}<help-tip term="floor" />: <span class="bvm-amount">{{floor}}</span></div>
@@ -55,6 +69,7 @@ import HelpTip from 'components/HelpTip.vue'
 import { QDialog } from 'quasar'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 import { listingCurrencies } from 'src/utils/market'
+import type { Suggestion } from 'src/utils/pricing'
 
 export type ListResult = { price: string, symbol: string }
 
@@ -69,7 +84,8 @@ export default defineComponent({
         action: { type: String, required: true },
         floor: String,
         initialPrice: String,
-        initialSymbol: String
+        initialSymbol: String,
+        suggestions: Array as () => Suggestion[]
     },
     data() {
         return {
@@ -91,6 +107,12 @@ export default defineComponent({
         show() { (this.$refs.dialog as QDialog).show() },
         // method is REQUIRED by $q.dialog
         hide() { (this.$refs.dialog as QDialog).hide() },
+        use(s: Suggestion) {
+            this.price = String(s.price)
+            if (s.currency in listingCurrencies) {
+                this.symbol = s.currency
+            }
+        },
         onSubmit() {
             const price = this.price.trim().replace(',', '.')
             if (!/^\d+(\.\d{1,18})?$/.test(price) || parseFloat(price) <= 0) {

@@ -1,5 +1,10 @@
 <template>
-    <div class="column fit no-wrap">
+    <div class="column fit no-wrap home-root">
+        <div
+            v-if="prefs.homeBackground"
+            class="home-backdrop"
+            :style="{ backgroundImage: `url('${prefs.homeBackground}')` }"
+        />
         <!-- ensure wallets is loaded -->
         <template v-if="wallets">
             <!-- the header: which wallet, search and the wallet's options -->
@@ -150,6 +155,7 @@ import HomeWidgets from './HomeWidgets.vue'
 import HomeTour from './HomeTour.vue'
 import WidgetsDialog from './WidgetsDialog.vue'
 import { homeWidgets, type Widget } from './widgets'
+import { prefs } from 'src/utils/prefs'
 import { unreadCount } from 'src/utils/notifications'
 import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { haptic } from 'src/utils/prefs'
@@ -159,6 +165,7 @@ export default defineComponent({
     data: () => {
         return {
             selection,
+            prefs,
             // async computed (see src/shims-async-computed.d.ts)
             wallets: null as M.Wallet[] | null
         }
@@ -222,6 +229,27 @@ export default defineComponent({
 })
 </script>
 <style lang="sass" scoped>
+.home-root
+  position: relative
+  > *:not(.home-backdrop)
+    position: relative
+    z-index: 1
+
+// the chosen NFT, large and quiet behind the total
+.home-backdrop
+  position: absolute
+  top: 0
+  left: 0
+  right: 0
+  height: 420px
+  z-index: 0
+  background-size: cover
+  background-position: center
+  filter: blur(2px) saturate(1.1)
+  opacity: 0.35
+  mask-image: linear-gradient(#000 30%, transparent)
+  pointer-events: none
+
 .home-head
   min-height: 60px
   padding-top: env(safe-area-inset-top)

@@ -25,12 +25,14 @@ type Prefs = {
     /** text size, 1 = normal */
     textScale: number
     highContrast: boolean
+    /** an NFT image behind the home screen ('' for none) */
+    homeBackground: string
 }
 
 const KEY = 'bv-prefs'
 
 function load(): Prefs {
-    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, highContrast: false }
+    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, highContrast: false, homeBackground: '' }
     try {
         return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') as Partial<Prefs> }
     } catch {

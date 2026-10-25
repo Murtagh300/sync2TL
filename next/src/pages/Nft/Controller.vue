@@ -26,6 +26,17 @@
                             <q-item-section>{{$t('share.action')}}</q-item-section>
                         </q-item>
                         <q-item
+                            v-if="isOwner"
+                            v-close-popup
+                            clickable
+                            @click="setBackground()"
+                        >
+                            <q-item-section avatar>
+                                <q-icon name="o_wallpaper" />
+                            </q-item-section>
+                            <q-item-section>{{prefs.homeBackground === nft?.image ? $t('gallery.action_unset_background') : $t('gallery.action_set_background')}}</q-item-section>
+                        </q-item>
+                        <q-item
                             v-close-popup
                             clickable
                             @click="toggleHidden()"
@@ -270,11 +281,42 @@
                 <!-- traits -->
                 <template v-if="nft.traits && nft.traits.length">
                     <div class="bvm-label q-mt-lg q-mb-sm">{{$t('nft.label_traits')}}</div>
+                    <!-- what makes it special, in words -->
+                    <div
+                        v-if="highlights.rarest || highlights.valuable"
+                        class="bvm-tile q-pa-md q-mb-sm rarity-why"
+                    >
+                        <div
+                            v-if="highlights.rarest"
+                            class="row no-wrap items-start"
+                        >
+                            <q-icon
+                                name="o_diamond"
+                                color="primary"
+                                size="20px"
+                                class="q-mr-sm"
+                            />
+                            <span>{{$t('rarity.rarest', { trait: highlights.rarest.trait_type, value: highlights.rarest.value, pct: highlights.rarest.percentage })}}</span>
+                        </div>
+                        <div
+                            v-if="highlights.valuable && highlights.valuable.traitFloor"
+                            class="row no-wrap items-start q-mt-sm"
+                        >
+                            <q-icon
+                                name="o_trending_up"
+                                color="primary"
+                                size="20px"
+                                class="q-mr-sm"
+                            />
+                            <span>{{$t('rarity.valuable', { trait: highlights.valuable.trait_type, value: highlights.valuable.value, floor: highlights.valuable.traitFloor })}}</span>
+                        </div>
+                    </div>
                     <div class="traits">
                         <div
-                            v-for="t in nft.traits"
+                            v-for="t in sortedTraits"
                             :key="t.trait_type + t.value"
                             class="bvm-tile trait"
+                            :class="{ 'trait--rare': t.percentage != null && t.percentage <= 5 }"
                         >
                             <div class="trait-type ellipsis">{{t.trait_type}}</div>
                             <div class="trait-value ellipsis">{{t.value}}</div>
@@ -284,6 +326,12 @@
                             >
                                 <span v-if="t.percentage != null">{{t.percentage}}%</span>
                                 <span v-if="t.traitFloor"> · {{t.traitFloor}}</span>
+                            </div>
+                            <div
+                                v-if="t.percentage != null"
+                                class="rarity-bar"
+                            >
+                                <span :style="{ width: rarityWidth(t.percentage) }" />
                             </div>
                         </div>
                     </div>
@@ -356,6 +404,8 @@ import { emptyWatchlist, type Watchlist } from 'src/utils/alerts'
 import { heroHint, HERO_NAME } from 'src/utils/hero'
 import { isHidden, loadHidden, nftKey, saveHidden } from 'src/utils/hidden-nfts'
 import { shareCard } from 'src/utils/share-card'
+import { listingSuggestions, traitHighlights } from 'src/utils/pricing'
+import { prefs } from 'src/utils/prefs'
 import type { BVM } from 'boot/services/bvm'
 
 const erc721TransferFrom = new abi.Function({
@@ -400,6 +450,7 @@ export default defineComponent({
     data: () => ({
         error: false,
         watching: false,
+        prefs,
         activity: [] as BVM.ActivityEntry[],
         hidden: false,
         heroName: HERO_NAME,
@@ -489,12 +540,24 @@ export default defineComponent({
                 (a as { actor?: string }).actor === '0x0000000000000000000000000000000000000000')
             return minted ? { paid: '', currency: '', minted: true, percent: null } : null
         },
+        /** traits rarest first */
+        sortedTraits(): BVM.Trait[] {
+            return [...(this.nft?.traits || [])].sort((a, b) => (a.percentage ?? 101) - (b.percentage ?? 101))
+        },
+        highlights(): ReturnType<typeof traitHighlights> {
+            return traitHighlights(this.nft?.traits || [], this.nft?.intelligence?.collection?.floorValue)
+        },
         lastSale(): { displayPrice: string, currency: string } | null {
             return this.nft?.intelligence?.lastSale || null
         }
     },
     methods: {
         openURL,
+        setBackground() {
+            const image = this.nft?.image || ''
+            prefs.homeBackground = prefs.homeBackground === image ? '' : image
+            this.$q.notify(prefs.homeBackground ? this.$t('gallery.msg_background_set') : this.$t('gallery.msg_background_removed'))
+        },
         async share() {
             const nft = this.nft
             if (!nft) return
@@ -606,8 +669,14 @@ export default defineComponent({
             if (!nft) return
             await this.market(cancelOfferClauses(nft, offer), this.$t('offers.comment_withdraw'), this.$t('offers.msg_withdrawn'))
         },
+        /** rarer is fuller: 0.5% fills the bar, 50% barely shows */
+        rarityWidth(pct: number) {
+            return `${Math.max(6, Math.min(100, 100 - Math.log10(Math.max(pct, 0.1) * 10) * 40))}%`
+        },
         async askPrice(title: string, action: string): Promise<{ wei: string, token: string, text: string } | null> {
             const nft = this.nft!
+            // what similar NFTs sold for lately, for the suggestions
+            const sales = await this.$svc.bvm.activity(nft.collectionSlug, 30).catch(() => [] as BVM.FeedItem[])
             try {
                 const r = await this.$dialog<ListResult>({
                     component: ListDialog,
@@ -615,6 +684,7 @@ export default defineComponent({
                     action,
                     message: nft.name,
                     floor: this.floor,
+                    suggestions: listingSuggestions(nft, sales),
                     initialSymbol: nft.currency || 'VET'
                 })
                 // the listing currencies all have 18 decimals
@@ -715,6 +785,24 @@ export default defineComponent({
 
 .pnl
   font-size: 13px
+
+.rarity-why
+  font-size: 14px
+  line-height: 1.45
+
+.trait--rare
+  border-color: color-mix(in srgb, var(--q-primary) 45%, transparent) !important
+
+.rarity-bar
+  height: 3px
+  margin-top: 6px
+  border-radius: 2px
+  background: rgba(255, 255, 255, 0.06)
+  span
+    display: block
+    height: 100%
+    border-radius: 2px
+    background: var(--q-primary)
 
 .coll-link
   text-decoration: none

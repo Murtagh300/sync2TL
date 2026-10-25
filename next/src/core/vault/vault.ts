@@ -21,6 +21,7 @@ export function newVault(entity: Entity): Vault {
                 return {
                     get address() { return node.address },
                     get index() { return index },
+                    get publicKey() { return node.publicKey },
                     unlock: key => {
                         const clearText = vault.decrypt(key)
                         const words = clearText.toString('utf8').split(' ')
@@ -38,6 +39,7 @@ export function newVault(entity: Entity): Vault {
                 return {
                     get address() { return addr },
                     get index() { return index },
+                    get publicKey() { return Buffer.from(entity.pub, 'hex') },
                     unlock: key => vault.decrypt(key)
                 }
             }

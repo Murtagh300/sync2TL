@@ -64,7 +64,7 @@ import { contractName, UNLIMITED } from 'src/utils/actions'
 import { dappsFromActivity } from 'src/utils/dapps'
 import { genesises } from 'src/consts'
 
-type Key = 'backup' | 'lock' | 'bio' | 'approvals' | 'dapps'
+type Key = 'backup' | 'lock' | 'bio' | 'approvals' | 'dapps' | 'emergency'
 type Check = { key: Key, title: string, detail: string, state: 'ok' | 'todo' | 'checking' }
 
 // how safe this wallet is set up, with a way to fix each point
@@ -76,7 +76,14 @@ export default defineComponent({
         bioAvailable: false,
         bioOn: false,
         risky: null as number | null,
-        dappCount: 0
+        dappCount: 0,
+        emergencyDone: (() => {
+            try {
+                return ((JSON.parse(localStorage.getItem('bv-emergency') || '{}') as { checked?: string[] }).checked || []).length >= 4
+            } catch {
+                return false
+            }
+        })()
     }),
     computed: {
         notBackedUp(): M.Wallet[] {
@@ -101,6 +108,12 @@ export default defineComponent({
                     title: this.$t('security.check_approvals'),
                     detail: this.risky === null ? this.$t('security.checking') : this.risky ? this.$t('security.todo_approvals', { n: this.risky }) : this.$t('security.ok_approvals'),
                     state: this.risky === null ? 'checking' : this.risky ? 'todo' : 'ok'
+                },
+                {
+                    key: 'emergency',
+                    title: this.$t('emergency.title'),
+                    detail: this.emergencyDone ? this.$t('security.ok_emergency') : this.$t('security.todo_emergency'),
+                    state: this.emergencyDone ? 'ok' : 'todo'
                 },
                 {
                     key: 'dapps',
@@ -168,6 +181,9 @@ export default defineComponent({
                     if (w) void this.$router.push({ name: 'approvals', params: { walletId: String(w.id), addressIndex: '0' } })
                     break
                 }
+                case 'emergency':
+                    void this.$router.push({ name: 'emergency' })
+                    break
                 case 'dapps':
                     void this.$router.push({ name: 'dapps' })
                     break

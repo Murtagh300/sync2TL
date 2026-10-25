@@ -99,6 +99,39 @@
                     </div>
                 </div>
 
+                <!-- the encrypted message that came with it -->
+                <div
+                    v-if="messageData"
+                    class="bvm-tile q-pa-md q-mb-md"
+                >
+                    <div class="row items-center no-wrap">
+                        <q-icon
+                            name="o_lock"
+                            color="primary"
+                            size="20px"
+                        />
+                        <div class="q-ml-sm text-weight-bold col">{{$t('txDetail.label_message')}}</div>
+                        <q-btn
+                            v-if="messageText === null"
+                            unelevated
+                            dense
+                            no-caps
+                            color="primary"
+                            class="q-px-md"
+                            :label="$t('txDetail.action_read')"
+                            @click="readMessage()"
+                        />
+                    </div>
+                    <p
+                        v-if="messageText"
+                        class="q-mt-sm q-mb-none message-text"
+                    >“{{messageText}}”</p>
+                    <p
+                        v-else-if="messageError"
+                        class="q-mt-sm q-mb-none text-muted"
+                    >{{messageError}}</p>
+                </div>
+
                 <!-- your note -->
                 <q-input
                     v-model="note"
@@ -159,6 +192,8 @@ import { decodeAction } from 'src/utils/actions'
 import { describeAction } from 'src/utils/describe-action'
 import { formatDate, formatUnits } from 'src/utils/format'
 import { setTxNote, txNote } from 'src/utils/tx-notes'
+import { decryptMessage, isMessageData } from 'src/utils/message-crypto'
+import { Vault } from 'src/core/vault'
 import { copyText } from 'src/utils/clipboard'
 import { openURL } from 'src/utils/open-url'
 import { genesises, urls } from 'src/consts'
@@ -188,7 +223,9 @@ export default defineComponent({
             tokens: [] as M.TokenSpec[],
             collections: {} as Record<string, BVM.Collection>,
             contacts: [] as Contact[],
-            note: txNote(this.txId)
+            note: txNote(this.txId),
+            messageText: null as string | null,
+            messageError: ''
         }
     },
     computed: {
@@ -232,6 +269,10 @@ export default defineComponent({
             }
             const mine = (this.me || '').toLowerCase() === tx.origin.toLowerCase()
             return mine ? this.$t('common.transaction') : this.$t('txDetail.title_received')
+        },
+        /** an encrypted message clause, if the transaction carries one */
+        messageData(): string {
+            return this.tx?.clauses.find(c => isMessageData(c.data))?.data || ''
         },
         fee(): string {
             return this.receipt ? formatUnits(BigInt(this.receipt.paid), 18) : ''
@@ -308,6 +349,30 @@ export default defineComponent({
         copy() {
             copyText(this.txId).then(() => this.$q.notify(this.$t('common.copied'))).catch(() => { })
         },
+        /** decrypt with the key of the address this view is for (sender or recipient) */
+        async readMessage() {
+            this.messageError = ''
+            const me = (this.me || '').toLowerCase()
+            const wallets = await this.$svc.wallet.all()
+            const wallet = wallets.find(w => w.gid === this.gid && w.meta.addresses.some(a => a.toLowerCase() === me))
+            if (!wallet || wallet.meta.type !== 'hd') {
+                this.messageError = this.$t('txDetail.msg_message_ledger')
+                return
+            }
+            try {
+                const umk = await this.$authenticate()
+                const index = wallet.meta.addresses.findIndex(a => a.toLowerCase() === me)
+                const sk = Vault.decode(wallet.vault).derive(index).unlock(umk)
+                const text = await decryptMessage(this.messageData, sk)
+                if (text === null) {
+                    this.messageError = this.$t('txDetail.msg_message_not_for_you')
+                } else {
+                    this.messageText = text
+                }
+            } catch {
+                // cancelled
+            }
+        },
         saveNote() {
             setTxNote(this.txId, this.note)
         },
@@ -355,4 +420,8 @@ export default defineComponent({
 
 .tx-id
   font-variant-numeric: tabular-nums
+
+.message-text
+  font-size: 16px
+  font-weight: 600
 </style>

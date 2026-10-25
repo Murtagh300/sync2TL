@@ -25,6 +25,9 @@ import TxDetail from 'pages/TxDetail'
 import Collection from 'pages/Collection'
 import Notifications from 'pages/Notifications'
 import Portfolio from 'pages/Portfolio'
+import Payments from 'pages/Payments'
+import Liquidity from 'pages/Liquidity'
+import Emergency from 'pages/Emergency'
 import Security, { Dapps } from 'pages/Security'
 
 const routes: RouteRecordRaw[] = [
@@ -71,6 +74,18 @@ const routes: RouteRecordRaw[] = [
             path: 'more',
             name: 'more',
             component: More
+        }, {
+            path: 'liquidity',
+            name: 'liquidity',
+            component: Liquidity
+        }, {
+            path: 'emergency',
+            name: 'emergency',
+            component: Emergency
+        }, {
+            path: 'payments',
+            name: 'payments',
+            component: Payments
         }, {
             path: 'portfolio',
             name: 'portfolio',

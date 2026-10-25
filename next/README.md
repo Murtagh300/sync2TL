@@ -184,3 +184,20 @@ Production needs CORS on the BlackVeMarket API for the wallet's origin on: `/api
   NFT for a quick menu, share cards (NFT or address with QR) drawn on a canvas.
 - **Apps and help**: a grid of VeChain apps with favorites, (?) explanations next to fee, approvals, floor, VVET,
   recovery words and slippage, and a short tour after the first start (More › Show the tour again).
+
+## Payments, messages, liquidity and peace of mind
+
+- **Payment requests** (`pages/Payments`, `utils/payments.ts`): create a request (QR/link), and see it marked paid
+  when the exact amount arrives. **Scheduled payments**: weekly or monthly, a reminder in the notification center
+  when due, the send form filled in; each one is still signed by you.
+- **Encrypted messages** (`utils/message-crypto.ts`): a message sent with a payment in an extra 0-VET clause,
+  readable by the sender and the recipient only (ECDH on secp256k1 + AES-GCM). The recipient's public key is
+  recovered from a transaction it signed, so it must have sent one; Ledger wallets can't decrypt yet.
+- **Contacts by QR** (`utils/contacts-share.ts`): share the address book as a QR code, add it on another device.
+- **NFTs**: rarest and most valued trait in words (trait floors over 10× the collection floor are ignored as
+  asking prices), listing price suggestions (floor, trait floor, median of recent sales), a slideshow, and an
+  NFT as home background.
+- **Liquidity** (`pages/Liquidity`, `utils/liquidity.ts`): BetterSwap V2 LP tokens (share of the pool), BetterSwap V3
+  positions (amounts from the pool price, in range or not), VeTrade V3 positions (counted, linked).
+- **Emergency plan** (`pages/Emergency`): a checklist for your family and a printable letter with wallets,
+  addresses and restore steps; never the recovery words.

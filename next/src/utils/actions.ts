@@ -79,6 +79,7 @@ export type Action =
     | { kind: 'collection-offer', market: string, contract: string, price: bigint, paymentToken: string, quantity: number }
     | { kind: 'mint', contract: string, phaseId: string, quantity: number }
     | { kind: 'swap', router: string }
+    | { kind: 'message', to: string }
 
 // by selector; transfer/transferFrom (shared by ERC-20 and ERC-721) are read by the token card
 const table: Array<[abi.Function, (to: string, d: abi.Decoded) => Action | null]> = [
@@ -117,6 +118,10 @@ export function decodeAction(clause: { to: string | null, value: string | number
     const to = (clause.to || '').toLowerCase()
     if (!to || data.length < 10) {
         return null
+    }
+    if (data.startsWith('0x42564d534731')) {
+        // "BVMSG1": an encrypted payment message (src/utils/message-crypto.ts)
+        return { kind: 'message', to }
     }
     const sel = data.slice(0, 10)
     if (sel === fns.deposit.signature) {

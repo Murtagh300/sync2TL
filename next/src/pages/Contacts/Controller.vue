@@ -4,6 +4,41 @@
             <q-btn
                 flat
                 round
+                icon="o_qr_code_2"
+                :aria-label="$t('contacts.action_share_qr')"
+            >
+                <q-menu
+                    anchor="bottom right"
+                    self="top right"
+                >
+                    <q-list style="min-width: 220px">
+                        <q-item
+                            v-close-popup
+                            clickable
+                            :disable="!contacts.length"
+                            @click="shareQr()"
+                        >
+                            <q-item-section avatar>
+                                <q-icon name="o_qr_code_2" />
+                            </q-item-section>
+                            <q-item-section>{{$t('contacts.action_share_qr')}}</q-item-section>
+                        </q-item>
+                        <q-item
+                            v-close-popup
+                            clickable
+                            @click="importQr()"
+                        >
+                            <q-item-section avatar>
+                                <q-icon name="o_qr_code_scanner" />
+                            </q-item-section>
+                            <q-item-section>{{$t('contacts.action_import_qr')}}</q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-menu>
+            </q-btn>
+            <q-btn
+                flat
+                round
                 icon="add"
                 @click="add()"
             />
@@ -80,6 +115,8 @@ import AddressAvatar from 'components/AddressAvatar.vue'
 import AddressLabel from 'components/AddressLabel.vue'
 import ContactDialog from './ContactDialog.vue'
 import type { Contact } from 'src/utils/names'
+import QrScannerDialog from 'pages/QrScannerDialog'
+import { decodeContacts, encodeContacts } from 'src/utils/contacts-share'
 
 // the address book: names show up instead of addresses everywhere in the wallet
 export default defineComponent({
@@ -112,6 +149,28 @@ export default defineComponent({
                 const c = await this.$dialog<Contact>({ component: ContactDialog, contact })
                 const rest = this.contacts.filter(x => x !== contact && x.address.toLowerCase() !== c.address.toLowerCase())
                 await this.save([...rest, c])
+            } catch { }
+        },
+        shareQr() {
+            this.$qrcode({
+                title: this.$t('contacts.title_qr', { n: this.contacts.length }),
+                content: encodeContacts(this.contacts),
+                message: this.$t('contacts.msg_qr'),
+                messageClass: 'text-center text-muted'
+            })
+        },
+        async importQr() {
+            try {
+                const text = await this.$dialog<string>({ component: QrScannerDialog })
+                const found = decodeContacts(text)
+                if (!found) {
+                    this.$q.notify(this.$t('contacts.msg_not_contacts'))
+                    return
+                }
+                const known = new Set(this.contacts.map(c => c.address.toLowerCase()))
+                const added = found.filter(c => !known.has(c.address.toLowerCase()))
+                await this.save([...this.contacts, ...added])
+                this.$q.notify(this.$t('contacts.msg_imported', { n: added.length }))
             } catch { }
         },
         async remove(contact: Contact) {

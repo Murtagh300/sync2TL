@@ -93,6 +93,23 @@
                     />
                 </div>
             </div>
+            <q-item-label header>{{$t('send.label_message')}}</q-item-label>
+            <q-input
+                v-model="message"
+                class="q-mx-md"
+                outlined
+                dense
+                :maxlength="200"
+                :placeholder="$t('send.placeholder_message')"
+                :error="!!messageError"
+                :error-message="messageError"
+                no-error-icon
+                @update:model-value="messageError = ''"
+            >
+                <template #prepend>
+                    <q-icon name="o_lock" />
+                </template>
+            </q-input>
             <q-item-label header>{{$t('send.label_note')}}</q-item-label>
             <q-input
                 v-model="note"
@@ -137,6 +154,9 @@ import { genesises } from 'src/consts'
 import { BigNumber } from 'bignumber.js'
 import { money, prefs } from 'src/utils/prefs'
 import { setTxNote } from 'src/utils/tx-notes'
+import { advance, payments } from 'src/utils/payments'
+import { encryptMessage, publicKeyOf } from 'src/utils/message-crypto'
+import { Vault } from 'src/core/vault'
 import type { Contact } from 'src/utils/names'
 import type { PaymentRequest } from 'src/utils/payment-request'
 import SuccessDialog from 'components/SuccessDialog.vue'
@@ -158,15 +178,19 @@ export default defineComponent({
         symbol: String,
         // a payment request (see src/utils/payment-request.ts)
         to: String,
-        amount: String
+        amount: String,
+        /** the scheduled payment this pays (pages/Payments) */
+        schedule: String
     },
     data() {
         return {
             recipient: (this.to || null) as null | string,
             amountText: this.amount || '',
             fiatText: '',
+            message: '',
+            messageError: '',
             fiatMode: false,
-            note: '',
+            note: (this.schedule && payments.scheduled.find(x => x.id === this.schedule)?.note) || '',
             prefs,
             unitPrice: 0,
             fx: 1,
@@ -281,6 +305,25 @@ export default defineComponent({
     },
     methods: {
         isAddress: address.test,
+        /** the message as clause data for the recipient and this address; null when it can't be */
+        async encryptFor(to: string, text: string): Promise<string | null> {
+            const w = this.wallet!
+            try {
+                const bc = this.$svc.bc(w.gid)
+                const [theirs, mine] = await Promise.all([
+                    publicKeyOf(bc.thor, bc.nodeUrl, to),
+                    Promise.resolve(Vault.decode(w.vault).derive(parseInt(this.i || '0')).publicKey)
+                ])
+                if (!theirs) {
+                    this.messageError = this.$t('send.msg_no_pubkey')
+                    return null
+                }
+                return await encryptMessage(text, mine ? [theirs, mine] : [theirs])
+            } catch {
+                this.messageError = this.$t('common.something_wrong')
+                return null
+            }
+        },
         /** price and balance of the token being sent */
         async loadTokenInfo() {
             const w = this.wallet
@@ -388,13 +431,25 @@ export default defineComponent({
                     comment
                 }
             }
+            const clauses: Connex.Vendor.TxMessage = [msgItem]
+            if (this.message.trim()) {
+                const data = await this.encryptFor(this.recipient!, this.message.trim())
+                if (!data) {
+                    return
+                }
+                clauses.push({ to: this.recipient, value: 0, data, comment: this.$t('send.comment_message') })
+            }
             this.$signTx(this.wallet!.gid, {
-                message: [msgItem],
+                message: clauses,
                 options: {
                     signer: this.from,
                     comment: comment
                 }
             }).then((resp) => {
+                const s = this.schedule && payments.scheduled.find(x => x.id === this.schedule)
+                if (s) {
+                    advance(s)
+                }
                 if (this.note.trim()) {
                     setTxNote(resp.txid, this.note)
                 }

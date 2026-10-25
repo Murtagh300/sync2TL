@@ -80,6 +80,15 @@
                 </div>
             </div>
 
+            <q-btn
+                outline
+                no-caps
+                color="primary"
+                icon="o_water_drop"
+                class="full-width q-mb-md"
+                :label="$t('liquidity.action_open')"
+                :to="{ name: 'liquidity' }"
+            />
             <div class="bvm-label q-mb-sm">{{$t('portfolio.label_holdings')}}</div>
             <q-list class="bvm-list">
                 <q-item

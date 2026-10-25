@@ -29,6 +29,8 @@ export namespace Vault {
     export interface Node {
         readonly address: string
         readonly index: number
+        /** the uncompressed public key (65 bytes), for encrypting to this address */
+        readonly publicKey: Buffer
         /**
          * unlock the node and expose its private key
          * @param key the cipher key

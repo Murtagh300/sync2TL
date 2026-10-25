@@ -18,6 +18,16 @@
                     >{{$t('nft.msg_no_floor')}}</div>
                 </div>
                 <q-btn
+                    v-if="!selecting"
+                    flat
+                    dense
+                    round
+                    color="primary"
+                    icon="o_slideshow"
+                    :aria-label="$t('gallery.action_play')"
+                    @click="playGallery()"
+                />
+                <q-btn
                     flat
                     dense
                     no-caps
@@ -336,6 +346,7 @@ import { readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 import { navigateWithHero } from 'src/utils/hero'
 import { isHidden, loadHidden, nftKey, saveHidden, type HiddenNfts } from 'src/utils/hidden-nfts'
 import { shareCard } from 'src/utils/share-card'
+import GalleryDialog from 'components/GalleryDialog.vue'
 import { haptic } from 'src/utils/prefs'
 import SuccessDialog from 'components/SuccessDialog.vue'
 import RecipientCheckDialog from 'pages/Send/RecipientCheckDialog.vue'
@@ -440,6 +451,14 @@ export default defineComponent({
     },
     methods: {
         openURL,
+        playGallery() {
+            const items = this.visibleItems.filter(n => n.image).map(n => ({
+                contract: n.contract, tokenId: n.tokenId, image: n.image, name: n.name, collection: n.collection
+            }))
+            if (items.length) {
+                this.$dialog({ component: GalleryDialog, items }).catch(() => { })
+            }
+        },
         /** a held card: the things to do with this one NFT */
         quickMenu(nft: BVM.NFT) {
             if (this.selecting) return

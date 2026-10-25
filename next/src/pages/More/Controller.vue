@@ -35,9 +35,24 @@
                     :to="{ name: 'security' }"
                 />
                 <more-item
+                    icon="o_family_restroom"
+                    :title="$t('emergency.title')"
+                    :to="{ name: 'emergency' }"
+                />
+                <more-item
                     icon="o_apps"
                     :title="$t('dapps.title')"
                     :to="{ name: 'dapps' }"
+                />
+                <more-item
+                    icon="o_water_drop"
+                    :title="$t('liquidity.title')"
+                    :to="{ name: 'liquidity' }"
+                />
+                <more-item
+                    icon="o_request_quote"
+                    :title="$t('payments.title')"
+                    :to="{ name: 'payments' }"
                 />
                 <more-item
                     icon="o_contacts"
