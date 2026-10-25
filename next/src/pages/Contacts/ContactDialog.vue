@@ -30,6 +30,20 @@
                         :error-message="addrError"
                         no-error-icon
                     />
+                    <q-select
+                        v-model="groups"
+                        outlined
+                        dense
+                        multiple
+                        use-chips
+                        use-input
+                        new-value-mode="add-unique"
+                        hide-dropdown-icon
+                        input-debounce="0"
+                        :options="groupOptions"
+                        :label="$t('contacts.label_groups')"
+                        :hint="$t('contacts.hint_groups')"
+                    />
                 </q-card-section>
                 <q-card-actions class="q-px-md q-pb-md">
                     <q-btn
@@ -51,6 +65,7 @@ import { QDialog } from 'quasar'
 import { address } from 'thor-devkit'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 import { isVetName, resolveVetName, type Contact } from 'src/utils/names'
+import { SUGGESTED_GROUPS } from 'src/utils/last-payments'
 
 // add or change a contact; the address may be typed as a .vet name
 export default defineComponent({
@@ -58,15 +73,24 @@ export default defineComponent({
     emits: ['ok', 'hide'],
     components: { PromptDialogToolbar },
     props: {
-        contact: Object as () => Contact | undefined
+        contact: Object as () => Contact | undefined,
+        /** groups other contacts already use */
+        knownGroups: { type: Array as () => string[], default: () => [] }
     },
     data() {
         return {
             name: this.contact?.name || '',
             addr: this.contact?.address || '',
+            groups: [...(this.contact?.groups || [])] as string[],
             nameError: '',
             addrError: '',
             resolving: false
+        }
+    },
+    computed: {
+        groupOptions(): string[] {
+            const suggested = SUGGESTED_GROUPS.map(g => this.$t(`contacts.group_${g}`))
+            return [...new Set([...this.knownGroups, ...suggested])]
         }
     },
     watch: {
@@ -103,7 +127,8 @@ export default defineComponent({
             if (this.nameError || this.addrError) {
                 return
             }
-            this.$emit('ok', { name, address: address.toChecksumed(addr) } as Contact)
+            const groups = [...new Set(this.groups.map(g => String(g).trim()).filter(Boolean))]
+            this.$emit('ok', { name, address: address.toChecksumed(addr), ...(groups.length ? { groups } : {}) } as Contact)
             this.hide()
         }
     }

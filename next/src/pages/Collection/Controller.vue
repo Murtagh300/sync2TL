@@ -49,6 +49,10 @@
                         <div class="bvm-amount ellipsis">{{summary.volume.vetLabel || summary.volume.total}}</div>
                     </div>
                 </div>
+                <floor-trend
+                    class="bvm-tile q-pa-md q-mt-sm"
+                    :slug="slug"
+                />
                 <div class="row no-wrap q-gutter-x-sm q-mt-md">
                     <q-btn
                         class="col"
@@ -176,6 +180,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, markRaw } from 'vue'
+import FloorTrend from 'components/FloorTrend.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import AddressLabel from 'components/AddressLabel.vue'
@@ -192,7 +197,7 @@ import type { RouteLocationRaw } from 'vue-router'
 
 // a BlackVeMarket collection in the wallet: its numbers, what is for sale, offers
 export default defineComponent({
-    components: { PageToolbar, PageContent, AddressLabel },
+    components: { FloorTrend, PageToolbar, PageContent, AddressLabel },
     props: {
         slug: { type: String, required: true }
     },

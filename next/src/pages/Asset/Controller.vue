@@ -52,6 +52,10 @@
                     :marks="marks"
                 />
             </div>
+            <token-info
+                v-if="token && wallet.gid === mainGid"
+                :token="token"
+            />
             <div class="bvm-label q-px-md q-pt-lg q-pb-sm">{{$t('asset.label_history')}}</div>
         </page-content>
         <page-content class="col">
@@ -75,9 +79,12 @@ import PageContent from 'components/PageContent.vue'
 import AddressLabel from 'components/AddressLabel.vue'
 import AmountLabel from 'components/AmountLabel.vue'
 import PriceChart, { type ChartMark } from './PriceChart.vue'
+import TokenInfo from './TokenInfo.vue'
+import { genesises } from 'src/consts'
 import type { TransferLogItem } from './models'
 export default defineComponent({
     components: {
+        TokenInfo,
         Logs,
         HeadItem,
         AsyncResolve,
@@ -90,6 +97,7 @@ export default defineComponent({
     data() {
         return {
             showQR: false,
+            mainGid: genesises.main.id,
             marks: [] as ChartMark[],
             // async computed (see src/shims-async-computed.d.ts)
             wallet: null as M.Wallet | null,

@@ -45,6 +45,16 @@ export function downloadText(name: string, text: string, type = 'text/csv') {
 const esc = (s: string) => s.replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]!))
 
 /** a plain page with the table, opened to print or save as PDF */
+/**
+ * print a window the app wrote: from here, not with a script inside it (the page's
+ * Content-Security-Policy, which a blank window inherits, allows no inline scripts)
+ */
+export function printWindow(w: Window) {
+    w.focus()
+    // give it a moment to lay out
+    setTimeout(() => w.print(), 250)
+}
+
 export function printTable(title: string, rows: ExportRow[], headers: string[]) {
     const w = window.open('', '_blank')
     if (!w) {
@@ -65,8 +75,8 @@ th{background:#f4f4f4}
 <h1>${esc(title)}</h1><p>${esc(new Date().toLocaleString())}</p>
 <table><thead><tr>${[headers[0], headers[1], headers[2], headers[3], headers[4], headers[6], headers[7]].map(h => `<th>${esc(h!)}</th>`).join('')}</tr></thead>
 <tbody>${body}</tbody></table>
-<script>window.onload=function(){window.print()}<\/script>
 </body></html>`)
     w.document.close()
+    printWindow(w)
     return true
 }

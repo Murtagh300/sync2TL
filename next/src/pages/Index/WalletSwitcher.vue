@@ -80,7 +80,13 @@
                         />
                     </q-item-section>
                     <q-item-section style="min-width: 0">
-                        <q-item-label lines="1">{{w.meta.name}}</q-item-label>
+                        <q-item-label lines="1">{{w.meta.name}}<q-icon
+                            v-if="w.meta.type === 'watch'"
+                            name="o_visibility"
+                            size="14px"
+                            class="q-ml-xs text-muted"
+                            :title="$t('watch.label')"
+                        /></q-item-label>
                         <q-item-label
                             caption
                             lines="1"

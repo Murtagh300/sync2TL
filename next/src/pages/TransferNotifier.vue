@@ -1,5 +1,6 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { playChime } from 'src/utils/sound'
 import { abis } from 'src/consts'
 import { abi } from 'thor-devkit'
 import { formatAmount } from 'src/utils/format'
@@ -169,6 +170,9 @@ export default defineComponent({
             return result
         },
         notify(dir: 'in' | 'out', amount: string, decimals: number, symbol: string, walletId: number, addressIndex: number) {
+            if (dir === 'in') {
+                playChime()
+            }
             const parts = formatAmount(amount, { unit: decimals, fixed: 2, fullPrecision: true })!
             amount = `${parts.int}${parts.sep}${parts.dec}`
 

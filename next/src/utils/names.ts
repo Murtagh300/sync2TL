@@ -6,7 +6,7 @@ import { fn } from './actions'
  * then the .vet name it set (vet.domains, mainnet). Lookups are batched and cached.
  */
 
-export type Contact = { name: string, address: string }
+export type Contact = { name: string, address: string, /** labels such as family or team */ groups?: string[] }
 
 // vet.domains resolve utility on mainnet
 const RESOLVER = '0xA11413086e163e41901bb81fdc5617c975Fa5a1A'

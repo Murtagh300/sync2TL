@@ -82,6 +82,63 @@ export function payoutBatches(rows: PayoutRow[], token: { address?: string, deci
     return batches
 }
 
+/** an NFT airdrop line: an address, and which token (none: the next one that is free) */
+export type NftPayoutRow = { line: number, to: string, tokenId: string | null }
+export type OwnedNft = { contract: string, tokenId: string, listed?: boolean, tokenStandard?: string }
+
+/** "0xabc…, 42" or just "0xabc…" per line */
+export function parseNftPayout(text: string): { rows: NftPayoutRow[], errors: PayoutError[] } {
+    const rows: NftPayoutRow[] = []
+    const errors: PayoutError[] = []
+    text.split(/\r?\n/).forEach((raw, i) => {
+        const line = i + 1
+        const trimmed = raw.trim()
+        if (!trimmed || trimmed.startsWith('#')) return
+        const [first = '', second = ''] = trimmed.split(/[,;\t]/).map(p => p.trim().replace(/^["']|["']$/g, ''))
+        const isAddress = /^0x[0-9a-f]{40}$/i.test(first)
+        const isName = /^[a-z0-9-]+(\.[a-z0-9-]+)*\.vet$/i.test(first)
+        if (!isAddress && !isName) {
+            if (rows.length === 0 && errors.length === 0 && !/^0x/i.test(first)) return // a header
+            errors.push({ line, key: 'address' })
+            return
+        }
+        if (second && !/^\d+$/.test(second)) {
+            errors.push({ line, key: 'amount' })
+            return
+        }
+        rows.push({ line, to: first, tokenId: second || null })
+    })
+    return { rows, errors }
+}
+
+/**
+ * which NFT goes to each line: the one it names, or the next free one in order. Listed NFTs
+ * can't move (the market holds them), and an NFT goes out once.
+ */
+export function assignNfts(rows: NftPayoutRow[], owned: OwnedNft[]): { pairs: { row: NftPayoutRow, nft: OwnedNft }[], missing: number[] } {
+    const free = owned.filter(n => !n.listed)
+    const used = new Set<string>()
+    const named = new Set(rows.filter(r => r.tokenId).map(r => r.tokenId!))
+    const pairs: { row: NftPayoutRow, nft: OwnedNft }[] = []
+    const missing: number[] = []
+    for (const row of rows) {
+        let nft: OwnedNft | undefined
+        if (row.tokenId) {
+            nft = used.has(row.tokenId) ? undefined : free.find(n => n.tokenId === row.tokenId)
+        } else {
+            // the next free one that no other line asked for by number
+            nft = free.find(n => !used.has(n.tokenId) && !named.has(n.tokenId))
+        }
+        if (nft) {
+            used.add(nft.tokenId)
+            pairs.push({ row, nft })
+        } else {
+            missing.push(row.line)
+        }
+    }
+    return { pairs, missing }
+}
+
 /** addresses that appear on more than one line (lower case) */
 export function duplicates(rows: PayoutRow[]): Set<string> {
     const seen = new Set<string>()

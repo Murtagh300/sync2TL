@@ -8,11 +8,17 @@
             <prompt-dialog-toolbar>{{$t('alerts.title_add')}}</prompt-dialog-toolbar>
             <q-form @submit="onSubmit">
                 <q-card-section>
-                    <div class="text-weight-bold">{{collection.name}}</div>
-                    <div
-                        v-if="collection.floorValue != null"
-                        class="text-muted q-mb-md"
-                    >{{$t('market.label_floor')}}: {{collection.floorValue}} {{collection.floorCurrency}}</div>
+                    <template v-if="collection">
+                        <div class="text-weight-bold">{{collection.name}}</div>
+                        <div
+                            v-if="collection.floorValue != null"
+                            class="text-muted q-mb-md"
+                        >{{$t('market.label_floor')}}: {{collection.floorValue}} {{collection.floorCurrency}}</div>
+                    </template>
+                    <template v-else-if="token">
+                        <div class="text-weight-bold">{{token.symbol}}</div>
+                        <div class="text-muted q-mb-md">{{$t('alerts.label_price_now')}}: {{token.price}} {{currency}}</div>
+                    </template>
                     <q-btn-toggle
                         v-model="kind"
                         spread
@@ -22,8 +28,8 @@
                         color="dark"
                         class="q-mb-md"
                         :options="[
-                            { label: $t('alerts.label_below'), value: 'below' },
-                            { label: $t('alerts.label_above'), value: 'above' }
+                            { label: $t(token ? 'alerts.label_price_below' : 'alerts.label_below'), value: 'below' },
+                            { label: $t(token ? 'alerts.label_price_above' : 'alerts.label_above'), value: 'above' }
                         ]"
                     />
                     <q-input
@@ -64,18 +70,20 @@ export default defineComponent({
     emits: ['ok', 'hide'],
     components: { PromptDialogToolbar },
     props: {
-        collection: { type: Object as () => BVM.Collection, required: true }
+        collection: Object as () => BVM.Collection | undefined,
+        /** a token's price alert instead: its price now in the currency */
+        token: Object as () => { symbol: string, address: string, price: string, currency: string } | undefined
     },
     data() {
         return {
             kind: 'below' as AlertRule['kind'],
-            value: this.collection.floorValue != null ? String(this.collection.floorValue) : '',
+            value: this.collection?.floorValue != null ? String(this.collection.floorValue) : this.token ? this.token.price : '',
             error: ''
         }
     },
     computed: {
         currency(): string {
-            return this.collection.floorCurrency || 'VET'
+            return this.token ? this.token.currency : this.collection?.floorCurrency || 'VET'
         }
     },
     watch: {
@@ -92,14 +100,9 @@ export default defineComponent({
                 this.error = this.$t('send.msg_invalid_amount')
                 return
             }
-            const rule: AlertRule = {
-                id: `${this.collection.slug}:${Date.now()}`,
-                slug: this.collection.slug,
-                name: this.collection.name,
-                kind: this.kind,
-                value: v,
-                currency: this.currency
-            }
+            const rule: AlertRule = this.token
+                ? { id: `token:${this.token.address}:${Date.now()}`, slug: '', token: this.token.address, name: this.token.symbol, kind: this.kind, value: v, currency: this.currency }
+                : { id: `${this.collection!.slug}:${Date.now()}`, slug: this.collection!.slug, name: this.collection!.name, kind: this.kind, value: v, currency: this.currency }
             this.$emit('ok', rule)
             this.hide()
         }

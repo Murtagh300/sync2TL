@@ -203,6 +203,7 @@ export const marketURL = 'https://blackvemarket.com'
 let collectionsCache: { at: number, value: Record<string, BVM.Collection> } | null = null
 let collectionsLoading: Promise<Record<string, BVM.Collection>> | null = null
 const profileCache = new Map<string, Promise<BVM.Profile | null>>()
+const floorCache = new Map<string, { at: number, points: Promise<{ time: number, value: number, currency: string }[]> }>()
 
 async function loadCollections() {
     const resp = await http.get<{ items: { collection: BVM.Collection, floorValue: number | null, floor: string }[] }>('/collections')
@@ -310,6 +311,21 @@ export function build() {
                 params: { limit: opts.limit ?? 30, offset: opts.offset ?? 0, ...(opts.status === 'listed' ? { status: 'listed' } : {}), ...(opts.sort ? { sort: opts.sort } : {}) }
             })
             return resp.data
+        },
+        /** the floor per day (about the last month), oldest first; cached 30 minutes */
+        floorHistory(slug: string): Promise<{ time: number, value: number, currency: string }[]> {
+            const hit = floorCache.get(slug)
+            if (hit && hit.at > Date.now() - 30 * 60 * 1000) {
+                return hit.points
+            }
+            const points = http.get<{ items: { date: string, displayAmount: string, currency: string }[] }>(`/collection/${encodeURIComponent(slug)}/floor-history`)
+                .then(r => (r.data.items || [])
+                    .map(i => ({ time: Date.parse(i.date), value: parseFloat(String(i.displayAmount).replace(/,/g, '')), currency: i.currency }))
+                    .filter(p => isFinite(p.time) && isFinite(p.value) && p.value > 0)
+                    .sort((a, b) => a.time - b.time))
+            points.catch(() => floorCache.delete(slug))
+            floorCache.set(slug, { at: Date.now(), points })
+            return points
         },
         async collectionOffers(slug: string): Promise<{ enabled: boolean, offers: BVM.CollectionOffer[] }> {
             const resp = await http.get<{ enabled: boolean, offers: BVM.CollectionOffer[] }>(`/collection/${encodeURIComponent(slug)}/collection-offers`)

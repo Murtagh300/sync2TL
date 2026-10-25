@@ -124,7 +124,10 @@ import { randomBytes } from 'crypto'
 import ErrorTip from './ErrorTip.vue'
 import WarningListDialog from './WarningListDialog.vue'
 import InspectClauseDialog from './InspectClauseDialog.vue'
-import { haptic } from 'src/utils/prefs'
+import { haptic, money, prefs } from 'src/utils/prefs'
+import { outgoingValue } from 'src/utils/spend-limit'
+import SpendLimitDialog from './SpendLimitDialog.vue'
+import { genesises } from 'src/consts'
 import { network } from 'src/utils/network'
 import SimulationCard from './SimulationCard.vue'
 import { balanceChanges, type BalanceChanges } from 'src/utils/simulate'
@@ -323,6 +326,26 @@ export default defineComponent({
                 return
             }
             haptic()
+
+            // over the spending limit: wait a moment first
+            if (prefs.spendLimit > 0 && this.changes && this.gid === genesises.main.id) {
+                try {
+                    const tokens = Object.keys(this.changes.tokens)
+                    const [stats, fx] = await Promise.all([
+                        this.$svc.prices.stats(['0x0000000000000000000000000000000000000000', ...tokens]),
+                        this.$svc.prices.fx(prefs.currency)
+                    ])
+                    const usd = Object.fromEntries(Object.entries(stats).map(([k, v]) => [k.toLowerCase(), v.price]))
+                    const decimals = (t: string) => this.tokens.find(x => (x.address || '').toLowerCase() === t.toLowerCase())?.decimals ?? 18
+                    const value = outgoingValue(this.changes, usd, decimals, fx)
+                    if (value > prefs.spendLimit) {
+                        await this.$dialog({ component: SpendLimitDialog, amount: money(value), limit: money(prefs.spendLimit) })
+                    }
+                } catch {
+                    // cancelled in the dialog (prices that can't be had count as nothing, they don't throw)
+                    return
+                }
+            }
 
             if (est.reverted) {
                 await this.$dialog({

@@ -4,6 +4,13 @@
             <q-btn
                 flat
                 round
+                icon="o_insights"
+                :aria-label="$t('overview.title')"
+                @click="$router.push({ name: 'overview' })"
+            />
+            <q-btn
+                flat
+                round
                 icon="o_file_download"
                 :aria-label="$t('export.title')"
                 :disable="!built.rows.length"

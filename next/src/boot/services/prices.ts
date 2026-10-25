@@ -1,6 +1,7 @@
 // Token prices from BetterSwap (USD, with 1h/24h change and hourly history), turned into
 // euros with BlackVeMarket's rates. Mainnet only.
 import axios from 'axios'
+import { loadPools } from 'src/utils/liquidity'
 
 export namespace Prices {
     export type Stat = {
@@ -10,6 +11,16 @@ export namespace Prices {
         change24h: number
     }
     export type Point = { time: number, price: number }
+    /** what BetterSwap knows about a token, with its pools' volume and liquidity (USD) */
+    export type TokenInfo = {
+        description: string
+        circulatingSupply: number
+        totalSupply: number
+        maxSupply: number | null
+        links: { kind: 'website' | 'twitter' | 'telegram' | 'discord', url: string }[]
+        volume24h: number
+        liquidity: number
+    }
     export type Currency = 'EUR' | 'USD'
 }
 
@@ -39,6 +50,27 @@ type Rates = { usd: Record<string, number>, eur: Record<string, number> }
 const statCache = new Map<string, { at: number, stat: Prices.Stat | null }>()
 const historyCache = new Map<string, { at: number, points: Prices.Point[] }>()
 let ratesCache: { at: number, rates: Rates } | null = null
+
+type BetterSwapToken = {
+    address: string, description: string, circulatingSupply: number, totalSupply: number, maxSupply: number | null,
+    website: string | null, twitter: string | null, telegram: string | null, discord: string | null
+}
+type BetterSwapPool = { token0: { address: string }, token1: { address: string }, volume24h?: number, totalUsdValue?: number }
+let tokensCache: { at: number, tokens: Promise<BetterSwapToken[]>, pools: Promise<BetterSwapPool[]> } | null = null
+
+function tokenLists() {
+    if (!tokensCache || tokensCache.at < Date.now() - 60 * 60 * 1000) {
+        tokensCache = {
+            at: Date.now(),
+            tokens: betterswap.get<BetterSwapToken[]>('/tokens').then(r => r.data),
+            pools: loadPools() as Promise<BetterSwapPool[]>
+        }
+        // a failure is not cached
+        tokensCache.tokens.catch(() => { tokensCache = null })
+        tokensCache.pools.catch(() => { tokensCache = null })
+    }
+    return tokensCache
+}
 
 async function rates(): Promise<Rates> {
     if (ratesCache && ratesCache.at > Date.now() - 5 * 60 * 1000) {
@@ -97,6 +129,30 @@ export function build() {
                 }
             }
             return out
+        },
+        /** supply, links, 24h volume and liquidity of a token; null when BetterSwap doesn't list it */
+        async tokenInfo(address: string | null | undefined): Promise<Prices.TokenInfo | null> {
+            const a = key(address)
+            const lists = tokenLists()
+            const [tokens, pools] = await Promise.all([lists.tokens, lists.pools.catch(() => [] as BetterSwapPool[])])
+            const t = tokens.find(x => (x.address || '').toLowerCase() === a)
+            if (!t) {
+                return null
+            }
+            const mine = pools.filter(p => key(p.token0.address) === a || key(p.token1.address) === a)
+            const links = (['website', 'twitter', 'telegram', 'discord'] as const)
+                .filter(k => /^https:\/\//.test(t[k] || ''))
+                .map(k => ({ kind: k, url: t[k]! }))
+            return {
+                description: t.description || '',
+                circulatingSupply: t.circulatingSupply || 0,
+                totalSupply: t.totalSupply || 0,
+                maxSupply: t.maxSupply || null,
+                links,
+                volume24h: mine.reduce((s, p) => s + (p.volume24h || 0), 0),
+                // the value of the pools it trades in
+                liquidity: mine.reduce((s, p) => s + (p.totalUsdValue || 0), 0)
+            }
         },
         /** hourly USD prices over the last hours, by token address; cached 10 minutes */
         async history(addresses: Array<string | null | undefined>, hours = 168): Promise<Record<string, Prices.Point[]>> {

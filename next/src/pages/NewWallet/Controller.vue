@@ -71,6 +71,29 @@
                         class="text-muted"
                     />
                 </button>
+                <button
+                    type="button"
+                    class="bvm-tile choice row no-wrap items-center"
+                    @click="watchAddress()"
+                >
+                    <q-icon
+                        name="o_visibility"
+                        size="24px"
+                        color="primary"
+                    />
+                    <div class="col q-ml-md">
+                        <div class="choice-title">{{$t('newWallet.action_watch')}}</div>
+                        <div class="choice-body">{{$t('newWallet.msg_watch')}}</div>
+                    </div>
+                    <q-icon
+                        name="o_chevron_right"
+                        class="text-muted"
+                    />
+                </button>
+                <router-link
+                    :to="{ name: 'switch-guide' }"
+                    class="text-primary text-center q-mt-md switch-link"
+                >{{$t('switchGuide.link')}}</router-link>
             </div>
         </page-content>
     </div>
@@ -85,6 +108,9 @@ import MnemonicInputDialog from './MnemonicInputDialog.vue'
 import PopSheets, { Sheet } from 'components/PopSheets.vue'
 import PageContent from 'components/PageContent.vue'
 import { BackupDialog } from '../Backup'
+import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
+import { address as addressUtil } from 'thor-devkit'
+import { isVetName, resolveVetName } from 'src/utils/names'
 
 const defaultGid = genesises.main.id
 
@@ -157,6 +183,48 @@ export default defineComponent({
         }
     },
     methods: {
+        /** follow an address (or name.vet) without its keys */
+        async watchAddress() {
+            this.error = ''
+            await this.$nextTick()
+            if (!this.name) {
+                this.error = this.$t('common.required_field').toString()
+                return
+            }
+            const opts: PromptOptions = {
+                title: this.$t('newWallet.action_watch'),
+                message: this.$t('newWallet.msg_watch_input'),
+                model: '',
+                action: { label: this.$t('common.add'), color: 'primary' },
+                validate: input => {
+                    const v = input.trim()
+                    return addressUtil.test(v) || isVetName(v) ? '' : this.$t('send.msg_invalid_address')
+                }
+            }
+            try {
+                let addr = (await this.$dialog<string>({ component: PromptDialog, opts })).trim()
+                if (isVetName(addr)) {
+                    const resolved = await resolveVetName(addr)
+                    if (!resolved) {
+                        this.error = this.$t('send.msg_vet_not_found', { name: addr })
+                        return
+                    }
+                    addr = resolved
+                }
+                const existing = await this.$svc.wallet.all()
+                if (existing.some(w => w.gid === this.gid && w.meta.addresses.some(a => a.toLowerCase() === addr.toLowerCase()))) {
+                    this.error = this.$t('newWallet.msg_watch_exists')
+                    return
+                }
+                await this.$svc.wallet.insert({
+                    gid: this.gid,
+                    vault: '',
+                    meta: { name: this.name, type: 'watch', addresses: [addressUtil.toChecksumed(addr.toLowerCase())], backedUp: true }
+                })
+                this.$backOrHome()
+                this.$q.notify(this.$t('common.wallet_created'))
+            } catch { }
+        },
         async newWallet(type: 'generate' | 'import', wordsCount = 12) {
             // reset error
             this.error = ''
@@ -250,6 +318,12 @@ export default defineComponent({
   font-size: 16px
   font-weight: 900
   letter-spacing: -0.01em
+
+.switch-link
+  display: block
+  font-size: 13px
+  font-weight: 700
+  text-decoration: none
 
 .choice-body
   margin-top: 2px

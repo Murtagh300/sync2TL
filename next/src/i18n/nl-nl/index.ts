@@ -104,7 +104,11 @@ export default {
         action_eth_path: 'Ethereum',
         label_path: 'Afleidingspad',
         msg_example: 'Voorbeeld',
-        msg_invalid_path: 'Ongeldig pad'
+        msg_invalid_path: 'Ongeldig pad',
+        action_watch: 'Een adres volgen',
+        msg_watch: 'Alleen kijken: saldi, NFT\'s en activiteit van elk adres, zonder de sleutels.',
+        msg_watch_input: 'Het adres of naam.vet om te volgen',
+        msg_watch_exists: 'Dit adres staat al in BlackVault'
     },
     authenticationDialog: {
         title: 'Ontgrendelen',
@@ -113,6 +117,7 @@ export default {
         label_input_password: 'Voer je BlackVault-wachtwoord in'
     },
     settings: {
+        label_sound: 'Geluid als er iets binnenkomt',
         label_shake_hide: 'Schudden om saldi te verbergen',
         msg_motion_denied: 'BlackVault mag de bewegingssensor niet lezen. Sta bewegingstoegang voor deze site toe in je browserinstellingen.',
         title: 'Instellingen',
@@ -297,7 +302,16 @@ export default {
         label_rule_above: 'Floor op of boven {value}',
         msg_fired_below: 'De floor van {name} is {floor}, op of onder je {value}',
         msg_fired_above: 'De floor van {name} is {floor}, op of boven je {value}',
-        msg_new_offers: '{n} nieuw(e) bod(en) op je NFT\'s'
+        msg_new_offers: '{n} nieuw(e) bod(en) op je NFT\'s',
+        kind_floor: 'Floor van een collectie',
+        kind_token: 'Koers van een token',
+        label_price_now: 'Koers nu',
+        label_price_below: 'Koers daalt naar',
+        label_price_above: 'Koers stijgt naar',
+        label_price_rule_below: 'Koers op of onder {value}',
+        label_price_rule_above: 'Koers op of boven {value}',
+        msg_token_below: '{name} staat op {price}, op of onder je {value}',
+        msg_token_above: '{name} staat op {price}, op of boven je {value}'
     },
     launchpad: {
         title: 'Launchpad',
@@ -374,9 +388,129 @@ export default {
         msg_hint: 'Zoek in je contacten, tokens, BlackVeMarket-collecties, .vet-namen en adressen.',
         msg_nothing: 'Niets gevonden voor “{q}”'
     },
+    overview: {
+        title: 'Overzicht',
+        title_year: 'BlackVault {year}: {n} overboekingen',
+        action_prev: 'Vorige maand',
+        action_next: 'Volgende maand',
+        action_year_pdf: 'Jaaroverzicht {year} (pdf)',
+        label_in: 'Binnen',
+        label_out: 'Uit',
+        label_nothing: 'Niets',
+        label_fees: 'Betaalde fees',
+        label_fee_count: 'in {n} transacties',
+        label_sales: 'NFT-verkopen',
+        label_sales_count: '{n} verkocht',
+        label_best_sale: 'Beste: {amount}',
+        label_no_sales: 'Deze maand geen NFT\'s verkocht',
+        label_value: 'Waarde, begin en eind van de maand',
+        msg_prices_now: 'Totalen zijn tegen de koers van vandaag. Het jaaroverzicht toont de waarde op dat moment voor de laatste 30 dagen; oudere koersen zijn niet beschikbaar.'
+    },
+    floorTrend: {
+        label: 'Floor, laatste {days} dagen'
+    },
+    watch: {
+        label: 'Alleen kijken',
+        msg_cannot_sign: 'Dit is een wallet om alleen te bekijken: BlackVault heeft er geen sleutels van, dus hij kan niet verzenden of tekenen. Kies een andere wallet.'
+    },
+    dust: {
+        title: 'Kleine saldi opruimen',
+        msg_intro: 'Tokens die weinig waard zijn, in één transactie omgezet naar VET. VET en VTHO blijven zoals ze zijn.',
+        label_below: 'Minder waard dan',
+        label_no_price: 'geen koers',
+        msg_none: 'Geen kleine saldi op dit adres.',
+        action_convert: '{n} omzetten naar VET',
+        comment: '{n} kleine saldi omzetten voor minstens {vet} VET',
+        title_done: 'Opgeruimd',
+        msg_done: 'Minstens {vet} VET komt binnen zodra de transactie bevestigd is.'
+    },
+    consolidate: {
+        title: 'Adressen samenvoegen',
+        msg_intro: 'Verplaats alles van de andere adressen van deze wallet naar één adres: VET, VTHO en tokens. Elk adres tekent zijn eigen transactie.',
+        msg_one_address: 'Deze wallet heeft één adres: niets om samen te voegen.',
+        label_target: 'Alles verplaatsen naar',
+        label_empty: 'Niets om te verplaatsen',
+        msg_vtho: 'Op elk adres blijft {n} VTHO staan om de fee te betalen. NFT\'s worden niet verplaatst: verstuur die vanuit het tabblad NFT\'s.',
+        action: '{n} adres(sen) naar #{to} verplaatsen',
+        comment: 'Alles van adres #{from} naar #{to} verplaatsen',
+        title_done: 'Adressen samengevoegd',
+        msg_done: '{n} adres(sen) verplaatst naar {to} zodra de transacties bevestigd zijn.'
+    },
+    spendLimit: {
+        title: 'Boven je limiet',
+        msg: 'Dit verstuurt ongeveer {amount}, meer dan je limiet van {limit}.',
+        hint: 'Neem even de tijd: klopt de ontvanger, en bedoel je dit bedrag? Je kunt de limiet aanpassen in Instellingen.',
+        action_wait: 'Wacht {n} s',
+        action_continue: 'Toch ondertekenen',
+        setting: 'Bestedingslimiet',
+        setting_hint: 'Daarboven wacht ondertekenen 10 seconden',
+        off: 'Uit'
+    },
+    nodeHealth: {
+        slow: 'De netwerknode is traag ({ms} ms)',
+        down: 'De netwerknode antwoordt niet',
+        switched: 'Overgeschakeld naar een andere netwerknode: {host}'
+    },
+    switchGuide: {
+        title: 'Overstappen van VeWorld of Sync2',
+        link: 'Kom je van VeWorld of Sync2? Zo stap je over',
+        msg_intro: 'Breng je wallet in een paar minuten naar BlackVault. Je bezittingen verhuizen niet: BlackVault opent dezelfde adressen met dezelfde herstelwoorden.',
+        title_same: 'Dezelfde woorden, dezelfde adressen',
+        msg_same: 'VeWorld, Sync2 en BlackVault leiden adressen allemaal op de VeChain-manier af (m/44\'/818\'/0\'/0). Importeer hier je 12 of 24 woorden en dezelfde adressen verschijnen, met hun VET, tokens en NFT\'s. Je oude app blijft ook gewoon werken.',
+        other: 'Andere',
+        veworld_1_title: 'Zoek je herstelzin in VeWorld',
+        veworld_1: 'Open in VeWorld de instellingen van de wallet en zoek naar de back-up of herstelzin. VeWorld vraagt eerst je pincode of wachtwoord.',
+        veworld_2_title: 'Schrijf de woorden op',
+        veworld_2: 'Op papier, op volgorde. Niet in een screenshot, een notitie-app of een chat.',
+        veworld_3_title: 'Importeer ze in BlackVault',
+        veworld_3: 'Wallet toevoegen › Herstelwoorden importeren, en typ de woorden op volgorde, met spaties ertussen.',
+        veworld_4_title: 'Controleer het adres',
+        veworld_4: 'Het eerste adres in BlackVault moet hetzelfde zijn als in VeWorld. Wallets met meer adressen: voeg ze toe met "Adres toevoegen".',
+        sync2_1_title: 'Maak een back-up in Sync2',
+        sync2_1: 'Open in Sync2 de wallet, het menu, en kies Back-up. Sync2 vraagt je wachtwoord en toont de herstelwoorden.',
+        sync2_2_title: 'Schrijf de woorden op',
+        sync2_2: 'Op papier, op volgorde. Niet in een screenshot, een notitie-app of een chat.',
+        sync2_3_title: 'Importeer ze in BlackVault',
+        sync2_3: 'Wallet toevoegen › Herstelwoorden importeren, en typ de woorden op volgorde, met spaties ertussen.',
+        sync2_4_title: 'Controleer het adres',
+        sync2_4: 'De adressen zijn dezelfde als in Sync2. Voeg er meer toe met "Adres toevoegen" als de Sync2-wallet er meerdere had.',
+        other_1_title: 'Zoek de herstelwoorden',
+        other_1: 'De meeste VeChain-wallets tonen de 12 of 24 woorden onder back-up, beveiliging of exporteren in hun instellingen.',
+        other_2_title: 'Schrijf de woorden op',
+        other_2: 'Op papier, op volgorde. Niet in een screenshot, een notitie-app of een chat.',
+        other_3_title: 'Importeer ze in BlackVault',
+        other_3: 'Wallet toevoegen › Herstelwoorden importeren. Zijn de adressen anders, open dan Geavanceerd en probeer het Ethereum-pad: sommige multichain-wallets gebruiken dat.',
+        other_4_title: 'Controleer het adres',
+        other_4: 'Vergelijk het eerste adres met dat in je oude wallet voordat je iets verplaatst.',
+        title_limits: 'Goed om te weten',
+        limit_key: 'Een wallet die in VeWorld met een private key (geen woorden) is geïmporteerd, kan hier niet worden geïmporteerd: stuur de bezittingen dan naar een BlackVault-adres.',
+        limit_ledger: 'Ledger-apparaten worden niet ondersteund door BlackVault.',
+        limit_safety: 'Typ je herstelwoorden nooit in op een website en geef ze nooit aan iemand die zegt te helpen: een echte helper vraagt er nooit om.'
+    },
+    tokenInfo: {
+        title: 'Over deze token',
+        label_market_cap: 'Marktwaarde',
+        label_volume: 'Volume 24u',
+        label_liquidity: 'In pools',
+        label_supply: 'Aanbod',
+        link_website: 'Website',
+        link_twitter: 'X',
+        link_telegram: 'Telegram',
+        link_discord: 'Discord',
+        msg_source: 'Van BetterSwap: marktwaarde uit het circulerende aanbod, volume en liquiditeit uit de pools.'
+    },
     payout: {
         title: 'Batch-uitbetaling',
         msg_intro: 'Betaal een lijst adressen in één keer: beloningen, een airdrop, een rekening delen. Eén regel per adres.',
+        mode_tokens: 'Tokens',
+        mode_nfts: 'NFT\'s',
+        msg_intro_nfts: 'Stuur elk adres één NFT: een NFT-airdrop. Noem een token-ID, of laat hem weg en de volgende vrije gaat.',
+        label_collection: 'Collectie',
+        label_free_nfts: '{n} vrij',
+        hint_list_nfts: 'adres of .vet-naam, token-ID (optioneel)',
+        err_token_id: 'Regel {line}: geen geldig token-ID',
+        err_no_nft: 'Regel {line}: geen vrije NFT ervoor (niet van jou, te koop of al gebruikt)',
+        msg_empty_nfts: 'Kies een collectie en plak dan de adressen.',
         label_token: 'Betalen in',
         label_list: 'Adressen en bedragen',
         hint_list: 'adres of .vet-naam, bedrag, notitie (optioneel)',
@@ -483,7 +617,8 @@ export default {
     },
     lock: {
         title: 'BlackVault is vergrendeld',
-        msg: 'Ontgrendel met je wachtwoord om verder te gaan.'
+        msg: 'Ontgrendel met je wachtwoord om verder te gaan.',
+        action_now: 'Nu vergrendelen'
     },
     security: {
         title: 'Veiligheidscheck',
@@ -593,6 +728,7 @@ export default {
         my_wallet: 'Mijn BlackVault'
     },
     widgets: {
+        ticker: 'Koersticker',
         title: 'Home aanpassen',
         portfolio: 'Totale waarde',
         actions: 'Snelle acties',
@@ -739,7 +875,15 @@ export default {
         msg_qr: 'Scan dit in BlackVault op je andere apparaat: Contacten › Toevoegen uit een QR-code.',
         msg_not_contacts: 'Deze QR-code bevat geen BlackVault-contacten',
         msg_imported: '{n} contact(en) toegevoegd',
-        msg_empty: 'Bewaar de adressen waar je naar verstuurt. Hun namen verschijnen dan in plaats van 0x-adressen.'
+        msg_empty: 'Bewaar de adressen waar je naar verstuurt. Hun namen verschijnen dan in plaats van 0x-adressen.',
+        label_groups: 'Groepen',
+        hint_groups: 'Kies of typ een groep, dan Enter',
+        label_last_paid: 'Laatst betaald {amount}, {when}',
+        group_family: 'Familie',
+        group_friends: 'Vrienden',
+        group_team: 'Team',
+        group_exchange: 'Exchange',
+        group_business: 'Zakelijk'
     },
     receive: {
         label_request: 'Om een bedrag vragen',

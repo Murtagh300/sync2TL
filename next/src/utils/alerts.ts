@@ -16,12 +16,18 @@ export type Watchlist = {
 
 export type AlertRule = {
     id: string
+    /** a collection's floor ... */
     slug: string
+    /** ... or a token's price (its address; VET is the zero address), in currency */
+    token?: string
     name: string
     kind: 'below' | 'above'
     value: number
     currency: string
 }
+
+/** whether a rule's condition holds at this value */
+export const ruleHolds = (rule: AlertRule, value: number) => rule.kind === 'below' ? value <= rule.value : value >= rule.value
 
 type AlertState = {
     /** whether a rule's condition held at the last check, so it fires once per crossing */
@@ -47,14 +53,40 @@ export async function checkAlerts(svc: Service, t: (key: string, params?: Record
     ])
     const messages: AlertMessage[] = []
 
-    if (rules.length) {
+    // token prices: in the rule's currency
+    const tokenRules = rules.filter(r => r.token)
+    if (tokenRules.length) {
+        try {
+            const stats = await svc.prices.stats(tokenRules.map(r => r.token))
+            for (const rule of tokenRules) {
+                const s = stats[rule.token!.toLowerCase()]
+                if (!s) continue
+                const price = s.price * await svc.prices.fx(rule.currency === 'USD' ? 'USD' : 'EUR')
+                const holds = ruleHolds(rule, price)
+                if (holds && !state.fired[rule.id]) {
+                    const sign = rule.currency === 'USD' ? '$' : '€'
+                    messages.push({
+                        text: t(rule.kind === 'below' ? 'alerts.msg_token_below' : 'alerts.msg_token_above', {
+                            name: rule.name, price: `${sign}${price.toPrecision(4)}`, value: `${sign}${rule.value}`
+                        })
+                    })
+                }
+                state.fired[rule.id] = holds
+            }
+        } catch {
+            // prices unreachable: check again next time
+        }
+    }
+
+    const floorRules = rules.filter(r => !r.token)
+    if (floorRules.length) {
         const collections = await svc.bvm.collections()
-        for (const rule of rules) {
+        for (const rule of floorRules) {
             const c = collectionBySlug(collections, rule.slug)
             if (!c || c.floorValue == null || c.floorCurrency !== rule.currency) {
                 continue
             }
-            const holds = rule.kind === 'below' ? c.floorValue <= rule.value : c.floorValue >= rule.value
+            const holds = ruleHolds(rule, c.floorValue)
             if (holds && !state.fired[rule.id]) {
                 messages.push({
                     text: t(rule.kind === 'below' ? 'alerts.msg_fired_below' : 'alerts.msg_fired_above', {

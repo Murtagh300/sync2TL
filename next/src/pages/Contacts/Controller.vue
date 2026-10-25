@@ -66,24 +66,63 @@
                     @click="add()"
                 />
             </div>
+            <div
+                v-if="contacts.length && allGroups.length"
+                class="row no-wrap q-gutter-x-xs q-mb-md group-filter"
+                role="group"
+                :aria-label="$t('contacts.label_groups')"
+            >
+                <q-chip
+                    clickable
+                    :outline="group !== ''"
+                    :color="group === '' ? 'primary' : undefined"
+                    :text-color="group === '' ? 'dark' : undefined"
+                    class="q-ma-none q-mr-xs"
+                    @click="group = ''"
+                >{{$t('nft.label_all')}}</q-chip>
+                <q-chip
+                    v-for="g in allGroups"
+                    :key="g"
+                    clickable
+                    :outline="group !== g"
+                    :color="group === g ? 'primary' : undefined"
+                    :text-color="group === g ? 'dark' : undefined"
+                    class="q-ma-none q-mr-xs"
+                    @click="group = g"
+                >{{g}}</q-chip>
+            </div>
             <q-list
-                v-else
+                v-if="contacts.length"
                 class="bvm-list"
             >
                 <q-item
-                    v-for="(c, i) in sorted"
+                    v-for="(c, i) in shown"
                     :key="c.address + i"
                     clickable
                     @click="edit(c)"
                 >
                     <q-item-section avatar>
+                        <q-avatar
+                            v-if="profiles[c.address.toLowerCase()]?.avatar"
+                            size="34px"
+                            rounded
+                        >
+                            <img
+                                :src="profiles[c.address.toLowerCase()]!.avatar"
+                                alt=""
+                            >
+                        </q-avatar>
                         <address-avatar
+                            v-else
                             :addr="c.address"
                             size="34px"
                         />
                     </q-item-section>
                     <q-item-section style="min-width: 0">
-                        <q-item-label lines="1">{{c.name}}</q-item-label>
+                        <q-item-label lines="1">{{c.name}}<span
+                            v-if="profiles[c.address.toLowerCase()]?.displayName"
+                            class="text-muted text-weight-regular"
+                        > · @{{profiles[c.address.toLowerCase()]!.displayName}}</span></q-item-label>
                         <q-item-label
                             caption
                             lines="1"
@@ -92,6 +131,21 @@
                                 no-icon
                                 :addr="c.address"
                                 no-name
+                            /><span v-if="vetName(c.address)"> · {{vetName(c.address)}}</span>
+                        </q-item-label>
+                        <q-item-label
+                            v-if="paid(c.address) || c.groups?.length"
+                            caption
+                            lines="1"
+                        >
+                            <span v-if="paid(c.address)">{{paid(c.address)}}</span>
+                            <q-badge
+                                v-for="g in c.groups || []"
+                                :key="g"
+                                outline
+                                color="grey-6"
+                                class="q-ml-xs"
+                                :label="g"
                             />
                         </q-item-label>
                     </q-item-section>
@@ -120,36 +174,68 @@ import ContactDialog from './ContactDialog.vue'
 import type { Contact } from 'src/utils/names'
 import QrScannerDialog from 'pages/QrScannerDialog'
 import { decodeContacts, encodeContacts } from 'src/utils/contacts-share'
+import { lastPayment } from 'src/utils/last-payments'
+import { formatDate } from 'src/utils/format'
+import { nameOf } from 'src/utils/names'
+import type { BVM } from 'boot/services/bvm'
 
 // the address book: names show up instead of addresses everywhere in the wallet
 export default defineComponent({
     components: { PageToolbar, PageContent, AddressAvatar, AddressLabel },
     data: () => ({
-        contacts: [] as Contact[]
+        contacts: [] as Contact[],
+        group: '',
+        profiles: {} as Record<string, BVM.Profile | null>
     }),
     computed: {
         sorted(): Contact[] {
             return [...this.contacts].sort((a, b) => a.name.localeCompare(b.name))
+        },
+        allGroups(): string[] {
+            return [...new Set(this.contacts.flatMap(c => c.groups || []))].sort((a, b) => a.localeCompare(b))
+        },
+        shown(): Contact[] {
+            return this.group ? this.sorted.filter(c => (c.groups || []).includes(this.group)) : this.sorted
         }
     },
     async created() {
         this.contacts = await this.$svc.config.getContacts()
+        void this.loadProfiles()
     },
     methods: {
+        /** BlackVeMarket names and avatars, for the contacts that have one */
+        async loadProfiles() {
+            for (const c of this.contacts) {
+                const a = c.address.toLowerCase()
+                if (a in this.profiles) continue
+                const p = await this.$svc.bvm.profile(a).catch(() => null)
+                this.profiles = { ...this.profiles, [a]: p }
+            }
+        },
+        vetName(address: string): string {
+            const n = nameOf(address)
+            // nameOf gives the contact's own name first; only a .vet name adds something
+            return n.endsWith('.vet') ? n : ''
+        },
+        paid(address: string): string {
+            const p = lastPayment(address)
+            return p ? this.$t('contacts.label_last_paid', { amount: `${p.amount} ${p.symbol}`, when: formatDate(p.time, { relative: true }) }) : ''
+        },
         async save(list: Contact[]) {
             this.contacts = list
             await this.$svc.config.saveContacts(list)
+            void this.loadProfiles()
         },
         async add() {
             try {
-                const c = await this.$dialog<Contact>({ component: ContactDialog })
+                const c = await this.$dialog<Contact>({ component: ContactDialog, knownGroups: this.allGroups })
                 const rest = this.contacts.filter(x => x.address.toLowerCase() !== c.address.toLowerCase())
                 await this.save([...rest, c])
             } catch { }
         },
         async edit(contact: Contact) {
             try {
-                const c = await this.$dialog<Contact>({ component: ContactDialog, contact })
+                const c = await this.$dialog<Contact>({ component: ContactDialog, contact, knownGroups: this.allGroups })
                 const rest = this.contacts.filter(x => x !== contact && x.address.toLowerCase() !== c.address.toLowerCase())
                 await this.save([...rest, c])
             } catch { }
@@ -182,3 +268,8 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.group-filter
+  overflow-x: auto
+  scrollbar-width: none
+</style>

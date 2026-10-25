@@ -2,6 +2,7 @@ import { defineComponent } from 'vue'
 import { SignerGroup } from './models'
 import { Transaction, secp256k1, Certificate, blake2b256 } from 'thor-devkit'
 import { Vault } from 'src/core/vault'
+import { canSign } from 'src/utils/watch'
 
 // base of TxDialog and CertDialog (`extends: Common`)
 export default defineComponent({
@@ -40,8 +41,9 @@ export default defineComponent({
         }
     },
     asyncComputed: {
-        wallets(): Promise<M.Wallet[] | null> {
-            return this.$svc.wallet.getByGid(this.gid)
+        async wallets(): Promise<M.Wallet[] | null> {
+            // watch-only wallets have no keys to sign with
+            return (await this.$svc.wallet.getByGid(this.gid)).filter(canSign)
         }
     },
     watch: {

@@ -9,6 +9,11 @@
             :gid="wallet?.gid"
         />
         <page-content class="col no-wrap">
+            <div
+                v-if="wallet && !canSign(wallet)"
+                class="bvm-tile q-ma-md q-pa-md text-warning"
+                role="alert"
+            >{{$t('watch.msg_cannot_sign')}}</div>
             <q-item-label header>{{$t('send.label_to')}}</q-item-label>
             <To
                 v-model:address="recipient"
@@ -139,6 +144,8 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { rememberPayment } from 'src/utils/last-payments'
+import { canSign } from 'src/utils/watch'
 import { event as gtagEvent } from 'vue-gtag'
 import { visibleTokens } from 'src/utils/tokens'
 import { abi, address } from 'thor-devkit'
@@ -213,8 +220,8 @@ export default defineComponent({
             if (this.wid) {
                 return this.$svc.wallet.get(parseInt(this.wid))
             }
-            // a payment link names no wallet: the first one on mainnet
-            const [first] = await this.$svc.wallet.getByGid(genesises.main.id)
+            // a payment link names no wallet: the first one on mainnet that can sign
+            const [first] = (await this.$svc.wallet.getByGid(genesises.main.id)).filter(canSign)
             return first || null
         },
         recent: {
@@ -400,7 +407,12 @@ export default defineComponent({
 
             return (!this.errors.to && !this.errors.amount)
         },
+        canSign,
         async onSend() {
+            if (!canSign(this.wallet)) {
+                this.$q.notify({ message: this.$t('watch.msg_cannot_sign'), color: 'negative' })
+                return
+            }
             if (!this.validate()) {
                 return
             }
@@ -463,6 +475,7 @@ export default defineComponent({
                 if (this.wallet) {
                     this.$svc.config.saveRecentRecipients(this.wallet.gid, temp)
                 }
+                rememberPayment(this.recipient!, this.amountText, this.sym)
                 this.$dialog({
                     component: SuccessDialog,
                     title: this.$t('send.title_sent'),

@@ -32,12 +32,32 @@
                     >{{unread > 9 ? '9+' : unread}}</q-badge>
                 </q-btn>
                 <q-btn
+                    v-if="nodeHealth.status === 'slow' || nodeHealth.status === 'down'"
+                    flat
+                    round
+                    icon="o_cell_tower"
+                    :color="nodeHealth.status === 'down' ? 'negative' : 'warning'"
+                    :aria-label="$t(nodeHealth.status === 'down' ? 'nodeHealth.down' : 'nodeHealth.slow', { ms: nodeHealth.ms })"
+                    @click="$router.push({ name: 'nodes-setting' })"
+                >
+                    <q-tooltip>{{$t(nodeHealth.status === 'down' ? 'nodeHealth.down' : 'nodeHealth.slow', { ms: nodeHealth.ms })}}</q-tooltip>
+                </q-btn>
+                <q-btn
                     flat
                     round
                     icon="o_search"
                     :aria-label="$t('search.title')"
                     @click="$router.push({ name: 'search' })"
                 />
+                <q-btn
+                    flat
+                    round
+                    icon="o_lock"
+                    :aria-label="$t('lock.action_now')"
+                    @click="lockNow()"
+                >
+                    <q-tooltip>{{$t('lock.action_now')}}</q-tooltip>
+                </q-btn>
                 <q-btn
                     :aria-label="$t('a11y.more')"
                     v-if="wallet"
@@ -67,7 +87,12 @@
                             v-for="wd in shownWidgets"
                             :key="wd.key"
                         >
-                            <template v-if="wd.key === 'portfolio'">
+                            <price-ticker
+                                v-if="wd.key === 'ticker'"
+                                :wallet="wallet"
+                                class="q-mb-md"
+                            />
+                            <template v-else-if="wd.key === 'portfolio'">
                                 <portfolio-card
                                     ref="portfolio"
                                     :key="all ? 'all' : wallet.id"
@@ -143,6 +168,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import PullRefresh from 'components/PullRefresh.vue'
+import PriceTicker from './PriceTicker.vue'
+import { lockNow } from 'src/utils/lock'
+import { nodeHealth } from 'src/utils/node-health'
 import BackupTip from './BackupTip.vue'
 import UpgradeTip from './UpgradeTip.vue'
 import AddressCardList from './AddressCardList.vue'
@@ -161,9 +189,10 @@ import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { haptic } from 'src/utils/prefs'
 
 export default defineComponent({
-    components: { PullRefresh, BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, BalancePulse, HomeWidgets, HomeTour },
+    components: { PullRefresh, PriceTicker, BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, BalancePulse, HomeWidgets, HomeTour },
     data: () => {
         return {
+            nodeHealth,
             selection,
             prefs,
             // async computed (see src/shims-async-computed.d.ts)
@@ -209,6 +238,7 @@ export default defineComponent({
         }
     },
     methods: {
+        lockNow,
         onSelectWallet(id: number) {
             selection.walletId = id
             haptic()

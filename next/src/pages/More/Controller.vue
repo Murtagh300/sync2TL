@@ -55,6 +55,21 @@
                     :to="{ name: 'payments' }"
                 />
                 <more-item
+                    icon="o_insights"
+                    :title="$t('overview.title')"
+                    :to="{ name: 'overview' }"
+                />
+                <more-item
+                    icon="o_cleaning_services"
+                    :title="$t('dust.title')"
+                    :to="{ name: 'dust' }"
+                />
+                <more-item
+                    icon="o_call_merge"
+                    :title="$t('consolidate.title')"
+                    :to="{ name: 'consolidate' }"
+                />
+                <more-item
                     icon="o_groups"
                     :title="$t('payout.title')"
                     :to="{ name: 'payout' }"

@@ -20,11 +20,12 @@ export default defineComponent({
             return [{
                 label: this.$t('index.action_new_address').toString(),
                 action: () => this.newAddress(),
-                hidden: this.wallet.meta.addresses.length >= MAX_ADDRESS
+                hidden: this.wallet.meta.addresses.length >= MAX_ADDRESS || this.wallet.meta.type === 'watch'
             },
             {
                 label: this.$t('index.action_backup').toString(),
-                action: () => this.$router.push({ name: 'backup', params: { walletId: this.wallet.id.toString() } })
+                action: () => this.$router.push({ name: 'backup', params: { walletId: this.wallet.id.toString() } }),
+                hidden: this.wallet.meta.type === 'watch'
             },
             {
                 label: this.$t('index.action_rename').toString(),

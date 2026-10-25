@@ -93,6 +93,23 @@
                         @click="watchWallet()"
                     >+ {{$t('watchlist.action_wallet')}}</button>
                 </div>
+                <div
+                    v-if="list.collections.length"
+                    class="bvm-tile q-pa-sm q-mb-md floors"
+                >
+                    <div
+                        v-for="slug in list.collections"
+                        :key="'f' + slug"
+                        class="row no-wrap items-center floor-row"
+                    >
+                        <span class="col-4 ellipsis text-weight-bold">{{collectionName(slug)}}</span>
+                        <floor-trend
+                            class="col"
+                            :slug="slug"
+                            compact
+                        />
+                    </div>
+                </div>
 
                 <div
                     v-if="loading && !feed.length"
@@ -167,11 +184,11 @@
                         :key="a.id"
                     >
                         <q-item-section avatar>
-                            <q-avatar :icon="a.kind === 'below' ? 'o_trending_down' : 'o_trending_up'" />
+                            <q-avatar :icon="a.token ? 'o_toll' : a.kind === 'below' ? 'o_trending_down' : 'o_trending_up'" />
                         </q-item-section>
                         <q-item-section>
                             <q-item-label lines="1">{{a.name}}</q-item-label>
-                            <q-item-label caption>{{$t(a.kind === 'below' ? 'alerts.label_rule_below' : 'alerts.label_rule_above', { value: `${a.value} ${a.currency}` })}}</q-item-label>
+                            <q-item-label caption>{{$t(a.token ? (a.kind === 'below' ? 'alerts.label_price_rule_below' : 'alerts.label_price_rule_above') : (a.kind === 'below' ? 'alerts.label_rule_below' : 'alerts.label_rule_above'), { value: `${a.value} ${a.currency}` })}}</q-item-label>
                         </q-item-section>
                         <q-item-section side>
                             <q-btn
@@ -208,6 +225,9 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { prefs } from 'src/utils/prefs'
+import { genesises } from 'src/consts'
+import FloorTrend from 'components/FloorTrend.vue'
 import { address } from 'thor-devkit'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
@@ -224,7 +244,7 @@ import type { BVM } from 'boot/services/bvm'
 
 // collections and wallets to follow on BlackVeMarket, and price alerts
 export default defineComponent({
-    components: { EmptyState, PageToolbar, PageContent, AddressLabel },
+    components: { FloorTrend, EmptyState, PageToolbar, PageContent, AddressLabel },
     data: () => ({
         tab: 'feed' as 'feed' | 'alerts',
         list: emptyWatchlist(),
@@ -338,10 +358,51 @@ export default defineComponent({
             this.list = { ...this.list, wallets: this.list.wallets.filter(x => x !== w) }
             await this.save()
         },
+        /** a collection's floor, or a token's price */
         async addAlert() {
+            const kind = await new Promise<string>(resolve => {
+                this.$q.bottomSheet({
+                    message: this.$t('alerts.title_add'),
+                    actions: [
+                        { label: this.$t('alerts.kind_floor'), icon: 'o_collections', id: 'floor' },
+                        { label: this.$t('alerts.kind_token'), icon: 'o_toll', id: 'token' }
+                    ]
+                }).onOk((a: { id: string }) => resolve(a.id)).onCancel(() => resolve(''))
+            })
+            if (kind === 'token') {
+                return this.addTokenAlert()
+            }
+            if (kind !== 'floor') return
             try {
                 const c = await this.$dialog<BVM.Collection>({ component: CollectionPicker })
                 const rule = await this.$dialog<AlertRule>({ component: AlertDialog, collection: c })
+                this.alerts = [...this.alerts, rule]
+                await this.$svc.config.setJSON('alerts', this.alerts)
+                if (this.canAskPermission) {
+                    void this.askPermission()
+                }
+            } catch { }
+        },
+        async addTokenAlert() {
+            try {
+                const specs = (await this.$svc.config.token.all()).filter(t => t.gid === genesises.main.id)
+                const [stats, fx] = await Promise.all([this.$svc.prices.stats(specs.map(s => s.address)), this.$svc.prices.fx(prefs.currency)])
+                const priced = specs
+                    .map(s => ({ spec: s, stat: stats[(s.address || '0x0000000000000000000000000000000000000000').toLowerCase()] }))
+                    .filter(x => !!x.stat)
+                const picked = await new Promise<string>(resolve => {
+                    this.$q.bottomSheet({
+                        message: this.$t('alerts.kind_token'),
+                        actions: priced.map(x => ({ label: x.spec.symbol, id: x.spec.symbol }))
+                    }).onOk((a: { id: string }) => resolve(a.id)).onCancel(() => resolve(''))
+                })
+                const x = priced.find(p => p.spec.symbol === picked)
+                if (!x) return
+                const price = x.stat!.price * fx
+                const rule = await this.$dialog<AlertRule>({
+                    component: AlertDialog,
+                    token: { symbol: x.spec.symbol, address: (x.spec.address || '0x0000000000000000000000000000000000000000').toLowerCase(), price: price.toPrecision(4), currency: prefs.currency }
+                })
                 this.alerts = [...this.alerts, rule]
                 await this.$svc.config.setJSON('alerts', this.alerts)
                 if (this.canAskPermission) {
@@ -362,6 +423,11 @@ export default defineComponent({
 })
 </script>
 <style lang="sass" scoped>
+.floor-row
+  gap: 8px
+  padding: 4px 6px
+  font-size: 13px
+
 .watch-tabs
   :deep(.q-tab__label)
     font-size: 15px

@@ -33,6 +33,10 @@ export default defineComponent({
     },
     computed: {
         actions(): { key: Key, icon: string, label: string }[] {
+            // a watch-only wallet can't send or swap: receiving is what is left
+            if (this.wallet.meta.type === 'watch') {
+                return [{ key: 'receive', icon: 'o_south_west', label: this.$t('address.action_receive') }]
+            }
             return [
                 { key: 'send', icon: 'o_north_east', label: this.$t('send.action_send') },
                 { key: 'receive', icon: 'o_south_west', label: this.$t('address.action_receive') },

@@ -86,6 +86,7 @@ import { defineComponent, reactive, watch } from 'vue'
 import type { RouteLocationRaw } from 'vue-router'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import { printWindow } from 'src/utils/export'
 
 const KEY = 'bv-emergency'
 
@@ -140,7 +141,7 @@ export default defineComponent({
                 this.$q.notify(this.$t('export.msg_popup'))
                 return
             }
-            const rows = this.wallets.map(x => `<tr><td>${esc(x.meta.name)}</td><td>${esc(this.$netDisplayName(x.gid))}</td><td>${esc(this.$t('emergency.letter_words'))}</td><td><code>${x.meta.addresses.map(esc).join('<br>')}</code></td></tr>`).join('')
+            const rows = this.wallets.map(x => `<tr><td>${esc(x.meta.name)}</td><td>${esc(this.$netDisplayName(x.gid))}</td><td>${esc(x.meta.type === 'watch' ? this.$t('watch.label') : this.$t('emergency.letter_words'))}</td><td><code>${x.meta.addresses.map(esc).join('<br>')}</code></td></tr>`).join('')
             w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${esc(this.$t('emergency.letter_title'))}</title>
 <style>body{font:13px system-ui,sans-serif;margin:32px;color:#111;line-height:1.5}h1{font-size:20px}table{border-collapse:collapse;width:100%;margin:12px 0}td,th{border:1px solid #ccc;padding:6px 8px;text-align:left;vertical-align:top}code{font-size:11px}.box{border:2px dashed #999;padding:12px;margin-top:16px}</style></head><body>
 <h1>${esc(this.$t('emergency.letter_title'))}</h1>
@@ -150,8 +151,9 @@ export default defineComponent({
 <ol><li>${esc(this.$t('emergency.letter_step1'))}</li><li>${esc(this.$t('emergency.letter_step2'))}</li><li>${esc(this.$t('emergency.letter_step3'))}</li><li>${esc(this.$t('emergency.letter_step4'))}</li></ol>
 <div class="box">${esc(this.$t('emergency.letter_where'))}<br><br>______________________________________________</div>
 <p style="color:#a00"><b>${esc(this.$t('emergency.letter_warning'))}</b></p>
-<script>window.onload=function(){window.print()}<\/script></body></html>`)
+</body></html>`)
             w.document.close()
+            printWindow(w)
             if (!this.state.checked.includes('letter')) {
                 this.state.checked.push('letter')
             }

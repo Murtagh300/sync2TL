@@ -29,12 +29,16 @@ type Prefs = {
     homeBackground: string
     /** shake the phone to hide or show balances */
     shakeToHide: boolean
+    /** a transaction sending more than this (in the currency) waits a moment first; 0: off */
+    spendLimit: number
+    /** a chime when something comes in */
+    sound: boolean
 }
 
 const KEY = 'bv-prefs'
 
 function load(): Prefs {
-    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, highContrast: false, homeBackground: '', shakeToHide: false }
+    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true }
     try {
         return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') as Partial<Prefs> }
     } catch {

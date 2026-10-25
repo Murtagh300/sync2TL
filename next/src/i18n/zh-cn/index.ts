@@ -103,7 +103,11 @@ export default {
         action_eth_path: 'Ethereum',
         label_path: '路径',
         msg_example: '示例',
-        msg_invalid_path: '无效助记词路径'
+        msg_invalid_path: '无效助记词路径',
+        action_watch: '关注一个地址',
+        msg_watch: '仅查看：任意地址的余额、NFT 和活动，无需其密钥。',
+        msg_watch_input: '要关注的地址或 name.vet',
+        msg_watch_exists: '此地址已在 BlackVault 中'
     },
     authenticationDialog: {
         title: '授权',
@@ -112,6 +116,7 @@ export default {
         label_input_password: '输入密码以解锁'
     },
     settings: {
+        label_sound: '收到资产时播放声音',
         label_shake_hide: '摇一摇隐藏余额',
         msg_motion_denied: 'BlackVault 无法读取运动传感器。请在浏览器设置中允许此网站访问运动数据。',
         title: '设置',
@@ -296,7 +301,16 @@ export default {
         label_rule_above: '地板价不低于 {value}',
         msg_fired_below: '{name} 地板价为 {floor}，已不高于 {value}',
         msg_fired_above: '{name} 地板价为 {floor}，已不低于 {value}',
-        msg_new_offers: '你的 NFT 收到 {n} 个新出价'
+        msg_new_offers: '你的 NFT 收到 {n} 个新出价',
+        kind_floor: '收藏集地板价',
+        kind_token: '代币价格',
+        label_price_now: '当前价格',
+        label_price_below: '价格跌至',
+        label_price_above: '价格涨至',
+        label_price_rule_below: '价格等于或低于 {value}',
+        label_price_rule_above: '价格等于或高于 {value}',
+        msg_token_below: '{name} 为 {price}，等于或低于您的 {value}',
+        msg_token_above: '{name} 为 {price}，等于或高于您的 {value}'
     },
     launchpad: {
         title: '首发',
@@ -373,9 +387,129 @@ export default {
         msg_hint: '搜索联系人、代币、BlackVeMarket 系列、.vet 名称和地址。',
         msg_nothing: '未找到“{q}”'
     },
+    overview: {
+        title: '概览',
+        title_year: 'BlackVault {year}：{n} 笔转账',
+        action_prev: '上个月',
+        action_next: '下个月',
+        action_year_pdf: '{year} 年度概览（PDF）',
+        label_in: '收入',
+        label_out: '支出',
+        label_nothing: '无',
+        label_fees: '已付手续费',
+        label_fee_count: '共 {n} 笔交易',
+        label_sales: 'NFT 销售',
+        label_sales_count: '售出 {n} 个',
+        label_best_sale: '最高：{amount}',
+        label_no_sales: '本月没有售出 NFT',
+        label_value: '月初和月末的价值',
+        msg_prices_now: '总额按今日价格计算。年度概览显示最近 30 天当时的价值；更早的价格无法获取。'
+    },
+    floorTrend: {
+        label: '地板价，最近 {days} 天'
+    },
+    watch: {
+        label: '仅查看',
+        msg_cannot_sign: '这是一个仅查看的钱包：BlackVault 没有它的密钥，因此无法发送或签名。请选择另一个钱包。'
+    },
+    dust: {
+        title: '清理小额余额',
+        msg_intro: '价值很少的代币，在一笔交易中兑换成 VET。VET 和 VTHO 保持不变。',
+        label_below: '价值低于',
+        label_no_price: '无价格',
+        msg_none: '此地址没有小额余额。',
+        action_convert: '将 {n} 个兑换为 VET',
+        comment: '将 {n} 个小额余额兑换为至少 {vet} VET',
+        title_done: '已清理',
+        msg_done: '交易确认后至少收到 {vet} VET。'
+    },
+    consolidate: {
+        title: '合并地址',
+        msg_intro: '将此钱包其他地址上的所有资产（VET、VTHO 和代币）转到其中一个地址。每个地址签署自己的交易。',
+        msg_one_address: '此钱包只有一个地址：无需合并。',
+        label_target: '全部转到',
+        label_empty: '没有可转移的',
+        msg_vtho: '每个地址保留 {n} VTHO 用于支付手续费。NFT 不会被转移：请在 NFT 标签中发送。',
+        action: '将 {n} 个地址转到 #{to}',
+        comment: '将地址 #{from} 的全部转到 #{to}',
+        title_done: '地址已合并',
+        msg_done: '交易确认后，{n} 个地址已转到 {to}。'
+    },
+    spendLimit: {
+        title: '超出您的限额',
+        msg: '这将发送约 {amount}，超过您 {limit} 的限额。',
+        hint: '请稍等：收款人是否正确，金额是否无误？您可以在设置中更改限额。',
+        action_wait: '等待 {n} 秒',
+        action_continue: '仍然签名',
+        setting: '支出限额',
+        setting_hint: '超过限额时，签名需等待 10 秒',
+        off: '关闭'
+    },
+    nodeHealth: {
+        slow: '网络节点较慢（{ms} 毫秒）',
+        down: '网络节点无响应',
+        switched: '已切换到另一个网络节点：{host}'
+    },
+    switchGuide: {
+        title: '从 VeWorld 或 Sync2 迁移',
+        link: '来自 VeWorld 或 Sync2？如何迁移',
+        msg_intro: '几分钟即可把钱包带到 BlackVault。您的资产不会移动：BlackVault 用相同的助记词打开相同的地址。',
+        title_same: '相同的助记词，相同的地址',
+        msg_same: 'VeWorld、Sync2 和 BlackVault 都按 VeChain 方式（m/44\'/818\'/0\'/0）派生地址。在这里导入您的 12 或 24 个词，就会出现相同的地址及其 VET、代币和 NFT。旧应用也可以继续使用。',
+        other: '其他',
+        veworld_1_title: '在 VeWorld 中找到助记词',
+        veworld_1: '在 VeWorld 中打开钱包设置，查找备份或助记词。VeWorld 会先要求输入 PIN 或密码。',
+        veworld_2_title: '把助记词写下来',
+        veworld_2: '按顺序写在纸上。不要截图、记在笔记应用或聊天里。',
+        veworld_3_title: '在 BlackVault 中导入',
+        veworld_3: '添加钱包 › 导入助记词，按顺序输入，用空格分隔。',
+        veworld_4_title: '核对地址',
+        veworld_4: 'BlackVault 中的第一个地址必须与 VeWorld 显示的一致。有多个地址的钱包：用"添加地址"添加。',
+        sync2_1_title: '在 Sync2 中备份',
+        sync2_1: '在 Sync2 中打开钱包菜单，选择备份。Sync2 会要求密码并显示助记词。',
+        sync2_2_title: '把助记词写下来',
+        sync2_2: '按顺序写在纸上。不要截图、记在笔记应用或聊天里。',
+        sync2_3_title: '在 BlackVault 中导入',
+        sync2_3: '添加钱包 › 导入助记词，按顺序输入，用空格分隔。',
+        sync2_4_title: '核对地址',
+        sync2_4: '地址与 Sync2 中的一致。如果 Sync2 钱包有多个地址，用"添加地址"添加。',
+        other_1_title: '找到助记词',
+        other_1: '大多数 VeChain 钱包在设置的备份、安全或导出中显示 12 或 24 个词。',
+        other_2_title: '把助记词写下来',
+        other_2: '按顺序写在纸上。不要截图、记在笔记应用或聊天里。',
+        other_3_title: '在 BlackVault 中导入',
+        other_3: '添加钱包 › 导入助记词。如果地址不同，打开高级并尝试以太坊路径：一些多链钱包使用它。',
+        other_4_title: '核对地址',
+        other_4: '在转移任何资产之前，将第一个地址与旧钱包中的地址进行比较。',
+        title_limits: '须知',
+        limit_key: '在 VeWorld 中用私钥（而非助记词）导入的钱包无法在此导入：请把其资产发送到 BlackVault 地址。',
+        limit_ledger: 'BlackVault 不支持 Ledger 设备。',
+        limit_safety: '切勿在网站上输入助记词，也不要交给自称帮忙的人：真正的帮手不会索要助记词。'
+    },
+    tokenInfo: {
+        title: '关于此代币',
+        label_market_cap: '市值',
+        label_volume: '24 小时成交量',
+        label_liquidity: '流动性池',
+        label_supply: '供应量',
+        link_website: '网站',
+        link_twitter: 'X',
+        link_telegram: 'Telegram',
+        link_discord: 'Discord',
+        msg_source: '来自 BetterSwap：市值按流通量计算，成交量和流动性来自其流动性池。'
+    },
     payout: {
         title: '批量付款',
         msg_intro: '一次向多个地址付款：奖励、空投、分账。每行一个地址。',
+        mode_tokens: '代币',
+        mode_nfts: 'NFT',
+        msg_intro_nfts: '向每个地址发送一个 NFT：NFT 空投。指定代币 ID，或留空则发送下一个可用的。',
+        label_collection: '收藏集',
+        label_free_nfts: '{n} 个可用',
+        hint_list_nfts: '地址或 .vet 名称，代币 ID（可选）',
+        err_token_id: '第 {line} 行：代币 ID 无效',
+        err_no_nft: '第 {line} 行：没有可用的 NFT（不属于您、已上架或已使用）',
+        msg_empty_nfts: '选择一个收藏集，然后粘贴地址。',
         label_token: '付款币种',
         label_list: '地址和金额',
         hint_list: '地址或 .vet 名称，金额，备注（可选）',
@@ -482,7 +616,8 @@ export default {
     },
     lock: {
         title: 'BlackVault 已锁定',
-        msg: '输入密码解锁后继续。'
+        msg: '输入密码解锁后继续。',
+        action_now: '立即锁定'
     },
     security: {
         title: '安全检查',
@@ -592,6 +727,7 @@ export default {
         my_wallet: '我的 BlackVault'
     },
     widgets: {
+        ticker: '价格滚动条',
         title: '编辑首页',
         portfolio: '总价值',
         actions: '快捷操作',
@@ -738,7 +874,15 @@ export default {
         msg_qr: '在另一台设备的 BlackVault 中扫描：联系人 › 从二维码添加。',
         msg_not_contacts: '此二维码中没有 BlackVault 联系人',
         msg_imported: '已添加 {n} 个联系人',
-        msg_empty: '保存常用的收款地址，钱包中会显示名称而不是 0x 地址。'
+        msg_empty: '保存常用的收款地址，钱包中会显示名称而不是 0x 地址。',
+        label_groups: '分组',
+        hint_groups: '选择或输入分组，然后按回车',
+        label_last_paid: '上次支付 {amount}，{when}',
+        group_family: '家人',
+        group_friends: '朋友',
+        group_team: '团队',
+        group_exchange: '交易所',
+        group_business: '商务'
     },
     receive: {
         label_request: '指定金额',

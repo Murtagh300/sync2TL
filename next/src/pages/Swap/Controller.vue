@@ -189,6 +189,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { canSign } from 'src/utils/watch'
 import HelpTip from 'components/HelpTip.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
@@ -237,8 +238,8 @@ export default defineComponent({
             if (this.wid) {
                 return this.$svc.wallet.get(parseInt(this.wid))
             }
-            // from the menu: the first wallet on mainnet
-            const [first] = await this.$svc.wallet.getByGid(genesises.main.id)
+            // from the menu: the first wallet on mainnet that can sign
+            const [first] = (await this.$svc.wallet.getByGid(genesises.main.id)).filter(canSign)
             return first || null
         },
         tokens: {
@@ -422,6 +423,10 @@ export default defineComponent({
         async swap() {
             const w = this.wallet
             const q = this.quoteResult
+            if (!canSign(w)) {
+                this.$q.notify({ message: this.$t('watch.msg_cannot_sign'), color: 'negative' })
+                return
+            }
             if (!w || !q) {
                 return
             }

@@ -27,6 +27,9 @@ import Notifications from 'pages/Notifications'
 import Portfolio from 'pages/Portfolio'
 import Payments from 'pages/Payments'
 import Payout from 'pages/Payout'
+import Overview from 'pages/Overview'
+import SwitchGuide from 'pages/SwitchGuide'
+import { Dust, Consolidate } from 'pages/Tidy'
 import Liquidity from 'pages/Liquidity'
 import Emergency from 'pages/Emergency'
 import Security, { Dapps } from 'pages/Security'
@@ -115,6 +118,22 @@ const routes: RouteRecordRaw[] = [
             path: 'search',
             name: 'search',
             component: Search
+        }, {
+            path: 'dust',
+            name: 'dust',
+            component: Dust
+        }, {
+            path: 'consolidate',
+            name: 'consolidate',
+            component: Consolidate
+        }, {
+            path: 'switch-guide',
+            name: 'switch-guide',
+            component: SwitchGuide
+        }, {
+            path: 'overview',
+            name: 'overview',
+            component: Overview
         }, {
             path: 'payout',
             name: 'payout',

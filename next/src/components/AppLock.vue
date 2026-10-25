@@ -29,6 +29,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { prefs } from 'src/utils/prefs'
+import { lockState } from 'src/utils/lock'
 
 /**
  * Locks the app after it was in the background a while (Settings › Auto-lock), and
@@ -36,10 +37,14 @@ import { prefs } from 'src/utils/prefs'
  */
 export default defineComponent({
     data: () => ({
-        locked: false,
         hiddenAt: 0,
         prefs
     }),
+    computed: {
+        locked(): boolean {
+            return lockState.locked
+        }
+    },
     created() {
         document.addEventListener('visibilitychange', this.onVisibility)
     },
@@ -57,14 +62,14 @@ export default defineComponent({
             }
             document.body.classList.remove('bv-privacy-blur')
             if (minutes >= 0 && this.hiddenAt && Date.now() - this.hiddenAt >= minutes * 60 * 1000) {
-                this.locked = true
+                lockState.locked = true
             }
             this.hiddenAt = 0
         },
         async unlock() {
             try {
                 await this.$authenticate()
-                this.locked = false
+                lockState.locked = false
             } catch { }
         }
     }

@@ -104,7 +104,11 @@ export default {
         action_eth_path: 'Ethereum',
         label_path: 'Derivation path',
         msg_example: 'Example',
-        msg_invalid_path: 'Invalid path'
+        msg_invalid_path: 'Invalid path',
+        action_watch: 'Follow an address',
+        msg_watch: 'Watch only: balances, NFTs and activity of any address, without its keys.',
+        msg_watch_input: 'The address or name.vet to follow',
+        msg_watch_exists: 'This address is already in BlackVault'
     },
     authenticationDialog: {
         title: 'Unlock',
@@ -113,6 +117,7 @@ export default {
         label_input_password: 'Enter your BlackVault password'
     },
     settings: {
+        label_sound: 'Sound when something comes in',
         label_shake_hide: 'Shake to hide balances',
         msg_motion_denied: 'BlackVault may not read the motion sensor. Allow motion access for this site in your browser settings.',
         title: 'Settings',
@@ -297,7 +302,16 @@ export default {
         label_rule_above: 'Floor at or above {value}',
         msg_fired_below: '{name} floor is {floor}, at or below your {value}',
         msg_fired_above: '{name} floor is {floor}, at or above your {value}',
-        msg_new_offers: '{n} new offer(s) on your NFTs'
+        msg_new_offers: '{n} new offer(s) on your NFTs',
+        kind_floor: 'A collection\'s floor',
+        kind_token: 'A token\'s price',
+        label_price_now: 'Price now',
+        label_price_below: 'Price drops to',
+        label_price_above: 'Price rises to',
+        label_price_rule_below: 'Price at or below {value}',
+        label_price_rule_above: 'Price at or above {value}',
+        msg_token_below: '{name} is {price}, at or below your {value}',
+        msg_token_above: '{name} is {price}, at or above your {value}'
     },
     launchpad: {
         title: 'Launchpad',
@@ -374,9 +388,129 @@ export default {
         msg_hint: 'Search your contacts, tokens, BlackVeMarket collections, .vet names and addresses.',
         msg_nothing: 'Nothing found for “{q}”'
     },
+    overview: {
+        title: 'Overview',
+        title_year: 'BlackVault {year}: {n} transfers',
+        action_prev: 'Previous month',
+        action_next: 'Next month',
+        action_year_pdf: 'Year overview {year} (PDF)',
+        label_in: 'In',
+        label_out: 'Out',
+        label_nothing: 'Nothing',
+        label_fees: 'Fees paid',
+        label_fee_count: 'in {n} transactions',
+        label_sales: 'NFT sales',
+        label_sales_count: '{n} sold',
+        label_best_sale: 'Best: {amount}',
+        label_no_sales: 'No NFTs sold this month',
+        label_value: 'Value, start and end of the month',
+        msg_prices_now: 'Totals are at today\'s prices. The year overview shows the value at the time for the last 30 days; older prices are not available.'
+    },
+    floorTrend: {
+        label: 'Floor, last {days} days'
+    },
+    watch: {
+        label: 'Watch only',
+        msg_cannot_sign: 'This is a watch-only wallet: BlackVault has no keys for it, so it can not send or sign. Choose another wallet.'
+    },
+    dust: {
+        title: 'Clean up small balances',
+        msg_intro: 'Tokens worth only a little, swapped to VET in one transaction. VET and VTHO stay as they are.',
+        label_below: 'Worth less than',
+        label_no_price: 'no price',
+        msg_none: 'No small balances on this address.',
+        action_convert: 'Swap {n} to VET',
+        comment: 'Swap {n} small balances for at least {vet} VET',
+        title_done: 'Cleaned up',
+        msg_done: 'At least {vet} VET arrives once the transaction is confirmed.'
+    },
+    consolidate: {
+        title: 'Combine addresses',
+        msg_intro: 'Move everything from this wallet\'s other addresses to one of them: VET, VTHO and tokens. Each address signs its own transaction.',
+        msg_one_address: 'This wallet has one address: nothing to combine.',
+        label_target: 'Move everything to',
+        label_empty: 'Nothing to move',
+        msg_vtho: '{n} VTHO stays on each address to pay its fee. NFTs are not moved: send them from the NFTs tab.',
+        action: 'Move {n} address(es) to #{to}',
+        comment: 'Move everything from address #{from} to #{to}',
+        title_done: 'Addresses combined',
+        msg_done: '{n} address(es) moved to {to} once the transactions are confirmed.'
+    },
+    spendLimit: {
+        title: 'Over your limit',
+        msg: 'This sends about {amount}, more than your limit of {limit}.',
+        hint: 'Take a moment: is the recipient right, and did you mean this amount? You can change the limit in Settings.',
+        action_wait: 'Wait {n} s',
+        action_continue: 'Sign anyway',
+        setting: 'Spending limit',
+        setting_hint: 'Above it, signing waits 10 seconds',
+        off: 'Off'
+    },
+    nodeHealth: {
+        slow: 'The network node is slow ({ms} ms)',
+        down: 'The network node does not answer',
+        switched: 'Moved to another network node: {host}'
+    },
+    switchGuide: {
+        title: 'Switch from VeWorld or Sync2',
+        link: 'Coming from VeWorld or Sync2? How to switch',
+        msg_intro: 'Bring your wallet to BlackVault in a few minutes. Your assets don\'t move: BlackVault opens the same addresses with the same recovery words.',
+        title_same: 'Same words, same addresses',
+        msg_same: 'VeWorld, Sync2 and BlackVault all derive addresses the VeChain way (m/44\'/818\'/0\'/0). Import your 12 or 24 words here and the same addresses appear, with their VET, tokens and NFTs. Your old app keeps working too.',
+        other: 'Other',
+        veworld_1_title: 'Find your recovery phrase in VeWorld',
+        veworld_1: 'In VeWorld, open the settings of the wallet and look for its backup or recovery phrase. VeWorld asks your PIN or password first.',
+        veworld_2_title: 'Write the words down',
+        veworld_2: 'On paper, in order. Not in a screenshot, a note app or a chat.',
+        veworld_3_title: 'Import them in BlackVault',
+        veworld_3: 'Add a wallet › Import recovery words, and type the words in order, separated by spaces.',
+        veworld_4_title: 'Check the address',
+        veworld_4: 'The first address in BlackVault must be the one VeWorld shows. Wallets with more addresses: add them with "Add address".',
+        sync2_1_title: 'Back up in Sync2',
+        sync2_1: 'In Sync2, open the wallet, its menu, and choose Back up. Sync2 asks your password and shows the recovery words.',
+        sync2_2_title: 'Write the words down',
+        sync2_2: 'On paper, in order. Not in a screenshot, a note app or a chat.',
+        sync2_3_title: 'Import them in BlackVault',
+        sync2_3: 'Add a wallet › Import recovery words, and type the words in order, separated by spaces.',
+        sync2_4_title: 'Check the address',
+        sync2_4: 'The addresses match those in Sync2. Add more with "Add address" if the Sync2 wallet had several.',
+        other_1_title: 'Find the recovery words',
+        other_1: 'Most VeChain wallets show the 12 or 24 words under backup, security or export in their settings.',
+        other_2_title: 'Write the words down',
+        other_2: 'On paper, in order. Not in a screenshot, a note app or a chat.',
+        other_3_title: 'Import them in BlackVault',
+        other_3: 'Add a wallet › Import recovery words. If the addresses differ, open Advanced and try the Ethereum path: some multi-chain wallets use it.',
+        other_4_title: 'Check the address',
+        other_4: 'Compare the first address with the one in your old wallet before you move anything.',
+        title_limits: 'Good to know',
+        limit_key: 'A wallet imported into VeWorld with a private key (not words) can\'t be imported here: send its assets to a BlackVault address instead.',
+        limit_ledger: 'Ledger devices are not supported by BlackVault.',
+        limit_safety: 'Never type your recovery words into a website, and never give them to someone who says they help: no real helper asks for them.'
+    },
+    tokenInfo: {
+        title: 'About this token',
+        label_market_cap: 'Market cap',
+        label_volume: 'Volume 24h',
+        label_liquidity: 'In pools',
+        label_supply: 'Supply',
+        link_website: 'Website',
+        link_twitter: 'X',
+        link_telegram: 'Telegram',
+        link_discord: 'Discord',
+        msg_source: 'From BetterSwap: market cap from the circulating supply, volume and liquidity from its pools.'
+    },
     payout: {
         title: 'Pay many',
         msg_intro: 'Pay a list of addresses at once: rewards, an airdrop, splitting a bill. One line per address.',
+        mode_tokens: 'Tokens',
+        mode_nfts: 'NFTs',
+        msg_intro_nfts: 'Send one NFT to each address: an NFT airdrop. Name a token ID, or leave it out and the next free one goes.',
+        label_collection: 'Collection',
+        label_free_nfts: '{n} free',
+        hint_list_nfts: 'address or .vet name, token ID (optional)',
+        err_token_id: 'Line {line}: not a valid token ID',
+        err_no_nft: 'Line {line}: no free NFT for it (not yours, listed, or already used)',
+        msg_empty_nfts: 'Choose a collection, then paste the addresses.',
         label_token: 'Pay in',
         label_list: 'Addresses and amounts',
         hint_list: 'address or .vet name, amount, note (optional)',
@@ -483,7 +617,8 @@ export default {
     },
     lock: {
         title: 'BlackVault is locked',
-        msg: 'Unlock with your password to continue.'
+        msg: 'Unlock with your password to continue.',
+        action_now: 'Lock now'
     },
     security: {
         title: 'Security check-up',
@@ -593,6 +728,7 @@ export default {
         my_wallet: 'My BlackVault'
     },
     widgets: {
+        ticker: 'Price ticker',
         title: 'Edit home',
         portfolio: 'Total value',
         actions: 'Quick actions',
@@ -739,7 +875,15 @@ export default {
         msg_qr: 'Scan this in BlackVault on your other device: Contacts › Add from a QR code.',
         msg_not_contacts: 'This QR code holds no BlackVault contacts',
         msg_imported: '{n} contact(s) added',
-        msg_empty: 'Save the addresses you send to. Their names show up instead of 0x addresses.'
+        msg_empty: 'Save the addresses you send to. Their names show up instead of 0x addresses.',
+        label_groups: 'Groups',
+        hint_groups: 'Choose or type a group, then Enter',
+        label_last_paid: 'Last paid {amount}, {when}',
+        group_family: 'Family',
+        group_friends: 'Friends',
+        group_team: 'Team',
+        group_exchange: 'Exchange',
+        group_business: 'Business'
     },
     receive: {
         label_request: 'Ask for an amount',

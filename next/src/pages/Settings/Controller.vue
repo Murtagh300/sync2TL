@@ -115,6 +115,26 @@
                             color="primary"
                         />
                     </item>
+                    <q-item>
+                        <q-item-section avatar>
+                            <q-avatar icon="o_front_hand" />
+                        </q-item-section>
+                        <q-item-section>
+                            <q-item-label>{{$t('spendLimit.setting')}}</q-item-label>
+                            <q-item-label caption>{{$t('spendLimit.setting_hint')}}</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                            <q-select
+                                v-model="prefs.spendLimit"
+                                :options="limitOptions"
+                                emit-value
+                                map-options
+                                dense
+                                borderless
+                                style="min-width: 96px"
+                            />
+                        </q-item-section>
+                    </q-item>
                     <item
                         v-if="motionSupported"
                         icon="o_vibration"
@@ -163,6 +183,16 @@
                             color="primary"
                         />
                     </item>
+                    <item
+                        icon="o_notifications_active"
+                        :title="$t('settings.label_sound')"
+                    >
+                        <q-toggle
+                            v-model="prefs.sound"
+                            color="primary"
+                            @update:model-value="v => v && playChime()"
+                        />
+                    </item>
                 </q-list>
                 <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_network')}}</div>
                 <q-list class="bvm-list q-mb-lg">
@@ -207,6 +237,9 @@ import { openURL } from 'src/utils/open-url'
 import { marketURL } from 'boot/services/bvm'
 import { accents, applyAccent, haptic, prefs, type Accent } from 'src/utils/prefs'
 import { motionSupported, requestMotion } from 'src/utils/shake'
+import { LIMIT_OPTIONS } from 'src/utils/spend-limit'
+import { playChime } from 'src/utils/sound'
+import { money } from 'src/utils/prefs'
 
 export default defineComponent({
     components: { Item, LanguageListPopup, PageToolbar, PageContent },
@@ -227,6 +260,9 @@ export default defineComponent({
     },
     computed: {
         motionSupported: () => motionSupported(),
+        limitOptions(): { label: string, value: number }[] {
+            return LIMIT_OPTIONS.map(v => ({ label: v ? money(v) : this.$t('spendLimit.off'), value: v }))
+        },
         lockOptions(): { label: string, value: number }[] {
             return [
                 { label: this.$t('settings.lock_now'), value: 0 },
@@ -238,6 +274,7 @@ export default defineComponent({
         }
     },
     methods: {
+        playChime,
         async setShake(on: boolean) {
             const granted = on && await requestMotion()
             prefs.shakeToHide = granted

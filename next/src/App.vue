@@ -14,6 +14,7 @@ import dayjs from 'dayjs'
 // import more locales here
 import 'dayjs/locale/zh-cn'
 import 'dayjs/locale/nl'
+import { nodeHealth, startNodeHealth } from 'src/utils/node-health'
 
 /**
  * parse connex request url and return the request src
@@ -111,6 +112,10 @@ export default defineComponent({
         }
     },
     created() {
+        startNodeHealth(this.$svc)
+        this.$watch(() => nodeHealth.switchedTo, url => {
+            if (url) this.$q.notify({ message: this.$t('nodeHealth.switched', { host: new URL(url).host }), icon: 'o_cell_tower' })
+        })
         console.log(`[BlackVault] v${import.meta.env.APP_VERSION} (${import.meta.env.APP_BUILD})`)
         void this.externalSignHandlerLoop()
         // price alerts and new offers, while BlackVault is open

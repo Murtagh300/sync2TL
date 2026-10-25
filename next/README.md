@@ -224,6 +224,27 @@ Production needs CORS on the BlackVeMarket API for the wallet's origin on: `/api
 - **Empty states** with a next step (`components/EmptyState.vue`) and screen-reader labels on icon-only buttons.
 - Pull to refresh shows the BVM mark (`components/PullRefresh.vue`).
 
+## Overview, watch-only and housekeeping
+
+- **Overview** (`pages/Overview`, `utils/overview.ts`): a month read from the chain (also what happened before
+  BlackVault): in and out per token, fees paid, NFT sales, value at the start and end; the year as a printable list
+  with values at the time where prices reach back (30 days).
+- **Token card** on the token page: market cap, 24h volume, liquidity, supply and links (BetterSwap). **Floor chart**
+  per collection and in the watchlist (`components/FloorTrend.vue`; days without a record keep the last floor).
+  **Price ticker** on home (VET, VTHO, B3TR and pinned tokens).
+- **Watch-only wallets** (`type: 'watch'`, `utils/watch.ts`): follow any address or name.vet; never offered as a signer.
+- **Clean up small balances** (`pages/Tidy/Dust.vue`): tokens under a value swapped to VET in one transaction.
+  **Combine addresses** (`pages/Tidy/Consolidate.vue`): everything to one address, one transaction per address,
+  10 VTHO left for each fee. **Pay many** also airdrops NFTs: one per address, named or the next free one.
+- **Contacts**: BlackVeMarket avatar and name, .vet name, last payment, groups with a filter.
+- **Spending limit** (`utils/spend-limit.ts`): above it, signing waits 10 seconds. **Lock now** in the home header.
+  **Node health** (`utils/node-health.ts`): the mainnet node is timed; after two failures the wallet moves to
+  another node that answers.
+- **Token price alerts** next to floor alerts. **Switch guide** for VeWorld and Sync2 users (`pages/SwitchGuide`).
+  A **chime** when something comes in (`utils/sound.ts`, Web Audio).
+- Printing (PDF export, emergency letter) now prints from the app instead of an inline script, which the CSP blocks.
+- A test checks that every text the code asks for exists in English (`test/utils/i18n-used.spec.ts`).
+
 ## Security
 
 Reviewed internally on 2026-10-25: see [SECURITY-AUDIT.md](SECURITY-AUDIT.md) for the findings, the fixes,
