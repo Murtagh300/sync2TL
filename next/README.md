@@ -128,3 +128,19 @@ Results are cached for 5 minutes per address; the token registry itself refreshe
 Production needs CORS on the BlackVeMarket API for the wallet's origin on: `/api/profile/*`, `/api/nft/*`,
 `/api/collections`, `/api/activity`, `/api/launchpad/public`, `/api/delegate/status` (GET) and
 `/api/delegate/sign` (POST, JSON). Hosting the wallet on blackvemarket.com itself avoids that.
+
+## Modern wallet UX
+
+- **Home** (`pages/Index`): total value in € or $ with the 24h change and a 7 day line, quick actions (send,
+  receive, swap, scan) and a wallet switcher; a bottom tab bar (`components/TabBar.vue`) for Home, NFTs, Swap,
+  Activity and More. Search (`pages/Search`) covers contacts, tokens, collections, .vet names and addresses.
+- **Prices** (`boot/services/prices.ts`): BetterSwap's `token-prices/stats` and `token-prices/history`, in euros via
+  BlackVeMarket's `/rates`. BetterSwap sends no CORS headers: `quasar dev` proxies `/betterswap-api`; a build needs
+  `BETTERSWAP_API_URL` pointing at a proxy, otherwise only VET, VTHO and B3TR get a price (from BlackVeMarket).
+- **Feedback**: a transaction status pill over every page (`components/TxStatusBar.vue`), success screens
+  (`components/SuccessDialog.vue`), haptics, and a check before paying a new address (`pages/Send/RecipientCheckDialog.vue`).
+- **NFTs**: fullscreen viewer with zoom and swipe (`pages/Nft/NftViewer.vue`), sorting and listed/unlisted filters,
+  suggestions on an empty address.
+- **Preferences** (`utils/prefs.ts`, Settings › Appearance): accent color, currency, hidden balances, haptics.
+  Colors go through `--q-primary`, so the accent applies everywhere.
+- **Onboarding**: three visible steps, a password strength meter, and following a first collection.

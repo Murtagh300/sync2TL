@@ -113,6 +113,7 @@ import { contractName, UNLIMITED } from 'src/utils/actions'
 import { who } from 'src/utils/describe-action'
 import { formatUnits } from 'src/utils/format'
 import type { BVM } from 'boot/services/bvm'
+import SuccessDialog from 'components/SuccessDialog.vue'
 
 // what this address lets others spend or move, with a way to take it back
 export default defineComponent({
@@ -219,7 +220,7 @@ export default defineComponent({
                 // gone once the transaction is in; drop them now
                 const done = new Set(list)
                 this.approvals = this.approvals.filter(a => !done.has(a))
-                this.$q.notify(this.$t('approvals.msg_revoked'))
+                this.$dialog({ component: SuccessDialog, title: comment, message: this.$t('approvals.msg_revoked') }).catch(() => { })
             } catch {
                 // declined in the transaction dialog
             }

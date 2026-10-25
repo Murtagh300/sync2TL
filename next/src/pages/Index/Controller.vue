@@ -1,103 +1,109 @@
 <template>
-    <div
-        class="column fit"
-        v-touch-pan.right.mouse.prevent="handleDrawerTouchPan"
-    >
+    <div class="column fit no-wrap">
         <!-- ensure wallets is loaded -->
         <template v-if="wallets">
-            <page-toolbar
-                :title="title"
-                icon="menu"
-                :gid="wallet?.gid"
-                @action="drawerOpen=true"
-            >
+            <!-- the header: which wallet, search and the wallet's options -->
+            <div class="home-head row no-wrap items-center q-px-sm">
+                <wallet-switcher
+                    :wallet="wallet"
+                    :wallets="wallets"
+                    @select="onSelectWallet($event)"
+                />
+                <q-space />
+                <q-btn
+                    flat
+                    round
+                    icon="o_search"
+                    :aria-label="$t('search.title')"
+                    @click="$router.push({ name: 'search' })"
+                />
                 <q-btn
                     v-if="wallet"
-                    class="q-ml-auto"
                     flat
                     round
                     icon="more_horiz"
                 >
                     <option-menu :wallet="wallet" />
                 </q-btn>
-            </page-toolbar>
-            <!-- tips -->
-            <div class="narrow-page q-mx-auto">
-                <upgrade-tip v-if="$state.app.updateAvailable" />
-                <backup-tip
-                    v-for="w in wallets"
-                    :key="w.id"
-                    @backup="$router.push({name: 'backup', params: {walletId: w.id.toString()}})"
-                    v-show="w.id === selectedWalletId && !w.meta.backedUp"
-                />
             </div>
-            <!-- address list -->
-            <address-card-list
-                v-if="wallet"
-                ref="list"
-                :wallet="wallet"
-                class="col address-list"
-            />
-            <div
-                v-else
-                class="narrow-page q-my-auto text-center self-center"
+            <q-pull-to-refresh
+                class="col home-scroll overflow-auto"
+                color="primary"
+                bg-color="dark"
+                @refresh="refresh"
             >
-                <p class="bvm-display text-h4 text-center col-12 q-mb-lg">{{$t('common.no_wallet')}}</p>
-                <q-btn
-                    unelevated
-                    color="primary"
-                    class="q-px-lg"
-                    :label="$t('index.action_create')"
-                    :to="{name: 'new-wallet'}"
-                />
-            </div>
-            <!-- the drawer -->
-            <side-drawer
-                v-model="drawerOpen"
-                ref="drawer"
-            >
-                <drawer-panel>
-                    <wallet-list
-                        :current="selectedWalletId"
-                        :wallets="wallets"
-                        @select="onSelectWallet($event)"
+                <div class="home-page q-mx-auto q-px-md q-pb-lg">
+                    <!-- tips -->
+                    <upgrade-tip v-if="$state.app.updateAvailable" />
+                    <backup-tip
+                        v-for="w in wallets"
+                        :key="w.id"
+                        @backup="$router.push({name: 'backup', params: {walletId: w.id.toString()}})"
+                        v-show="w.id === wallet?.id && !w.meta.backedUp"
                     />
-                </drawer-panel>
-            </side-drawer>
+                    <template v-if="wallet">
+                        <portfolio-card
+                            ref="portfolio"
+                            :key="wallet.id"
+                            :wallet="wallet"
+                        />
+                        <quick-actions
+                            :wallet="wallet"
+                            class="q-mt-lg"
+                        />
+                        <div class="bvm-label q-mt-xl q-mb-xs">{{$t('home.label_addresses', { n: wallet.meta.addresses.length })}}</div>
+                        <address-card-list
+                            ref="list"
+                            :key="'list-' + wallet.id"
+                            :wallet="wallet"
+                            class="address-list"
+                        />
+                    </template>
+                    <div
+                        v-else
+                        class="home-empty text-center"
+                    >
+                        <p class="bvm-display text-h4 text-center q-mb-sm">{{$t('common.no_wallet')}}</p>
+                        <p class="text-soft q-mb-lg">{{$t('home.msg_no_wallet')}}</p>
+                        <q-btn
+                            unelevated
+                            color="primary"
+                            size="lg"
+                            no-caps
+                            class="q-px-lg"
+                            :label="$t('index.action_create')"
+                            :to="{name: 'new-wallet'}"
+                        />
+                    </div>
+                </div>
+            </q-pull-to-refresh>
         </template>
     </div>
 </template>
 <script lang="ts">
-import { defineComponent, type ComponentPublicInstance } from 'vue'
+import { defineComponent } from 'vue'
 import BackupTip from './BackupTip.vue'
 import UpgradeTip from './UpgradeTip.vue'
-import DrawerPanel from './DrawerPanel.vue'
-import WalletList from './WalletList.vue'
 import AddressCardList from './AddressCardList.vue'
 import OptionMenu from './OptionMenu.vue'
-import SideDrawer from 'components/SideDrawer.vue'
-import PageToolbar from 'components/PageToolbar.vue'
-import { scroll } from 'quasar'
-
-const SELECTED_WALLET_ID_KEY = 'selectedWalletId'
+import WalletSwitcher from './WalletSwitcher.vue'
+import PortfolioCard from './PortfolioCard.vue'
+import QuickActions from './QuickActions.vue'
+import { selection, selectedWallet } from 'src/utils/selection'
+import { haptic } from 'src/utils/prefs'
 
 export default defineComponent({
-    components: { BackupTip, UpgradeTip, DrawerPanel, WalletList, AddressCardList, OptionMenu, SideDrawer, PageToolbar },
+    components: { BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions },
     data: () => {
         return {
-            drawerOpen: false,
-            selectedWalletId: parseInt(localStorage.getItem(SELECTED_WALLET_ID_KEY) || '0'),
+            selection,
             // async computed (see src/shims-async-computed.d.ts)
             wallets: null as M.Wallet[] | null
         }
     },
     computed: {
         wallet(): M.Wallet | null {
-            return this.wallets ? this.wallets.find(w => w.id === this.selectedWalletId) || this.wallets[0] || null
-                : null
-        },
-        title(): string {
-            return (this.wallet && this.wallet.meta.name) || 'BlackVault'
+            return selectedWallet(this.wallets)
         }
     },
     asyncComputed: {
@@ -106,25 +112,10 @@ export default defineComponent({
         }
     },
     watch: {
-        selectedWalletId(newVal: number) {
-            // remember the selected wallet
-            localStorage.setItem(SELECTED_WALLET_ID_KEY, newVal.toString())
-            const list = this.$refs.list as ComponentPublicInstance
-            list && list.$el.scrollTo({ top: 0, behavior: 'auto' })
-        },
-        wallet(newVal: M.Wallet | null, oldVal: M.Wallet | null) {
-            if (newVal && oldVal &&
-                newVal.id === oldVal.id &&
-                newVal.meta.addresses.length !== oldVal.meta.addresses.length) {
-                // new address added, and scroll to the end
-                const list = this.$refs.list as ComponentPublicInstance
-                list && scroll.setVerticalScrollPosition(list.$el, list.$el.scrollHeight, 500)
-            }
-        },
         wallets(newVal: M.Wallet[] | null, oldVal: M.Wallet[] | null) {
-            if (newVal && newVal.length > 0 && !newVal.find(w => w.id === this.selectedWalletId)) {
+            if (newVal && newVal.length > 0 && !newVal.find(w => w.id === selection.walletId)) {
                 // none selected, select the first one
-                this.selectedWalletId = newVal[0].id
+                selection.walletId = newVal[0].id
                 return
             }
 
@@ -132,7 +123,7 @@ export default defineComponent({
                 // new wallet created, find out and select it
                 for (const { id } of newVal) {
                     if (!oldVal.find(w => w.id === id)) {
-                        this.selectedWalletId = id
+                        selection.walletId = id
                         break
                     }
                 }
@@ -140,19 +131,31 @@ export default defineComponent({
         }
     },
     methods: {
-        handleDrawerTouchPan(ev: Record<string, unknown>) {
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            (this.$refs.drawer as any).handleTouchPanExternal(ev)
-        },
         onSelectWallet(id: number) {
-            this.drawerOpen = false
-            this.selectedWalletId = id
+            selection.walletId = id
+            haptic()
+        },
+        refresh(done: () => void) {
+            (this.$refs.portfolio as { refresh?: () => void } | undefined)?.refresh?.()
+            void this.$asyncComputed.wallets.update()
+            setTimeout(done, 600)
         }
     }
 })
 </script>
-<style scoped>
-body.q-ios-padding .address-list {
-    margin-bottom: calc(-1 * env(safe-area-inset-bottom));
-}
+<style lang="sass" scoped>
+.home-head
+  min-height: 60px
+  padding-top: env(safe-area-inset-top)
+
+.home-page
+  max-width: 560px
+
+.home-empty
+  padding: 18vh 8px 0
+
+// the cards sit in the page's own scroll
+.address-list
+  margin: 0 -8px
+  overflow: visible !important
 </style>

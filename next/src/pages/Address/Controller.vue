@@ -92,6 +92,8 @@
                         <token-item
                             :token="token"
                             :balance="data"
+                            :stat="stats[(token.address || zero).toLowerCase()]"
+                            :fx="fx"
                         >
                             <q-btn
                                 outline
@@ -150,6 +152,8 @@ import PageContent from 'components/PageContent.vue'
 import NftGrid from './NftGrid.vue'
 import { visibleTokens } from 'src/utils/tokens'
 import ReceiveDialog from './ReceiveDialog.vue'
+import type { Prices } from 'boot/services/prices'
+import { prefs } from 'src/utils/prefs'
 
 export default defineComponent({
     components: {
@@ -169,7 +173,11 @@ export default defineComponent({
         nftTotal: 0,
         // async computed (see src/shims-async-computed.d.ts)
         wallet: null as M.Wallet | null,
-        tokenList: [] as M.TokenSpec[]
+        tokenList: [] as M.TokenSpec[],
+        stats: {} as Record<string, Prices.Stat>,
+        fx: 1,
+        zero: '0x0000000000000000000000000000000000000000',
+        prefs
     }),
     asyncComputed: {
         wallet(): Promise<M.Wallet | null> {
@@ -192,6 +200,20 @@ export default defineComponent({
         },
         address(): string {
             return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex)] : ''
+        }
+    },
+    watch: {
+        async tokenList(list: M.TokenSpec[]) {
+            if (!this.nftSupported || !list.length) {
+                return
+            }
+            this.stats = await this.$svc.prices.stats(list.map(t => t.address)).catch(() => ({}))
+        },
+        'prefs.currency': {
+            async handler(c: 'EUR' | 'USD') {
+                this.fx = await this.$svc.prices.fx(c)
+            },
+            immediate: true
         }
     },
     methods: {

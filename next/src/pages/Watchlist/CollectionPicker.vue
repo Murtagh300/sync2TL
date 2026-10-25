@@ -43,7 +43,7 @@
                         <q-item-section>
                             <q-item-label lines="1">{{c.name}}</q-item-label>
                             <q-item-label
-                                v-if="c.floorValue != null"
+                                v-if="c.floorValue"
                                 caption
                             >{{$t('market.label_floor')}} {{c.floorValue}} {{c.floorCurrency}}</q-item-label>
                         </q-item-section>

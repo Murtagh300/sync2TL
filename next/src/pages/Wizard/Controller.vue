@@ -58,6 +58,7 @@
                 padding
                 innerClass="fit column q-gutter-y-md no-wrap"
             >
+                <steps :current="finished ? 2 : 1" />
                 <h4 class="q-mb-none bvm-display">{{$t('wizard.title_init')}}</h4>
                 <Progress
                     :current="progressStr"
@@ -76,8 +77,56 @@
                     color="primary"
                     size="lg"
                     class="full-width"
-                    :label="$t('common.finish')"
-                    @click="$emit('done')"
+                    :label="$t('common.next')"
+                    @click="slide = 'follow'"
+                />
+            </div>
+        </q-carousel-slide>
+        <q-carousel-slide
+            name="follow"
+            class="column q-pa-none no-wrap"
+        >
+            <page-content
+                class="col"
+                padding
+                innerClass="fit column no-wrap"
+            >
+                <steps :current="3" />
+                <h4 class="q-mb-sm bvm-display">{{$t('wizard.title_follow')}}</h4>
+                <p class="text-soft">{{$t('wizard.msg_follow')}}</p>
+                <div class="follow-grid">
+                    <button
+                        v-for="c in ideas"
+                        :key="c.slug"
+                        type="button"
+                        class="follow bvm-tile"
+                        :class="{ 'follow--on': followed.includes(c.slug) }"
+                        @click="toggleFollow(c.slug)"
+                    >
+                        <img
+                            :src="c.coverImage"
+                            alt=""
+                            loading="lazy"
+                        >
+                        <span class="ellipsis">{{c.name}}</span>
+                        <q-icon
+                            v-if="followed.includes(c.slug)"
+                            name="check_circle"
+                            class="follow-check"
+                            size="22px"
+                        />
+                    </button>
+                </div>
+            </page-content>
+            <div class="wizard-action narrow-page q-mx-auto">
+                <q-btn
+                    unelevated
+                    no-caps
+                    color="primary"
+                    size="lg"
+                    class="full-width"
+                    :label="followed.length ? $t('wizard.action_follow', { n: followed.length }) : $t('wizard.action_skip')"
+                    @click="finish()"
                 />
             </div>
         </q-carousel-slide>
@@ -93,6 +142,9 @@ import LanguageListPopup from 'pages/LanguageListPopup.vue'
 import PageContent from 'src/components/PageContent.vue'
 import { secureRNG, kdfEncrypt, Vault } from 'src/core/vault'
 import { BackupDialog } from '../Backup'
+import Steps from './Steps.vue'
+import type { BVM } from 'boot/services/bvm'
+import { emptyWatchlist } from 'src/utils/alerts'
 
 async function randomDelay<T>(p: () => Promise<T>, aboutSeconds: number) {
     const [r] = await Promise.all([
@@ -106,6 +158,7 @@ export default defineComponent({
     emits: ['done'],
     components: {
         Progress,
+        Steps,
         FeatureSlides,
         LanguageListPopup,
         PageContent
@@ -114,11 +167,24 @@ export default defineComponent({
         return {
             slide: 'welcome',
             progressStr: '',
-            finished: false
+            finished: false,
+            ideas: [] as BVM.Collection[],
+            followed: [] as string[]
         }
     },
     methods: {
+        toggleFollow(slug: string) {
+            this.followed = this.followed.includes(slug) ? this.followed.filter(s => s !== slug) : [...this.followed, slug]
+        },
+        async finish() {
+            if (this.followed.length) {
+                await this.$svc.config.setJSON('watchlist', { ...emptyWatchlist(), collections: this.followed })
+            }
+            this.$emit('done')
+        },
         async onClickStart() {
+            // collections to suggest at the end, loaded while the wallet is made
+            this.$svc.bvm.collections().then(c => { this.ideas = Object.values(c).slice(0, 6) }).catch(() => { })
             // set new password
             const password = await this.$dialog<string>({ component: NewPasswordDialog })
 
@@ -188,4 +254,39 @@ export default defineComponent({
 
 .wizard-action
   padding: 12px 16px 20px
+
+.follow-grid
+  display: grid
+  grid-template-columns: repeat(3, 1fr)
+  gap: 8px
+
+.follow
+  position: relative
+  display: flex
+  flex-direction: column
+  gap: 6px
+  padding: 0 0 8px
+  overflow: hidden
+  color: inherit
+  font: inherit
+  font-size: 12px
+  font-weight: 700
+  cursor: pointer
+  img
+    width: 100%
+    aspect-ratio: 1
+    object-fit: cover
+  span
+    padding: 0 6px
+
+.follow--on
+  border-color: var(--q-primary) !important
+
+.follow-check
+  position: absolute
+  top: 6px
+  right: 6px
+  color: var(--q-primary)
+  background: #000
+  border-radius: 50%
 </style>

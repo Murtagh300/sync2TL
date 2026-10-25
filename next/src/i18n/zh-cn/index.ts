@@ -64,6 +64,13 @@ export default {
         msg_init_animation_s4: '使用主密钥加密钱包',
         msg_init_animation_s5: '妥善地保存已加密的钱包',
         msg_init_complete: '您的钱包已经就绪！',
+        step_password: '密码',
+        step_backup: '备份',
+        step_follow: '关注',
+        title_follow: '关注你的第一个系列',
+        msg_follow: '它们的新挂单、成交和出价会出现在你的关注列表中，随时可以修改。',
+        action_follow: '关注 {n} 个并完成',
+        action_skip: '跳过并完成',
         action_get_started: '开始使用'
     },
     index: {
@@ -115,6 +122,10 @@ export default {
         action_language: '语言偏好',
         msg_password_changed: '密码已修改',
         action_user_guide: 'BlackVeMarket',
+        label_appearance: '外观',
+        label_accent: '主题色',
+        label_currency: '货币',
+        label_haptics: '操作振动',
         label_general: '通用',
         label_network: '网络'
     },
@@ -148,6 +159,18 @@ export default {
         label_contract: '合约',
         label_token_id: 'Token ID',
         label_standard: '标准',
+        label_sort: '排序',
+        label_show: '显示',
+        sort_default: '挂售优先',
+        sort_rank: '稀有度',
+        sort_collection: '系列',
+        sort_token: '编号',
+        sort_price_low: '价格从低到高',
+        sort_price_high: '价格从高到低',
+        status_listed: '挂售中',
+        status_unlisted: '未挂售',
+        label_selected_short: '已选',
+        msg_viewer_hint: '双击放大 · 左右滑动切换',
         label_portfolio: '按系列地板价估值',
         msg_no_floor: '这些系列暂无地板价',
         label_count: '{n} 个 NFT',
@@ -201,6 +224,8 @@ export default {
         placeholder_to: '地址或 name.vet',
         msg_resolved: '{name}',
         msg_vet_not_found: '{name} 未指向任何地址',
+        title_sent: '已发送',
+        msg_sent: '交易确认后到账，约 10 秒。',
         msg_invalid_amount: '无效数额',
         msg_invalid_address: '请输入有效地址',
         msg_invalid_address_checksum: '地址检验失败',
@@ -265,10 +290,55 @@ export default {
         label_slippage: '允许的价格波动',
         action_max: '最大',
         action_swap: '兑换',
+        title_done: '兑换已提交',
         msg_insufficient: '{symbol} 不足',
         msg_no_route: '暂无该交易对的兑换路径',
         msg_done: '交易确认后完成兑换',
         comment: '用 {amount} {from} 兑换 {out} {to}'
+    },
+    home: {
+        label_total: '总价值',
+        label_24h: '今日',
+        label_7d: '近 7 天价值',
+        label_nfts: '+ {n} 个 NFT',
+        label_addresses: '地址 ({n})',
+        action_hide: '隐藏余额',
+        action_scan: '扫码',
+        action_switch: '切换钱包',
+        msg_no_prices: '主网钱包才显示价格。',
+        msg_mainnet_only: '主网钱包才显示 NFT。',
+        msg_no_wallet: '创建钱包，或用助记词导入。',
+        msg_unknown_qr: '此二维码不是地址或收款请求'
+    },
+    tabs: {
+        label: '主菜单',
+        home: '首页',
+        activity: '记录',
+        more: '更多'
+    },
+    more: {
+        label_wallet: '钱包',
+        open_market: '打开 BlackVeMarket'
+    },
+    search: {
+        title: '搜索',
+        placeholder: '代币、系列、联系人、name.vet、0x…',
+        label_tokens: '代币',
+        label_collections: '系列',
+        msg_hint: '搜索联系人、代币、BlackVeMarket 系列、.vet 名称和地址。',
+        msg_nothing: '未找到“{q}”'
+    },
+    txStatus: {
+        msg_pending: '{label} · 等待上链',
+        msg_pending_many: '{n} 笔交易等待上链',
+        msg_done: '{label} · 已完成',
+        msg_failed: '{label} · 未成功'
+    },
+    recipientCheck: {
+        title: '新地址',
+        message: '你从未向此地址转账。请核对开头和结尾是否与对方提供的一致。',
+        hint: '诈骗者会使用中间相似的地址，请比对放大的字符。',
+        action_continue: '地址无误'
     },
     contacts: {
         title: '联系人',
@@ -297,6 +367,10 @@ export default {
     newPasswordDialog: {
         msg_password_mismatch: '密码不一致',
         msg_password_too_short: '密码过短(至少6位)',
+        strength_1: '弱',
+        strength_2: '一般',
+        strength_3: '良好',
+        strength_4: '强',
         title_set_new_password: '设置新密码',
         title_confirm_password: '确认您的密码'
     },

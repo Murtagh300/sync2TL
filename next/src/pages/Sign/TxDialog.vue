@@ -99,6 +99,7 @@ import { randomBytes } from 'crypto'
 import ErrorTip from './ErrorTip.vue'
 import WarningListDialog from './WarningListDialog.vue'
 import InspectClauseDialog from './InspectClauseDialog.vue'
+import { haptic } from 'src/utils/prefs'
 import SimulationCard from './SimulationCard.vue'
 import { balanceChanges, type BalanceChanges } from 'src/utils/simulate'
 import type { BVM } from 'boot/services/bvm'
@@ -267,6 +268,7 @@ export default defineComponent({
             if (!est || !wallet) {
                 return
             }
+            haptic()
 
             if (est.reverted) {
                 await this.$dialog({

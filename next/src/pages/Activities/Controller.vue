@@ -2,6 +2,11 @@
     <div class="column fit no-wrap">
         <page-toolbar :title="$t('activities.title')" />
         <page-content class="col">
+            <q-pull-to-refresh
+                color="primary"
+                bg-color="dark"
+                @refresh="refresh"
+            >
             <template v-if="entryList.length">
                 <template
                     v-for="(item, i) in entryList"
@@ -16,12 +21,16 @@
                 </template>
             </template>
             <template v-else>
-                <div class="text-center q-px-xl column fit justify-center">
-                    <div class="col-5">
-                        <p class="q-my-sm text-grey">{{$t('activities.msg_not_found')}}</p>
-                    </div>
+                <div class="text-center q-px-xl q-py-xl column items-center">
+                    <q-icon
+                        name="o_receipt_long"
+                        size="40px"
+                        class="text-muted"
+                    />
+                    <p class="q-mt-md text-soft">{{$t('activities.msg_not_found')}}</p>
                 </div>
             </template>
+            </q-pull-to-refresh>
         </page-content>
     </div>
 </template>
@@ -105,6 +114,10 @@ export default defineComponent({
         }
     },
     methods: {
+        refresh(done: () => void) {
+            void this.$asyncComputed.list.update()
+            setTimeout(done, 500)
+        },
         /** our own comment ("Send 5 VET"), or what the transaction's clauses do */
         txSummary(a: M.Activity): string {
             if (a.type !== 'tx') {

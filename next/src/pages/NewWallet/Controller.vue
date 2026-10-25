@@ -299,8 +299,8 @@ export default defineComponent({
     border-color: rgba(255, 255, 255, 0.22)
 
 .choice--primary
-  border-color: rgba(110, 231, 183, 0.4)
-  background: rgba(110, 231, 183, 0.06)
+  border-color: color-mix(in srgb, var(--q-primary) 40%, transparent)
+  background: color-mix(in srgb, var(--q-primary) 06%, transparent)
 
 .choice-title
   font-size: 16px
@@ -317,5 +317,5 @@ export default defineComponent({
   width: 24px
   height: 24px
   :deep(path)
-    fill: $primary
+    fill: var(--q-primary)
 </style>

@@ -71,6 +71,10 @@ import { toWei } from 'src/utils/format'
 import { genesises } from 'src/consts'
 import type { Contact } from 'src/utils/names'
 import type { PaymentRequest } from 'src/utils/payment-request'
+import SuccessDialog from 'components/SuccessDialog.vue'
+import RecipientCheckDialog from './RecipientCheckDialog.vue'
+import { isKnownRecipient } from 'src/utils/recipient'
+import { nameOf } from 'src/utils/names'
 
 export default defineComponent({
     components: {
@@ -214,9 +218,16 @@ export default defineComponent({
 
             return (!this.errors.to && !this.errors.amount)
         },
-        onSend() {
+        async onSend() {
             if (!this.validate()) {
                 return
+            }
+            if (!await isKnownRecipient(this.$svc, this.wallet!.gid, this.recipient!)) {
+                try {
+                    await this.$dialog({ component: RecipientCheckDialog, to: this.recipient! })
+                } catch {
+                    return
+                }
             }
             let msgItem!: Connex.Vendor.TxMessage[0]
             let comment = ''
@@ -254,7 +265,15 @@ export default defineComponent({
                 if (this.wallet) {
                     this.$svc.config.saveRecentRecipients(this.wallet.gid, temp)
                 }
-                this.$router.replace({ name: 'sign-success', query: { type: 'tx' } })
+                this.$dialog({
+                    component: SuccessDialog,
+                    title: this.$t('send.title_sent'),
+                    message: this.$t('send.msg_sent'),
+                    lines: [
+                        { label: this.$t('send.label_amount'), value: `${this.amountText} ${this.sym}` },
+                        { label: this.$t('send.label_to'), value: nameOf(this.recipient) || `${this.recipient!.slice(0, 8)}…${this.recipient!.slice(-6)}` }
+                    ]
+                }).catch(() => { }).finally(() => this.$backOrHome())
             })
         }
     }

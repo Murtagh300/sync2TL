@@ -85,8 +85,8 @@ export default defineComponent({
 </script>
 <style lang="sass" scoped>
 .wallet-active
-  background: rgba(110, 231, 183, 0.08)
+  background: color-mix(in srgb, var(--q-primary) 08%, transparent)
   color: $text
-  box-shadow: inset 3px 0 0 $primary
+  box-shadow: inset 3px 0 0 var(--q-primary)
   font-weight: 700
 </style>

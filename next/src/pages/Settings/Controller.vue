@@ -37,6 +37,68 @@
                         />
                     </item>
                 </q-list>
+                <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_appearance')}}</div>
+                <q-list class="bvm-list q-mb-lg">
+                    <q-item>
+                        <q-item-section avatar>
+                            <q-avatar icon="o_palette" />
+                        </q-item-section>
+                        <q-item-section>
+                            <q-item-label>{{$t('settings.label_accent')}}</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                            <div class="row no-wrap q-gutter-x-sm">
+                                <button
+                                    v-for="(a, name) in accents"
+                                    :key="name"
+                                    type="button"
+                                    class="swatch"
+                                    :class="{ 'swatch--on': prefs.accent === name }"
+                                    :style="{ background: a.color }"
+                                    :aria-label="name"
+                                    @click="setAccent(name)"
+                                />
+                            </div>
+                        </q-item-section>
+                    </q-item>
+                    <q-item>
+                        <q-item-section avatar>
+                            <q-avatar icon="o_payments" />
+                        </q-item-section>
+                        <q-item-section>
+                            <q-item-label>{{$t('settings.label_currency')}}</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                            <q-btn-toggle
+                                v-model="prefs.currency"
+                                dense
+                                no-caps
+                                unelevated
+                                toggle-color="primary"
+                                color="dark"
+                                :options="[{ label: '€ EUR', value: 'EUR' }, { label: '$ USD', value: 'USD' }]"
+                            />
+                        </q-item-section>
+                    </q-item>
+                    <item
+                        icon="o_visibility_off"
+                        :title="$t('home.action_hide')"
+                    >
+                        <q-toggle
+                            v-model="prefs.hideBalances"
+                            color="primary"
+                        />
+                    </item>
+                    <item
+                        icon="o_vibration"
+                        :title="$t('settings.label_haptics')"
+                    >
+                        <q-toggle
+                            v-model="prefs.haptics"
+                            color="primary"
+                        />
+                    </item>
+                </q-list>
                 <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_network')}}</div>
                 <q-list class="bvm-list q-mb-lg">
                     <item
@@ -78,13 +140,16 @@ import PageContent from 'src/components/PageContent.vue'
 import { kdfEncrypt } from 'src/core/vault'
 import { openURL } from 'src/utils/open-url'
 import { marketURL } from 'boot/services/bvm'
+import { accents, applyAccent, haptic, prefs, type Accent } from 'src/utils/prefs'
 
 export default defineComponent({
     components: { Item, LanguageListPopup, PageToolbar, PageContent },
     data: () => ({
         // async computed (see src/shims-async-computed.d.ts)
         bioPass: null as BioPass | null,
-        bioPassSaved: null as boolean | null
+        bioPassSaved: null as boolean | null,
+        prefs,
+        accents
     }),
     asyncComputed: {
         bioPass() {
@@ -147,9 +212,27 @@ export default defineComponent({
                 }
             } catch { }
         },
+        setAccent(name: Accent) {
+            prefs.accent = name
+            applyAccent(name)
+            haptic()
+        },
         openGuide() {
             openURL(marketURL)
         }
     }
 })
 </script>
+<style lang="sass" scoped>
+.swatch
+  width: 22px
+  height: 22px
+  padding: 0
+  border-radius: 50%
+  border: 2px solid transparent
+  cursor: pointer
+
+.swatch--on
+  border-color: #fff
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.6) inset
+</style>

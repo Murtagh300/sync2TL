@@ -58,9 +58,21 @@ describe('formatDate', () => {
         expect(formatDate(Date.now() - 60 * 1000, { relative: true })).toBe('a minute ago')
     })
 
-    it('shows older dates absolute', () => {
+    it('shows the full date and time when not relative', () => {
         const old = new Date(2024, 0, 2, 3, 4, 5).getTime()
-        expect(formatDate(old, { relative: true })).toBe('01/02/2024 03:04:05')
         expect(formatDate(old)).toBe('01/02/2024 03:04:05')
+    })
+
+    // changed in BlackVault: today/yesterday, the weekday, then a short date (Sync2: full date and time)
+    it.skipIf(import.meta.env.MODE === 'legacy')('reads older dates in words', () => {
+        const at = (daysAgo: number, h: number) => {
+            const d = new Date()
+            d.setDate(d.getDate() - daysAgo)
+            d.setHours(h, 5, 0, 0)
+            return d.getTime()
+        }
+        expect(formatDate(at(1, 9), { relative: true })).toBe('Yesterday, 09:05')
+        expect(formatDate(at(3, 9), { relative: true })).toMatch(/^[A-Z][a-z]+day 09:05$/)
+        expect(formatDate(new Date(2024, 0, 2, 3, 4, 5).getTime(), { relative: true })).toBe('2 Jan 2024')
     })
 })

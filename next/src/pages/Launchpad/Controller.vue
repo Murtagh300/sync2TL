@@ -5,6 +5,11 @@
             class="col"
             size="md"
         >
+            <q-pull-to-refresh
+                color="primary"
+                bg-color="dark"
+                @refresh="done => load().finally(done)"
+            >
             <div class="q-pa-md">
                 <div
                     v-if="loading"
@@ -64,6 +69,7 @@
                     </router-link>
                 </div>
             </div>
+            </q-pull-to-refresh>
         </page-content>
     </div>
 </template>
@@ -138,6 +144,6 @@ export default defineComponent({
   background: rgba(0, 0, 0, 0.6)
 
 .launch-state--live
-  background: $primary
+  background: var(--q-primary)
   color: $on-primary
 </style>

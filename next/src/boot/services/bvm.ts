@@ -136,6 +136,12 @@ export namespace BVM {
 
     export type DelegateStatus = { enabled: boolean, genesis: boolean, free: boolean, remainingTx: number }
 
+    export type Profile = {
+        displayName: string
+        /** the NFT chosen as avatar on blackvemarket.com */
+        avatar: string
+    }
+
     export type Holdings = {
         holdings: NFT[]
         ownedCollections: OwnedCollection[]
@@ -153,6 +159,7 @@ export const marketURL = 'https://blackvemarket.com'
 
 let collectionsCache: { at: number, value: Record<string, BVM.Collection> } | null = null
 let collectionsLoading: Promise<Record<string, BVM.Collection>> | null = null
+const profileCache = new Map<string, Promise<BVM.Profile | null>>()
 
 async function loadCollections() {
     const resp = await http.get<{ items: { collection: BVM.Collection, floorValue: number | null, floor: string }[] }>('/collections')
@@ -177,13 +184,13 @@ export function build() {
         supports(gid: string) {
             return gid === genesises.main.id
         },
-        async holdings(address: string, opts: { offset?: number, limit?: number, collection?: string } = {}): Promise<BVM.Holdings> {
+        async holdings(address: string, opts: { offset?: number, limit?: number, collection?: string, sort?: string, status?: string } = {}): Promise<BVM.Holdings> {
             const resp = await http.get<BVM.Holdings>(`/profile/${address.toLowerCase()}`, {
                 params: {
                     limit: opts.limit ?? 30,
                     offset: opts.offset ?? 0,
-                    status: 'all',
-                    sort: 'default',
+                    status: opts.status || 'all',
+                    sort: opts.sort || 'default',
                     ...(opts.collection ? { collection: opts.collection } : {})
                 }
             })
@@ -230,6 +237,19 @@ export function build() {
                 ...(d.sales || []).map(r => read('sale', r)),
                 ...(d.offers || []).map(r => read('offer', r))
             ].sort((a, b) => b.time - a.time)
+        },
+        /** the name and avatar an address set on blackvemarket.com; cached per session */
+        async profile(address: string): Promise<BVM.Profile | null> {
+            const a = address.toLowerCase()
+            if (!profileCache.has(a)) {
+                profileCache.set(a, http.get<{ profile?: { display_name?: string | null } | null, avatarItem?: { image?: string } | null }>(`/profile/${a}`, {
+                    params: { limit: 1, offset: 0, status: 'all', sort: 'default' }
+                }).then(r => ({
+                    displayName: r.data.profile?.display_name || '',
+                    avatar: r.data.avatarItem?.image || ''
+                })).catch(() => null))
+            }
+            return profileCache.get(a)!
         },
         /** the NFTs an address has listed */
         async listings(address: string, limit = 12): Promise<BVM.NFT[]> {

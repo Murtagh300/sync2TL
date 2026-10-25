@@ -5,10 +5,16 @@
             appear
             name="q-transition--fade"
         >
-            <stacked-router-view
+            <div
                 v-if="initialized"
-                class="fit"
-            />
+                class="column no-wrap fit"
+            >
+                <div class="col relative-position">
+                    <stacked-router-view class="fit" />
+                    <tx-status-bar />
+                </div>
+                <tab-bar v-if="showTabs" />
+            </div>
             <wizard
                 v-else
                 class="fit"
@@ -34,10 +40,13 @@ import ActivityStatusUpdater from 'pages/ActivityStatusUpdater'
 import TransferNotifier from 'pages/TransferNotifier.vue'
 import { unique } from 'src/utils/array'
 import Disclaimer from './Disclaimer'
+import TabBar, { TAB_ROUTES } from 'components/TabBar.vue'
+import TxStatusBar from 'components/TxStatusBar.vue'
+import { applyAccent } from 'src/utils/prefs'
 
 export default defineComponent({
     name: 'Main',
-    components: { Wizard, StackedRouterView, ActivityStatusUpdater, TransferNotifier, Disclaimer },
+    components: { Wizard, StackedRouterView, ActivityStatusUpdater, TransferNotifier, Disclaimer, TabBar, TxStatusBar },
     data() {
         return {
             initialized: false,
@@ -46,11 +55,19 @@ export default defineComponent({
             gids: null as string[] | null
         }
     },
+    computed: {
+        showTabs(): boolean {
+            return TAB_ROUTES.includes(String(this.$route.name || ''))
+        }
+    },
     asyncComputed: {
         async gids(): Promise<string[]> {
             const wallets = await this.$svc.wallet.all()
             return unique(wallets.map(w => w.gid))
         }
+    },
+    created() {
+        applyAccent()
     },
     async mounted() {
         this.initialized = await this.$svc.config.getUserMasterKeyGlob().then(r => !!r)

@@ -5,6 +5,7 @@ import * as Config from './config'
 import * as Wallet from './wallet'
 import * as Activity from './activity'
 import * as Bvm from './bvm'
+import * as Prices from './prices'
 import { groupBy } from 'src/utils/array'
 import { configureNames, setContacts } from 'src/utils/names'
 import { genesises } from 'src/consts'
@@ -15,6 +16,7 @@ export type Service = {
     wallet: ReturnType<typeof Wallet.build>
     activity: ReturnType<typeof Activity.build>
     bvm: ReturnType<typeof Bvm.build>
+    prices: ReturnType<typeof Prices.build>
 }
 
 declare module 'vue' {
@@ -66,7 +68,7 @@ export default defineBoot(async ({ app }) => {
         }
     })()
 
-    instance = { bc, config, wallet, activity, bvm: Bvm.build() }
+    instance = { bc, config, wallet, activity, bvm: Bvm.build(), prices: Prices.build() }
 
     // names for addresses: contacts, and .vet names from mainnet
     configureNames(() => {

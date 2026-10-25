@@ -61,7 +61,9 @@ export default defineConfig(() => {
                 // analytics only when a measurement id is supplied at build time (GA_ID=G-XXXX)
                 GA_ID: process.env.GA_ID || '',
                 // the BlackVeMarket API; needs CORS for the wallet's origin (see README)
-                BVM_API_URL: process.env.BVM_API_URL || ''
+                BVM_API_URL: process.env.BVM_API_URL || '',
+                // BetterSwap prices; it sends no CORS headers, so a build points this at a proxy
+                BETTERSWAP_API_URL: process.env.BETTERSWAP_API_URL || ''
             },
 
             extendViteConf(viteConf) {
@@ -80,8 +82,13 @@ export default defineConfig(() => {
         devServer: {
             port: 8090,
             open: false,
-            // the BlackVeMarket API sends no CORS headers; proxy it in development
+            // BlackVeMarket and BetterSwap send no CORS headers; proxy them in development
             proxy: {
+                '/betterswap-api': {
+                    target: 'https://www.betterswap.io/api',
+                    changeOrigin: true,
+                    rewrite: (path: string) => path.replace(/^\/betterswap-api/, '')
+                },
                 '/bvm-api': {
                     target: 'https://blackvemarket.com/api',
                     changeOrigin: true,

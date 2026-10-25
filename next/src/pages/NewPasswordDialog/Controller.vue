@@ -29,6 +29,23 @@
                         type="password"
                         autocomplete="new-password"
                     />
+                    <div
+                        v-if="!password && inputValue"
+                        class="strength q-mx-xl q-mt-xs"
+                    >
+                        <div class="strength-bar row no-wrap">
+                            <span
+                                v-for="i in 4"
+                                :key="i"
+                                class="col"
+                                :class="i <= strength ? `strength-on strength-${strength}` : ''"
+                            />
+                        </div>
+                        <div
+                            class="strength-label"
+                            :class="`strength-text-${strength}`"
+                        >{{$t(`newPasswordDialog.strength_${strength}`)}}</div>
+                    </div>
                 </q-card-section>
                 <q-card-actions>
                     <q-btn
@@ -63,6 +80,17 @@ export default defineComponent({
         }
     },
     computed: {
+        /** 1 weak … 4 strong: length and variety of characters */
+        strength(): number {
+            const v = this.inputValue
+            let score = 0
+            if (v.length >= 8) score++
+            if (v.length >= 12) score++
+            if (/[a-z]/.test(v) && /[A-Z]/.test(v)) score++
+            if (/\d/.test(v)) score++
+            if (/[^A-Za-z0-9]/.test(v)) score++
+            return Math.max(1, Math.min(4, score))
+        },
         hint(): string {
             return this.password
                 ? this.$t('newPasswordDialog.title_confirm_password').toString()
@@ -115,3 +143,31 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.strength-bar
+  gap: 4px
+  span
+    height: 4px
+    border-radius: 2px
+    background: rgba(255, 255, 255, 0.1)
+
+.strength-on.strength-1
+  background: $negative
+.strength-on.strength-2
+  background: $warning
+.strength-on.strength-3, .strength-on.strength-4
+  background: var(--q-primary)
+
+.strength-label
+  margin-top: 4px
+  font-size: 12px
+  font-weight: 700
+  text-align: center
+
+.strength-text-1
+  color: $negative
+.strength-text-2
+  color: $warning
+.strength-text-3, .strength-text-4
+  color: var(--q-primary)
+</style>

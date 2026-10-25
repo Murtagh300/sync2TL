@@ -64,6 +64,13 @@ export default {
         msg_init_animation_s4: 'Encrypting your wallet',
         msg_init_animation_s5: 'Saving it on this device',
         msg_init_complete: 'Your wallet is ready.',
+        step_password: 'Password',
+        step_backup: 'Back up',
+        step_follow: 'Follow',
+        title_follow: 'Follow your first collections',
+        msg_follow: 'Their new listings, sales and offers show up in your watchlist. You can change this any time.',
+        action_follow: 'Follow {n} and finish',
+        action_skip: 'Skip and finish',
         action_get_started: 'Create my wallet'
     },
     index: {
@@ -116,6 +123,10 @@ export default {
         action_language: 'Language',
         msg_password_changed: 'Password changed',
         action_user_guide: 'BlackVeMarket',
+        label_appearance: 'Appearance',
+        label_accent: 'Accent color',
+        label_currency: 'Currency',
+        label_haptics: 'Vibrate on actions',
         label_general: 'General',
         label_network: 'Network'
     },
@@ -149,6 +160,18 @@ export default {
         label_contract: 'Contract',
         label_token_id: 'Token ID',
         label_standard: 'Standard',
+        label_sort: 'Sort',
+        label_show: 'Show',
+        sort_default: 'Listed first',
+        sort_rank: 'Rarest first',
+        sort_collection: 'Collection',
+        sort_token: 'Token ID',
+        sort_price_low: 'Price, low to high',
+        sort_price_high: 'Price, high to low',
+        status_listed: 'Listed',
+        status_unlisted: 'Not listed',
+        label_selected_short: 'selected',
+        msg_viewer_hint: 'Double tap to zoom · swipe for the next one',
         label_portfolio: 'Estimated value at collection floors',
         msg_no_floor: 'No floor prices for these collections yet',
         label_count: '{n} NFTs',
@@ -202,6 +225,8 @@ export default {
         placeholder_to: 'Address or name.vet',
         msg_resolved: '{name}',
         msg_vet_not_found: '{name} does not point to an address',
+        title_sent: 'Sent',
+        msg_sent: 'It arrives once the transaction is confirmed, in about 10 seconds.',
         msg_invalid_amount: 'Enter a valid amount',
         msg_invalid_address: 'Enter a valid VeChain address',
         msg_invalid_address_checksum: 'This address has a typo (its checksum does not match)',
@@ -266,10 +291,55 @@ export default {
         label_slippage: 'Price may move by',
         action_max: 'Max',
         action_swap: 'Swap',
+        title_done: 'Swap sent',
         msg_insufficient: 'Not enough {symbol}',
         msg_no_route: 'No route for this pair right now',
         msg_done: 'Swapped once the transaction is confirmed',
         comment: 'Swap {amount} {from} for {out} {to}'
+    },
+    home: {
+        label_total: 'Total value',
+        label_24h: 'today',
+        label_7d: 'Value over the last 7 days',
+        label_nfts: '+ {n} NFTs',
+        label_addresses: 'Addresses ({n})',
+        action_hide: 'Hide balances',
+        action_scan: 'Scan',
+        action_switch: 'Switch wallet',
+        msg_no_prices: 'Prices are shown for mainnet wallets.',
+        msg_mainnet_only: 'NFTs are shown for mainnet wallets.',
+        msg_no_wallet: 'Create a wallet or import one with your recovery words.',
+        msg_unknown_qr: 'This QR code is not an address or a request'
+    },
+    tabs: {
+        label: 'Main',
+        home: 'Home',
+        activity: 'Activity',
+        more: 'More'
+    },
+    more: {
+        label_wallet: 'Wallet',
+        open_market: 'Open BlackVeMarket'
+    },
+    search: {
+        title: 'Search',
+        placeholder: 'Tokens, collections, contacts, name.vet, 0x…',
+        label_tokens: 'Tokens',
+        label_collections: 'Collections',
+        msg_hint: 'Search your contacts, tokens, BlackVeMarket collections, .vet names and addresses.',
+        msg_nothing: 'Nothing found for “{q}”'
+    },
+    txStatus: {
+        msg_pending: '{label} · waiting for the chain',
+        msg_pending_many: '{n} transactions waiting for the chain',
+        msg_done: '{label} · done',
+        msg_failed: '{label} · did not go through'
+    },
+    recipientCheck: {
+        title: 'New address',
+        message: 'You have not sent to this address before. Check the start and end against what you were given.',
+        hint: 'Scammers use addresses that look alike in the middle. Compare the large characters.',
+        action_continue: 'The address is right'
     },
     contacts: {
         title: 'Contacts',
@@ -298,6 +368,10 @@ export default {
     newPasswordDialog: {
         msg_password_mismatch: 'The passwords do not match',
         msg_password_too_short: 'Use at least 6 characters',
+        strength_1: 'Weak',
+        strength_2: 'Fair',
+        strength_3: 'Good',
+        strength_4: 'Strong',
         title_set_new_password: 'Choose a password',
         title_confirm_password: 'Repeat your password'
     },

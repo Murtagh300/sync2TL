@@ -33,5 +33,5 @@ export default defineComponent({
 </script>
 <style lang="sass" scoped>
 .upgrade-tip
-  border-color: rgba(110, 231, 183, 0.35)
+  border-color: color-mix(in srgb, var(--q-primary) 35%, transparent)
 </style>

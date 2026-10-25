@@ -71,6 +71,10 @@
                     v-if="amountError"
                     class="text-negative swap-error"
                 >{{amountError}}</div>
+                <div
+                    v-else-if="payFiat"
+                    class="text-muted swap-fiat"
+                >{{payFiat}}</div>
             </div>
 
             <div class="row justify-center">
@@ -101,6 +105,10 @@
                         :tokens="tokens"
                     />
                 </div>
+                <div
+                    v-if="receiveFiat"
+                    class="text-muted swap-fiat"
+                >{{receiveFiat}}</div>
             </div>
 
             <div
@@ -153,6 +161,9 @@ import { formatUnits, toWei } from 'src/utils/format'
 import { BigNumber } from 'bignumber.js'
 import { visibleTokens } from 'src/utils/tokens'
 import { genesises } from 'src/consts'
+import SuccessDialog from 'components/SuccessDialog.vue'
+import { money, prefs } from 'src/utils/prefs'
+import type { Prices } from 'boot/services/prices'
 
 // swap tokens through the VeChain DEXes
 export default defineComponent({
@@ -171,6 +182,8 @@ export default defineComponent({
         quoteError: '',
         fromBalance: null as bigint | null,
         controller: null as AbortController | null,
+        stats: {} as Record<string, Prices.Stat>,
+        fx: 1,
         timer: 0 as ReturnType<typeof setTimeout> | 0,
         // async computed (see src/shims-async-computed.d.ts)
         wallet: null as M.Wallet | null,
@@ -232,6 +245,12 @@ export default defineComponent({
             }
             return ''
         },
+        payFiat(): string {
+            return this.amountWei && this.fromToken ? this.fiatOf(this.amountWei, this.fromToken) : ''
+        },
+        receiveFiat(): string {
+            return this.quoteResult && this.toToken ? this.fiatOf(this.quoteResult.amountOut, this.toToken) : ''
+        },
         rate(): string {
             const q = this.quoteResult
             if (!q || !this.amountWei || !this.fromToken || !this.toToken) {
@@ -243,15 +262,25 @@ export default defineComponent({
         }
     },
     watch: {
-        fromSymbol() { this.loadBalance(); this.requote() },
-        toSymbol() { this.requote() },
+        fromSymbol() { this.loadBalance(); this.requote(); void this.loadPrices() },
+        toSymbol() { this.requote(); void this.loadPrices() },
         amount() { this.requote() },
         slippageBps() { this.requote() },
         address() { this.loadBalance() },
-        tokens() { this.loadBalance() }
+        tokens() { this.loadBalance(); void this.loadPrices() }
     },
     methods: {
         formatUnits,
+        fiatOf(amount: bigint, spec: M.TokenSpec): string {
+            const s = this.stats[(spec.address || '0x0000000000000000000000000000000000000000').toLowerCase()]
+            return s ? money(new BigNumber(amount.toString()).div(new BigNumber(10).pow(spec.decimals)).toNumber() * s.price * this.fx) : ''
+        },
+        async loadPrices() {
+            const pair = [this.fromToken?.address, this.toToken?.address]
+            const [stats, fx] = await Promise.all([this.$svc.prices.stats(pair).catch(() => ({})), this.$svc.prices.fx(prefs.currency)])
+            this.stats = { ...this.stats, ...stats }
+            this.fx = fx
+        },
         async loadBalance() {
             const w = this.wallet
             const t = this.fromToken
@@ -333,7 +362,15 @@ export default defineComponent({
                     message: q.clauses.map(c => ({ ...c, comment })),
                     options: { signer: this.address, comment }
                 })
-                this.$q.notify(this.$t('swap.msg_done'))
+                this.$dialog({
+                    component: SuccessDialog,
+                    title: this.$t('swap.title_done'),
+                    message: this.$t('swap.msg_done'),
+                    lines: [
+                        { label: this.$t('swap.label_pay'), value: `${this.amount} ${this.fromSymbol}` },
+                        { label: this.$t('swap.label_receive'), value: `≈ ${formatUnits(q.amountOut, this.toToken?.decimals || 18)} ${this.toSymbol}` }
+                    ]
+                }).catch(() => { })
                 this.amount = ''
                 setTimeout(() => this.loadBalance(), 12 * 1000)
             } catch {
@@ -362,6 +399,10 @@ export default defineComponent({
 
 .swap-error
   font-size: 12px
+
+.swap-fiat
+  font-size: 13px
+  font-variant-numeric: tabular-nums
 
 .flip
   margin: -10px 0

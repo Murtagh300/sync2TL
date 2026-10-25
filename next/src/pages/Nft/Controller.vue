@@ -52,9 +52,17 @@
                 <q-img
                     :src="nft.image"
                     :ratio="1"
-                    class="hero-image"
+                    class="hero-image cursor-pointer"
                     spinner-color="primary"
-                />
+                    @click="openViewer()"
+                >
+                    <div class="absolute-bottom-right hero-zoom flex flex-center">
+                        <q-icon
+                            name="o_open_in_full"
+                            size="18px"
+                        />
+                    </div>
+                </q-img>
 
                 <div class="bvm-label q-mt-lg">{{nft.collection}}</div>
                 <h1 class="nft-name bvm-display">{{nft.name}}</h1>
@@ -237,6 +245,10 @@ import AddressLabel from 'components/AddressLabel.vue'
 import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
 import { openURL } from 'src/utils/open-url'
 import ListDialog, { type ListResult } from './ListDialog.vue'
+import NftViewer, { type ViewerItem } from './NftViewer.vue'
+import SuccessDialog from 'components/SuccessDialog.vue'
+import RecipientCheckDialog from 'pages/Send/RecipientCheckDialog.vue'
+import { isKnownRecipient, rememberRecipient } from 'src/utils/recipient'
 import { acceptOfferClauses, cancelListingClauses, canTrade, listClauses, listingCurrencies, repriceClauses, signMarketTx, type Clause } from 'src/utils/market'
 import { toWei } from 'src/utils/format'
 import { emptyWatchlist, type Watchlist } from 'src/utils/alerts'
@@ -349,6 +361,28 @@ export default defineComponent({
     },
     methods: {
         openURL,
+        async openViewer() {
+            const nft = this.nft
+            if (!nft) {
+                return
+            }
+            // this NFT and the others of its collection on this address
+            let items: ViewerItem[] = [{ contract: nft.contract, tokenId: nft.tokenId, image: nft.image, name: nft.name }]
+            try {
+                const h = await this.$svc.bvm.holdings(this.address, { collection: nft.collectionSlug, limit: 60 })
+                const others = h.holdings
+                    .filter(n => !(n.contract.toLowerCase() === nft.contract.toLowerCase() && n.tokenId === nft.tokenId))
+                    .map(n => ({ contract: n.contract, tokenId: n.tokenId, image: n.image, name: n.name }))
+                items = [...items, ...others]
+            } catch { }
+            try {
+                const last = await this.$dialog<number>({ component: NftViewer, items, start: 0 })
+                const to = items[last]
+                if (to && last !== 0) {
+                    void this.$router.replace({ name: 'nft', params: { walletId: this.walletId, addressIndex: this.addressIndex, contract: to.contract, tokenId: to.tokenId } })
+                }
+            } catch { }
+        },
         async toggleWatch() {
             const slug = this.nft?.collectionSlug
             if (!slug) {
@@ -367,7 +401,13 @@ export default defineComponent({
             }
             try {
                 await signMarketTx(this.$signTx, this.$svc.bvm, wallet.gid, this.address, clauses, comment)
-                this.$q.notify(done)
+                this.$dialog({
+                    component: SuccessDialog,
+                    title: comment,
+                    message: done,
+                    image: this.nft?.image,
+                    link: this.nft ? { label: this.$t('nft.action_view_market'), url: this.$svc.bvm.nftPage(this.nft.contract, this.nft.tokenId) } : undefined
+                }).catch(() => { })
                 // BlackVeMarket picks it up within a minute
                 setTimeout(() => void this.$asyncComputed.nft.update(), 20 * 1000)
             } catch {
@@ -450,6 +490,9 @@ export default defineComponent({
                     }
                 }
                 to = (await this.$dialog<string>({ component: PromptDialog, opts })).trim()
+                if (!await isKnownRecipient(this.$svc, wallet.gid, to)) {
+                    await this.$dialog({ component: RecipientCheckDialog, to })
+                }
             } catch {
                 return
             }
@@ -463,8 +506,10 @@ export default defineComponent({
                     message: [{ to: nft.contract, value: '0', data, comment }],
                     options: { signer: from, comment }
                 })
-                this.$q.notify(this.$t('nft.msg_sent').toString())
-                this.$backOrHome()
+                void rememberRecipient(this.$svc, wallet.gid, to)
+                this.$dialog({ component: SuccessDialog, title: comment, message: this.$t('nft.msg_sent'), image: nft.image })
+                    .catch(() => { })
+                    .finally(() => this.$backOrHome())
             } catch {
                 // declined in the transaction dialog
             }
@@ -475,6 +520,14 @@ export default defineComponent({
 <style lang="sass" scoped>
 .offer-amount
   font-size: 16px
+
+.hero-zoom
+  width: 34px
+  height: 34px
+  margin: 10px
+  padding: 0
+  border-radius: 10px
+  background: rgba(0, 0, 0, 0.55) !important
 
 .hero-image
   border-radius: $radius-lg
@@ -494,8 +547,8 @@ export default defineComponent({
   color: $text-soft
 
 .pill--listed
-  border-color: rgba(110, 231, 183, 0.5)
-  color: $primary
+  border-color: color-mix(in srgb, var(--q-primary) 50%, transparent)
+  color: var(--q-primary)
 
 .description
   color: $text-soft
@@ -521,7 +574,7 @@ export default defineComponent({
 .trait-meta
   margin-top: 4px
   font-size: 12px
-  color: $primary
+  color: var(--q-primary)
 
 .details
   padding: 4px 14px

@@ -92,7 +92,7 @@ body
 // the site's section labels ("For sale now", "Launchpad"): small, mint, tracked
 .bvm-label,
 .q-item__label--header
-  color: $primary !important
+  color: var(--q-primary) !important
   font-size: 12px
   font-weight: 800
   letter-spacing: 0.08em
@@ -173,7 +173,7 @@ body
 
 .q-field--outlined.q-field--highlighted .q-field__control:after
   border-width: 1px
-  border-color: $primary
+  border-color: var(--q-primary)
 
 .q-field--standout .q-field__control
   background: $field
@@ -184,7 +184,7 @@ body
 .q-item
   border-radius: 0
 .q-item.q-router-link--active, .q-item--active
-  color: $primary
+  color: var(--q-primary)
 
 // a list set in a tile (settings, nodes, tokens): rows split by hairlines,
 // icons in small rounded squares
@@ -211,6 +211,15 @@ body
       font-size: 19px
   .q-item__label
     font-weight: 700
+
+// ---- tab pages: a big title instead of a toolbar
+.tab-head
+  min-height: 60px
+  padding-top: env(safe-area-inset-top)
+
+.tab-title
+  margin: 0
+  font-size: 30px
 
 // ---- dialogs ----------------------------------------------------
 // the dialog shell only (cards inside dialogs keep their own look)
@@ -254,7 +263,7 @@ body
     color: $on-primary !important
 
 :focus-visible
-  outline: 2px solid $primary
+  outline: 2px solid var(--q-primary)
   outline-offset: 2px
 
 // thin, quiet scrollbars

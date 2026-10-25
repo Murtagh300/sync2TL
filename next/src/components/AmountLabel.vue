@@ -1,6 +1,7 @@
 <template>
     <span>
-        <template v-if="formatted">
+        <template v-if="prefs.hideBalances">••••</template>
+        <template v-else-if="formatted">
             {{formatted.int}}<span
                 style="font-size:80%"
                 v-if="formatted.dec"
@@ -15,6 +16,7 @@
 import { defineComponent } from 'vue'
 import { BigNumber } from 'bignumber.js'
 import { formatAmount } from 'src/utils/format'
+import { prefs } from 'src/utils/prefs'
 
 export default defineComponent({
     props: {
@@ -26,6 +28,7 @@ export default defineComponent({
         },
         long: Boolean // full precision
     },
+    data: () => ({ prefs }),
     computed: {
         formatted() {
             // a missing value formats as invalid (null), as before

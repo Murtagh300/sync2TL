@@ -33,10 +33,13 @@
             </q-tabs>
 
             <!-- feed -->
-            <div
+            <q-pull-to-refresh
                 v-show="tab === 'feed'"
-                class="q-pa-md"
+                color="primary"
+                bg-color="dark"
+                @refresh="done => loadFeed().finally(done)"
             >
+            <div class="q-pa-md">
                 <div class="row q-gutter-sm q-mb-md">
                     <div
                         v-for="slug in list.collections"
@@ -133,6 +136,7 @@
                     </q-item>
                 </q-list>
             </div>
+            </q-pull-to-refresh>
 
             <!-- alerts -->
             <div
@@ -372,7 +376,7 @@ export default defineComponent({
 .chip--add
   padding: 6px 12px
   border-style: dashed
-  color: $primary
+  color: var(--q-primary)
   cursor: pointer
 
 .kind
@@ -384,7 +388,7 @@ export default defineComponent({
   color: $text-soft
 
 .kind--sale
-  color: $primary
+  color: var(--q-primary)
 
 .kind--offer
   color: $warning

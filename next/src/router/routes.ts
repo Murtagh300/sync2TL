@@ -18,6 +18,9 @@ import Contacts from 'pages/Contacts'
 import Watchlist from 'pages/Watchlist'
 import Launchpad, { Launch } from 'pages/Launchpad'
 import Swap from 'pages/Swap'
+import Nfts from 'pages/Nfts'
+import More from 'pages/More'
+import Search from 'pages/Search'
 
 const routes: RouteRecordRaw[] = [
     {
@@ -55,6 +58,18 @@ const routes: RouteRecordRaw[] = [
             path: 'send',
             name: 'send',
             component: Send
+        }, {
+            path: 'nfts',
+            name: 'nfts',
+            component: Nfts
+        }, {
+            path: 'more',
+            name: 'more',
+            component: More
+        }, {
+            path: 'search',
+            name: 'search',
+            component: Search
         }, {
             path: 'swap',
             name: 'swap',

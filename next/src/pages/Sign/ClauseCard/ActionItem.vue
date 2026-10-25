@@ -77,7 +77,7 @@ export default defineComponent({
   font-size: 12px
 
 .action-op--ok .action-icon
-  color: $primary
+  color: var(--q-primary)
 
 .action-op--warn
   .action-icon

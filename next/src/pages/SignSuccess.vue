@@ -65,8 +65,8 @@ export default defineComponent({
   width: 76px
   height: 76px
   border-radius: 20px
-  border: 1px solid rgba(110, 231, 183, 0.35)
-  background: rgba(110, 231, 183, 0.08)
+  border: 1px solid color-mix(in srgb, var(--q-primary) 35%, transparent)
+  background: color-mix(in srgb, var(--q-primary) 08%, transparent)
 
 .success-title
   font-size: 30px

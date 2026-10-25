@@ -84,11 +84,23 @@ export type FormatDateOptions = {
 
 export function formatDate(date: number, opts?: FormatDateOptions) {
     opts = opts || {}
-    const relativeBreak = 3600 * 1000 // in 1hours
-    if (opts.relative && Date.now() < date + relativeBreak) {
-        // "x minutes ago" (Sync2 used toNow(), which reads "in x minutes" for past dates)
-        return dayjs(date).fromNow()
-    } else {
+    if (!opts.relative) {
         return dayjs(date).format('L HH:mm:ss')
     }
+    const d = dayjs(date)
+    const now = dayjs()
+    // "2 minutes ago" within the hour (Sync2 used toNow(), which reads "in x minutes" for past dates)
+    if (now.diff(d, 'minute') < 60) {
+        return d.fromNow()
+    }
+    const days = now.startOf('day').diff(d.startOf('day'), 'day')
+    if (days <= 1) {
+        // "today, 14:32" / "yesterday, 09:10" in the app's language
+        const word = new Intl.RelativeTimeFormat(dayjs.locale(), { numeric: 'auto' }).format(-days, 'day')
+        return `${word.charAt(0).toUpperCase()}${word.slice(1)}, ${d.format('HH:mm')}`
+    }
+    if (days < 7) {
+        return d.format('dddd HH:mm')
+    }
+    return d.format(d.year() === now.year() ? 'D MMM' : 'D MMM YYYY')
 }

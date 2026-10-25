@@ -131,6 +131,7 @@ import { formatUnits } from 'src/utils/format'
 import { mintClauses } from 'src/utils/market'
 import { openURL } from 'src/utils/open-url'
 import { genesises } from 'src/consts'
+import SuccessDialog from 'components/SuccessDialog.vue'
 
 // one launch: its phases, and minting from the live one
 export default defineComponent({
@@ -192,7 +193,7 @@ export default defineComponent({
                         .map(c => ({ ...c, comment })),
                     options: { comment }
                 })
-                this.$q.notify(this.$t('launchpad.msg_minted'))
+                this.$dialog({ component: SuccessDialog, title: comment, message: this.$t('launchpad.msg_minted'), image: launch.coverImage }).catch(() => { })
             } catch {
                 // declined in the transaction dialog
             }
@@ -222,5 +223,5 @@ export default defineComponent({
   color: $text-muted
 
 .phase-state--live
-  color: $primary
+  color: var(--q-primary)
 </style>

@@ -36,6 +36,10 @@
                     class="sim-amount bvm-amount"
                 >{{row.direction === 'in' ? '+' : '−'}}{{row.text}}</span>
             </div>
+            <div
+                v-if="row.fiat"
+                class="text-muted sim-fiat"
+            >{{row.fiat}}</div>
         </div>
         <div
             v-if="rows.length > shownRows.length"
@@ -47,9 +51,14 @@
 import { defineComponent } from 'vue'
 import type { BalanceChanges, NftChange } from 'src/utils/simulate'
 import { formatUnits } from 'src/utils/format'
+import { BigNumber } from 'bignumber.js'
+import { money, prefs } from 'src/utils/prefs'
+import type { Prices } from 'boot/services/prices'
+
+const ZERO = '0x0000000000000000000000000000000000000000'
 import NftChip from './NftChip.vue'
 
-type Row = { direction: 'in' | 'out', text?: string, nft?: NftChange }
+type Row = { direction: 'in' | 'out', text?: string, nft?: NftChange, fiat?: string }
 
 // what signing does to the signer's balances, from the dry run
 export default defineComponent({
@@ -60,20 +69,45 @@ export default defineComponent({
         tokens: { type: Array as () => M.TokenSpec[], default: () => [] },
         collections: { type: Object as () => Record<string, { name: string }>, default: () => ({}) }
     },
+    data: () => ({
+        stats: {} as Record<string, Prices.Stat>,
+        fx: 1
+    }),
+    async created() {
+        if (!this.$svc.bvm.supports(this.gid)) {
+            return
+        }
+        const addresses = [ZERO, ...Object.keys(this.changes.tokens)]
+        const [stats, fx] = await Promise.all([
+            this.$svc.prices.stats(addresses).catch(() => ({})),
+            this.$svc.prices.fx(prefs.currency)
+        ])
+        this.stats = stats
+        this.fx = fx
+    },
+    methods: {
+        fiat(amount: bigint, decimals: number, address: string): string | undefined {
+            const s = this.stats[address.toLowerCase()]
+            if (!s) {
+                return undefined
+            }
+            return money(new BigNumber(amount.toString()).div(new BigNumber(10).pow(decimals)).toNumber() * s.price * this.fx)
+        }
+    },
     computed: {
         rows(): Row[] {
             const rows: Row[] = []
             const abs = (v: bigint) => v < 0n ? -v : v
             const { vet, tokens, nfts } = this.changes
             if (vet !== 0n) {
-                rows.push({ direction: vet > 0n ? 'in' : 'out', text: `${formatUnits(abs(vet), 18)} VET` })
+                rows.push({ direction: vet > 0n ? 'in' : 'out', text: `${formatUnits(abs(vet), 18)} VET`, fiat: this.fiat(abs(vet), 18, ZERO) })
             }
             for (const [address, delta] of Object.entries(tokens)) {
                 const spec = this.tokens.find(t => t.address.toLowerCase() === address)
                 const text = spec
                     ? `${formatUnits(abs(delta), spec.decimals)} ${spec.symbol}`
                     : `${formatUnits(abs(delta), 18)} ${address.slice(0, 6)}…${address.slice(-4)}`
-                rows.push({ direction: delta > 0n ? 'in' : 'out', text })
+                rows.push({ direction: delta > 0n ? 'in' : 'out', text, fiat: spec ? this.fiat(abs(delta), spec.decimals, address) : undefined })
             }
             for (const nft of nfts) {
                 rows.push({ direction: nft.direction, nft })
@@ -104,9 +138,13 @@ export default defineComponent({
   background: rgba(248, 113, 113, 0.12)
 
 .sim-sign--in
-  color: $primary
-  background: rgba(110, 231, 183, 0.12)
+  color: var(--q-primary)
+  background: color-mix(in srgb, var(--q-primary) 12%, transparent)
 
 .sim-amount
   font-size: 16px
+
+.sim-fiat
+  font-size: 13px
+  font-variant-numeric: tabular-nums
 </style>
