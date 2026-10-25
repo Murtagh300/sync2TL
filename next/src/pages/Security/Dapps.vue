@@ -21,7 +21,7 @@
                     <q-item-section avatar>
                         <q-avatar rounded>
                             <img
-                                :src="`https://api.faviconkit.com/${d.host}/64`"
+                                :src="`${d.origin}/favicon.ico`"
                                 alt=""
                                 @error="($event.target as HTMLImageElement).style.visibility = 'hidden'"
                             >

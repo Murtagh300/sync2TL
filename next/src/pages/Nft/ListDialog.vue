@@ -32,7 +32,7 @@
                     <div
                         v-if="floor"
                         class="text-muted list-floor"
-                    >{{$t('market.label_floor')}}: <span class="bvm-amount">{{floor}}</span></div>
+                    >{{$t('market.label_floor')}}<help-tip term="floor" />: <span class="bvm-amount">{{floor}}</span></div>
                 </q-card-section>
                 <q-card-actions class="q-px-md q-pb-md">
                     <q-btn
@@ -51,6 +51,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import HelpTip from 'components/HelpTip.vue'
 import { QDialog } from 'quasar'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 import { listingCurrencies } from 'src/utils/market'
@@ -61,7 +62,7 @@ export type ListResult = { price: string, symbol: string }
 export default defineComponent({
     // the Dialog plugin listens to these
     emits: ['ok', 'hide'],
-    components: { PromptDialogToolbar },
+    components: { PromptDialogToolbar, HelpTip },
     props: {
         title: { type: String, required: true },
         message: { type: String, default: '' },

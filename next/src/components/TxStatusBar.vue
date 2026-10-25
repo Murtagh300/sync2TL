@@ -34,6 +34,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { haptic } from 'src/utils/prefs'
+import { notify as addNotification } from 'src/utils/notifications'
 
 type Shown = { id: string, state: 'pending' | 'done' | 'failed', label: string, count: number }
 
@@ -84,6 +85,13 @@ export default defineComponent({
                     const id = landed.glob.id
                     if (!this.doneAt[id]) {
                         this.doneAt[id] = Date.now()
+                        const failed = landed.glob.receipt!.reverted
+                        addNotification({
+                            id: `tx:${id}`,
+                            kind: failed ? 'tx-failed' : 'tx-done',
+                            title: this.$t(failed ? 'txStatus.msg_failed' : 'txStatus.msg_done', { label: label(landed) }),
+                            route: { name: 'tx', params: { gid: landed.gid, txId: id }, query: { me: landed.glob.signer } }
+                        })
                         haptic(landed.glob.receipt!.reverted ? 'warning' : 'success')
                     }
                     if (Date.now() - this.doneAt[id]! < 6000) {

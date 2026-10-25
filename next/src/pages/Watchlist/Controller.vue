@@ -109,7 +109,7 @@
                         v-for="item in feed"
                         :key="item.id"
                         clickable
-                        @click="openURL($svc.bvm.nftPage(item.contract, item.tokenId))"
+                        :to="{ name: 'collection', params: { slug: item.collectionSlug } }"
                     >
                         <q-item-section avatar>
                             <q-avatar rounded>

@@ -54,6 +54,15 @@
             </q-card-section>
             <q-card-actions class="row no-wrap q-px-md q-pb-md">
                 <q-btn
+                    class="col"
+                    outline
+                    no-caps
+                    color="primary"
+                    icon="o_image"
+                    :label="$t('share.action_image')"
+                    @click="shareImage()"
+                />
+                <q-btn
                     v-if="canShare"
                     class="col"
                     outline
@@ -84,6 +93,8 @@ import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 import QRCode from 'src/components/QRCode.vue'
 import { copyText } from 'src/utils/clipboard'
 import { buildPaymentLink } from 'src/utils/payment-request'
+import { shareCard } from 'src/utils/share-card'
+import { nameOf } from 'src/utils/names'
 
 // the address as a QR code; with an amount it becomes a payment request
 export default defineComponent({
@@ -126,6 +137,14 @@ export default defineComponent({
             copyText(this.content)
                 .then(() => this.$q.notify(this.$t('common.copied')))
                 .catch(console.error)
+        },
+        shareImage() {
+            const name = nameOf(this.address)
+            shareCard({
+                title: this.request && this.validAmount ? `${this.amount} ${this.symbol}` : (name || this.$t('share.my_wallet')),
+                subtitle: `${this.checksumed.slice(0, 10)}…${this.checksumed.slice(-8)}`,
+                qr: this.content
+            }).catch(() => { })
         },
         share() {
             const text = this.request && this.validAmount

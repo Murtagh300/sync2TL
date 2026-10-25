@@ -46,6 +46,10 @@ export const fns = {
     acceptBlindOffer: fn('acceptBlindOffer', [['address', 'nft'], ['uint256', 'tokenId'], ['uint256', 'index']]),
     cancelOffer: fn('cancelOffer', [['uint256', 'saleId'], ['uint256', 'index']]),
     cancelBlindOffer: fn('cancelBlindOffer', [['address', 'nft'], ['uint256', 'tokenId'], ['uint256', 'index']]),
+    // BlackVeMarket offers contract: an offer on any NFT of a collection
+    createCollectionOffer: fn('createOffer', [['address', 'nft'], ['address', 'paymentToken'], ['uint256', 'pricePerItem'], ['uint32', 'quantity'], ['uint64', 'expiresAt']], [['uint256', 'offerId']]),
+    cancelCollectionOffer: fn('cancelOffer', [['uint256', 'offerId']]),
+    acceptCollectionOffer: fn('acceptOffer', [['uint256', 'offerId'], ['uint256[]', 'tokenIds']]),
     // BlackVeMarket launchpad collections
     mint: fn('mint', [['uint256', 'phaseId'], ['uint32', 'quantity']], [], true),
     // Uniswap V2 style routers (VeRocket, BetterSwap aggregator)
@@ -72,6 +76,7 @@ export type Action =
     | { kind: 'offer', market: string, amount: bigint, paymentToken: string, saleId?: string, contract?: string, tokenId?: string }
     | { kind: 'accept-offer', market: string, saleId?: string, contract?: string, tokenId?: string }
     | { kind: 'cancel-offer', market: string }
+    | { kind: 'collection-offer', market: string, contract: string, price: bigint, paymentToken: string, quantity: number }
     | { kind: 'mint', contract: string, phaseId: string, quantity: number }
     | { kind: 'swap', router: string }
 
@@ -96,6 +101,9 @@ const table: Array<[abi.Function, (to: string, d: abi.Decoded) => Action | null]
     [fns.acceptBlindOffer, (to, d) => ({ kind: 'accept-offer', market: to, contract: d.nft, tokenId: String(d.tokenId) })],
     [fns.cancelOffer, (to) => ({ kind: 'cancel-offer', market: to })],
     [fns.cancelBlindOffer, (to) => ({ kind: 'cancel-offer', market: to })],
+    [fns.createCollectionOffer, (to, d) => ({ kind: 'collection-offer', market: to, contract: d.nft, price: BigInt(d.pricePerItem), paymentToken: d.paymentToken, quantity: Number(d.quantity) })],
+    [fns.cancelCollectionOffer, (to) => ({ kind: 'cancel-offer', market: to })],
+    [fns.acceptCollectionOffer, (to) => ({ kind: 'accept-offer', market: to })],
     [fns.mint, (to, d) => ({ kind: 'mint', contract: to, phaseId: String(d.phaseId), quantity: Number(d.quantity) })],
     [fns.swapExactETHForTokens, (to) => ({ kind: 'swap', router: to })],
     [fns.swapExactTokensForETH, (to) => ({ kind: 'swap', router: to })],

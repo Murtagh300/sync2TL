@@ -1,6 +1,42 @@
 <template>
     <div class="column fit no-wrap">
-        <page-toolbar :title="$t('activities.title')" />
+        <page-toolbar :title="$t('activities.title')">
+            <q-btn
+                flat
+                round
+                icon="o_file_download"
+                :aria-label="$t('export.title')"
+                :disable="!built.rows.length"
+            >
+                <q-menu
+                    anchor="bottom right"
+                    self="top right"
+                >
+                    <q-list style="min-width: 200px">
+                        <q-item
+                            v-close-popup
+                            clickable
+                            @click="exportRows('csv')"
+                        >
+                            <q-item-section avatar>
+                                <q-icon name="o_table_view" />
+                            </q-item-section>
+                            <q-item-section>{{$t('export.csv')}}</q-item-section>
+                        </q-item>
+                        <q-item
+                            v-close-popup
+                            clickable
+                            @click="exportRows('pdf')"
+                        >
+                            <q-item-section avatar>
+                                <q-icon name="o_picture_as_pdf" />
+                            </q-item-section>
+                            <q-item-section>{{$t('export.pdf')}}</q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-menu>
+            </q-btn>
+        </page-toolbar>
         <page-content class="col">
             <q-pull-to-refresh
                 color="primary"
@@ -75,6 +111,11 @@ import { incomingTransfers, type Incoming } from 'src/utils/incoming'
 import { txNote } from 'src/utils/tx-notes'
 import { decodeAsTokenTransferClause, decodeAsNftTransferClause } from 'pages/Sign/helper'
 import type { BVM } from 'boot/services/bvm'
+import { downloadText, printTable, toCsv, type ExportRow } from 'src/utils/export'
+import { prefs } from 'src/utils/prefs'
+import { BigNumber } from 'bignumber.js'
+
+const units = (v: bigint | string, decimals: number) => new BigNumber(v.toString()).div(new BigNumber(10).pow(decimals)).toNumber()
 
 type Target =
     | { kind: 'tx', gid: string, txId: string, me: string }
@@ -162,6 +203,48 @@ export default defineComponent({
                 this.loading = false
             }
         },
+        async exportRows(kind: 'csv' | 'pdf') {
+            const rows = this.built.rows
+            // values at the time: hourly prices reach back 30 days
+            const tokens = [...new Set(rows.filter(r => r.asset).map(r => r.asset!.token))]
+            const [history, fx] = await Promise.all([
+                this.$svc.prices.history(tokens, 720).catch(() => ({} as Record<string, { time: number, price: number }[]>)),
+                this.$svc.prices.fx(prefs.currency)
+            ])
+            const priceAt = (token: string, t: number) => {
+                const pts = history[(token || ZERO).toLowerCase()] || []
+                if (!pts.length || t < pts[0]!.time - 3600 * 1000) return null
+                let p = pts[0]!.price
+                for (const x of pts) {
+                    if (x.time > t) break
+                    p = x.price
+                }
+                return p
+            }
+            const out: ExportRow[] = rows.map(r => {
+                const price = r.asset ? priceAt(r.asset.token, r.time) : null
+                return {
+                    time: r.time,
+                    type: r.tone === 'in' ? this.$t('export.type_in') : r.tone === 'out' ? this.$t('export.type_out') : r.tone === 'fail' ? this.$t('export.type_failed') : this.$t('export.type_other'),
+                    title: r.title,
+                    amount: r.amount || '',
+                    counterparty: r.counterparty || '',
+                    txId: r.txId || '',
+                    note: r.note || '',
+                    value: price !== null && r.asset ? (r.asset.amount * price * fx).toFixed(2) : ''
+                }
+            })
+            const headers = [
+                this.$t('export.col_date'), this.$t('export.col_type'), this.$t('export.col_what'), this.$t('export.col_amount'),
+                this.$t('export.col_counterparty'), this.$t('export.col_tx'), this.$t('export.col_note'),
+                this.$t('export.col_value', { currency: prefs.currency })
+            ]
+            if (kind === 'csv') {
+                downloadText(`blackvault-activity-${new Date().toISOString().slice(0, 10)}.csv`, toCsv(out, headers))
+            } else if (!printTable(this.$t('export.title_pdf'), out, headers)) {
+                this.$q.notify(this.$t('export.msg_popup'))
+            }
+        },
         refresh(done: () => void) {
             void this.load().finally(done)
         },
@@ -211,6 +294,7 @@ export default defineComponent({
             const failed = status === 'failed' || status === 'expired'
             const base: Row = {
                 key: `tx:${a.id}`,
+                txId: a.glob.id,
                 time: a.createdTime,
                 title: a.glob.comment || this.$t('common.transaction'),
                 icon: 'o_receipt_long',
@@ -230,6 +314,7 @@ export default defineComponent({
                     const amount = formatUnits(BigInt(c.value), 18)
                     return {
                         ...base,
+                        asset: { amount: -units(BigInt(c.value), 18), token: '' },
                         icon: 'o_north_east',
                         tone: out,
                         amount: `−${amount} VET`,
@@ -241,7 +326,7 @@ export default defineComponent({
                 for (const spec of this.tokens.filter(t => t.gid === a.gid)) {
                     const t = decodeAsTokenTransferClause(clause, spec)
                     if (t) {
-                        return { ...base, icon: 'o_north_east', tone: out, amount: `−${formatUnits(t.amount, spec.decimals)} ${spec.symbol}`, counterparty: t.to, counterpartyLabel: this.$t('activities.label_to') }
+                        return { ...base, icon: 'o_north_east', tone: out, amount: `−${formatUnits(t.amount, spec.decimals)} ${spec.symbol}`, counterparty: t.to, counterpartyLabel: this.$t('activities.label_to'), asset: { amount: -units(t.amount, spec.decimals), token: spec.address } }
                     }
                 }
                 const nft = decodeAsNftTransferClause(clause)
@@ -278,6 +363,7 @@ export default defineComponent({
         incomingRow(i: Incoming & { gid: string }): Row {
             const base: Row = {
                 key: `in:${i.id}`,
+                txId: i.txId,
                 time: i.time,
                 title: '',
                 icon: 'o_south_west',
@@ -287,7 +373,7 @@ export default defineComponent({
                 note: txNote(i.txId)
             }
             if (i.kind === 'vet') {
-                return { ...base, title: this.$t('activities.label_received', { what: 'VET' }), amount: `+${formatUnits(BigInt(i.amount || 0), 18)} VET` }
+                return { ...base, title: this.$t('activities.label_received', { what: 'VET' }), amount: `+${formatUnits(BigInt(i.amount || 0), 18)} VET`, asset: { amount: units(i.amount || '0', 18), token: '' } }
             }
             if (i.kind === 'nft') {
                 const name = this.collections[i.contract!]?.name || this.$t('action.an_nft')
@@ -297,7 +383,8 @@ export default defineComponent({
             return {
                 ...base,
                 title: this.$t('activities.label_received', { what: spec?.symbol || this.$t('activities.label_a_token') }),
-                amount: spec ? `+${formatUnits(BigInt(i.amount || 0), spec.decimals)} ${spec.symbol}` : undefined
+                amount: spec ? `+${formatUnits(BigInt(i.amount || 0), spec.decimals)} ${spec.symbol}` : undefined,
+                asset: spec ? { amount: units(i.amount || '0', spec.decimals), token: spec.address } : undefined
             }
         }
     }

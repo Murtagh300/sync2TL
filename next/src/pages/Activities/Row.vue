@@ -66,6 +66,9 @@ export type ActivityRow = {
     note?: string
     status?: 'pending' | 'failed' | 'expired'
     statusLabel?: string
+    /** what moved, for the export: an amount of a token (VET: '') */
+    asset?: { amount: number, token: string }
+    txId?: string
 }
 
 // one line of activity: what, with whom, when, how much

@@ -7,6 +7,8 @@
             class="col"
             padding
         >
+            <div class="bvm-label q-mb-sm q-ml-xs">{{$t('dappsGrid.title')}}</div>
+            <dapps-grid class="q-mb-lg" />
             <div class="bvm-label q-mb-sm q-ml-xs">BlackVeMarket</div>
             <q-list class="bvm-list q-mb-lg">
                 <more-item
@@ -54,6 +56,11 @@
                     :to="{ name: 'search' }"
                 />
                 <more-item
+                    icon="o_school"
+                    :title="$t('tour.action_again')"
+                    @click="replayTour()"
+                />
+                <more-item
                     icon="o_settings"
                     :title="$t('settings.title')"
                     :to="{ name: 'settings' }"
@@ -67,6 +74,7 @@
 import { defineComponent, h } from 'vue'
 import { QItem, QItemSection, QIcon, QAvatar } from 'quasar'
 import PageContent from 'components/PageContent.vue'
+import DappsGrid from 'components/DappsGrid.vue'
 import { marketURL } from 'boot/services/bvm'
 import { openURL } from 'src/utils/open-url'
 import { selectedWallet } from 'src/utils/selection'
@@ -85,7 +93,7 @@ const MoreItem = defineComponent({
 
 // everything that isn't a tab of its own
 export default defineComponent({
-    components: { PageContent, MoreItem },
+    components: { PageContent, MoreItem, DappsGrid },
     data: () => ({
         marketURL,
         // async computed (see src/shims-async-computed.d.ts)
@@ -104,7 +112,13 @@ export default defineComponent({
         build(): string { return import.meta.env.APP_BUILD || '' }
     },
     methods: {
-        openURL
+        openURL,
+        replayTour() {
+            try {
+                localStorage.removeItem('bv-tour-done')
+            } catch { }
+            void this.$router.replace({ name: 'index' })
+        }
     }
 })
 </script>

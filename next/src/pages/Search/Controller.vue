@@ -108,7 +108,7 @@
                             v-for="c in collections"
                             :key="c.slug"
                             clickable
-                            @click="openURL($svc.bvm.collectionPage(c.slug))"
+                            :to="{ name: 'collection', params: { slug: c.slug } }"
                         >
                             <q-item-section avatar>
                                 <q-avatar rounded>
@@ -127,7 +127,7 @@
                             </q-item-section>
                             <q-item-section side>
                                 <q-icon
-                                    name="o_open_in_new"
+                                    name="chevron_right"
                                     size="18px"
                                 />
                             </q-item-section>

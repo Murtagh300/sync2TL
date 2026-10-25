@@ -3,6 +3,7 @@ import { defineComponent } from 'vue'
 import { abis } from 'src/consts'
 import { abi } from 'thor-devkit'
 import { formatAmount } from 'src/utils/format'
+import { emitBalancePulse, notify as addNotification } from 'src/utils/notifications'
 
 export default defineComponent({
     props: {
@@ -174,6 +175,14 @@ export default defineComponent({
             const message = dir === 'in'
                 ? `${this.$t('common.received')} <strong>${amount}</strong> ${symbol}`
                 : `${this.$t('common.sent')} <strong>${amount}</strong> ${symbol}`
+
+            addNotification({
+                id: `${dir}:${walletId}:${addressIndex}:${symbol}:${amount}:${Math.floor(Date.now() / 10000)}`,
+                kind: dir,
+                title: `${dir === 'in' ? this.$t('common.received') : this.$t('common.sent')} ${amount} ${symbol}`,
+                route: { name: 'address', params: { walletId: walletId.toString(), addressIndex: addressIndex.toString() } }
+            })
+            emitBalancePulse({ walletId, addressIndex, dir, text: `${amount} ${symbol}` })
 
             this.$q.notify({
                 color: 'secondary',

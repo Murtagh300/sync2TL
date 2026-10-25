@@ -81,6 +81,77 @@ export function sendClauses(nfts: MarketNft[], from: string, to: string): Clause
     }))
 }
 
+export const VVET = '0x45429A2255e7248e57fce99E7239aED3f84B7a53'
+export const OFFERS_CONTRACT = '0x181EFd5A9ad8d9c3c56Cc5cE66A98D3bEC82DD4c'
+
+/** offers are paid in tokens: VET is wrapped into VVET first, in the same transaction */
+export const offerCurrencies: Record<string, string> = {
+    VET: ZERO_ADDRESS,
+    VVET,
+    B3TR: listingCurrencies.B3TR!,
+    SQUAD: listingCurrencies.SQUAD!,
+    GOLD: listingCurrencies.GOLD!,
+    VENI: listingCurrencies.VENI!
+}
+
+/** buy a listed NFT at its price: VET as value, a token after approving it */
+export function buyClauses(nft: MarketNft & { rawPrice?: string | null, paymentToken?: string | null }): Clause[] {
+    const price = nft.rawPrice || '0'
+    const token = nft.paymentToken || ZERO_ADDRESS
+    const buy = { to: nft.maasContract!, value: '0', data: fns.fixedBuy.encode(nft.saleId!) }
+    if (token.toLowerCase() === ZERO_ADDRESS) {
+        return [{ ...buy, value: price }]
+    }
+    return [{ to: token, value: '0', data: fns.approve.encode(nft.maasContract!, price) }, buy]
+}
+
+/** the clauses that make paymentToken spendable by spender: wrap VET into VVET when offering VET */
+function fundOffer(spender: string, symbol: string, total: string): { clauses: Clause[], token: string } {
+    if (symbol === 'VET') {
+        return {
+            clauses: [
+                { to: VVET, value: total, data: fns.deposit.encode() },
+                { to: VVET, value: '0', data: fns.approve.encode(spender, total) }
+            ],
+            token: VVET
+        }
+    }
+    const token = offerCurrencies[symbol]!
+    return { clauses: [{ to: token, value: '0', data: fns.approve.encode(spender, total) }], token }
+}
+
+/** an offer on one NFT: on its listing when listed, otherwise a blind offer */
+export function offerClauses(nft: MarketNft, amountWei: string, symbol: string): Clause[] {
+    const { clauses, token } = fundOffer(nft.maasContract!, symbol, amountWei)
+    const offer = nft.listed && nft.saleId
+        ? { to: nft.maasContract!, value: '0', data: fns.createOffer.encode(nft.saleId, amountWei, token) }
+        : { to: nft.maasContract!, value: '0', data: fns.createBlindOffer.encode(nft.contract, nft.tokenId, amountWei, token) }
+    return [...clauses, offer]
+}
+
+/** withdraw your offer on one NFT */
+export function cancelOfferClauses(nft: MarketNft, offer: { isListed: boolean, saleId: string | null, index: number }): Clause[] {
+    return [offer.isListed && offer.saleId
+        ? { to: nft.maasContract!, value: '0', data: fns.cancelOffer.encode(offer.saleId, offer.index) }
+        : { to: nft.maasContract!, value: '0', data: fns.cancelBlindOffer.encode(nft.contract, nft.tokenId, offer.index) }]
+}
+
+/** an offer on any NFT(s) of a collection, valid for some days */
+export function collectionOfferClauses(nftContract: string, pricePerItemWei: string, quantity: number, symbol: string, days: number): Clause[] {
+    const total = (BigInt(pricePerItemWei) * BigInt(quantity)).toString()
+    const { clauses, token } = fundOffer(OFFERS_CONTRACT, symbol, total)
+    const expiresAt = Math.floor(Date.now() / 1000) + days * 24 * 3600
+    return [...clauses, {
+        to: OFFERS_CONTRACT,
+        value: '0',
+        data: fns.createCollectionOffer.encode(nftContract, token, pricePerItemWei, quantity, expiresAt)
+    }]
+}
+
+export function cancelCollectionOfferClauses(offerId: string): Clause[] {
+    return [{ to: OFFERS_CONTRACT, value: '0', data: fns.cancelCollectionOffer.encode(offerId) }]
+}
+
 /** mint from a launchpad phase, paid in VET or in a token */
 export function mintClauses(contract: string, phaseIndex: number, quantity: number, priceWei: string, payToken: string | null): Clause[] {
     const total = (BigInt(priceWei) * BigInt(quantity)).toString()

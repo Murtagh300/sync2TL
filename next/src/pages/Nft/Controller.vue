@@ -18,6 +18,16 @@
                         <q-item
                             v-close-popup
                             clickable
+                            @click="share()"
+                        >
+                            <q-item-section avatar>
+                                <q-icon name="o_ios_share" />
+                            </q-item-section>
+                            <q-item-section>{{$t('share.action')}}</q-item-section>
+                        </q-item>
+                        <q-item
+                            v-close-popup
+                            clickable
                             @click="toggleHidden()"
                         >
                             <q-item-section avatar>
@@ -100,7 +110,10 @@
                     </div>
                 </q-img>
 
-                <div class="bvm-label q-mt-lg">{{nft.collection}}</div>
+                <router-link
+                    class="bvm-label q-mt-lg block coll-link"
+                    :to="{ name: 'collection', params: { slug: nft.collectionSlug } }"
+                >{{nft.collection}} ›</router-link>
                 <h1 class="nft-name bvm-display">{{nft.name}}</h1>
 
                 <div class="row q-gutter-sm q-mt-sm">
@@ -157,7 +170,28 @@
                             />
                         </div>
                     </template>
+                    <template v-if="!isOwner && tradable">
+                        <q-btn
+                            v-if="nft.listed && nft.saleId"
+                            unelevated
+                            no-caps
+                            size="lg"
+                            color="primary"
+                            icon="o_shopping_bag"
+                            :label="$t('collection.action_buy_for', { price: nft.price })"
+                            @click="buy()"
+                        />
+                        <q-btn
+                            outline
+                            no-caps
+                            color="primary"
+                            icon="o_local_offer"
+                            :label="$t('offers.action_place')"
+                            @click="makeOffer()"
+                        />
+                    </template>
                     <q-btn
+                        v-if="isOwner"
                         :unelevated="!(isOwner && tradable)"
                         :outline="isOwner && tradable"
                         no-caps
@@ -196,6 +230,19 @@
                                 <q-item-label caption>
                                     <address-label :addr="o.buyer" />
                                 </q-item-label>
+                            </q-item-section>
+                            <q-item-section
+                                v-if="!isOwner && isMine(o.buyer)"
+                                side
+                            >
+                                <q-btn
+                                    flat
+                                    dense
+                                    no-caps
+                                    color="negative"
+                                    :label="$t('offers.action_withdraw')"
+                                    @click="withdrawOffer(o)"
+                                />
                             </q-item-section>
                             <q-item-section
                                 v-if="isOwner && tradable"
@@ -246,6 +293,21 @@
                 <div class="bvm-label q-mt-lg q-mb-sm">{{$t('nft.label_details')}}</div>
                 <div class="bvm-tile details">
                     <div
+                        v-if="pnl"
+                        class="detail row no-wrap items-center"
+                    >
+                        <span class="text-muted">{{pnl.minted ? $t('nft.label_minted') : $t('nft.label_bought_for')}}</span>
+                        <q-space />
+                        <span class="bvm-amount">
+                            <template v-if="!pnl.minted">{{pnl.paid}} {{pnl.currency}}</template>
+                            <span
+                                v-if="pnl.percent !== null"
+                                class="q-ml-sm pnl"
+                                :class="pnl.percent >= 0 ? 'text-primary' : 'text-negative'"
+                            >{{pnl.percent >= 0 ? '+' : ''}}{{pnl.percent.toFixed(0)}}% {{$t('nft.label_vs_floor')}}</span>
+                        </span>
+                    </div>
+                    <div
                         v-if="lastSale"
                         class="detail row"
                     >
@@ -281,6 +343,9 @@ import AddressLabel from 'components/AddressLabel.vue'
 import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
 import { openURL } from 'src/utils/open-url'
 import ListDialog, { type ListResult } from './ListDialog.vue'
+import OfferDialog, { type OfferResult } from 'pages/Collection/OfferDialog.vue'
+import { buyClauses, offerClauses, cancelOfferClauses } from 'src/utils/market'
+import { genesises } from 'src/consts'
 import NftViewer, { type ViewerItem } from './NftViewer.vue'
 import SuccessDialog from 'components/SuccessDialog.vue'
 import RecipientCheckDialog from 'pages/Send/RecipientCheckDialog.vue'
@@ -290,6 +355,7 @@ import { toWei } from 'src/utils/format'
 import { emptyWatchlist, type Watchlist } from 'src/utils/alerts'
 import { heroHint, HERO_NAME } from 'src/utils/hero'
 import { isHidden, loadHidden, nftKey, saveHidden } from 'src/utils/hidden-nfts'
+import { shareCard } from 'src/utils/share-card'
 import type { BVM } from 'boot/services/bvm'
 
 const erc721TransferFrom = new abi.Function({
@@ -334,6 +400,7 @@ export default defineComponent({
     data: () => ({
         error: false,
         watching: false,
+        activity: [] as BVM.ActivityEntry[],
         hidden: false,
         heroName: HERO_NAME,
         // async computed (see src/shims-async-computed.d.ts)
@@ -347,7 +414,8 @@ export default defineComponent({
         async nft(): Promise<BVM.NFT | null> {
             this.error = false
             try {
-                const nft = await this.$svc.bvm.nft(this.contract, this.tokenId)
+                const { nft, activity } = await this.$svc.bvm.nftWithActivity(this.contract, this.tokenId)
+                this.activity = activity
                 const list = await this.$svc.config.getJSON<Watchlist>('watchlist', emptyWatchlist())
                 this.watching = list.collections.includes(nft.collectionSlug)
                 const [h, cols] = await Promise.all([loadHidden(this.$svc), this.$svc.bvm.collections().catch(() => null)])
@@ -401,12 +469,39 @@ export default defineComponent({
         canSend(): boolean {
             return !!this.nft && !!this.wallet && !this.sendBlock
         },
+        /** what this address paid (or that it minted), against the floor now */
+        pnl(): { paid: string, currency: string, minted: boolean, percent: number | null } | null {
+            const me = this.address.toLowerCase()
+            if (!this.isOwner || !me) {
+                return null
+            }
+            const num = (s?: string | null) => parseFloat(String(s || '').replace(/,/g, ''))
+            const floor = this.nft?.intelligence?.collection
+            const bought = this.activity.find(a => a.action === 'sale' && (a.buyer || '').toLowerCase() === me)
+            if (bought && bought.displayAmount) {
+                const paid = num(bought.displayAmount)
+                const percent = floor && floor.floorValue && floor.floorCurrency === bought.currency && paid > 0
+                    ? (floor.floorValue / paid - 1) * 100
+                    : null
+                return { paid: bought.displayAmount, currency: bought.currency || '', minted: false, percent }
+            }
+            const minted = this.activity.find(a => a.action === 'transfer' && (a.buyer || '').toLowerCase() === me &&
+                (a as { actor?: string }).actor === '0x0000000000000000000000000000000000000000')
+            return minted ? { paid: '', currency: '', minted: true, percent: null } : null
+        },
         lastSale(): { displayPrice: string, currency: string } | null {
             return this.nft?.intelligence?.lastSale || null
         }
     },
     methods: {
         openURL,
+        async share() {
+            const nft = this.nft
+            if (!nft) return
+            try {
+                await shareCard({ title: nft.name, subtitle: nft.collection, image: nft.image }, this.$svc.bvm.nftPage(nft.contract, nft.tokenId))
+            } catch { }
+        },
         async toggleHidden() {
             const nft = this.nft
             if (!nft) {
@@ -477,6 +572,39 @@ export default defineComponent({
             } catch {
                 // declined in the transaction dialog
             }
+        },
+        isMine(address: string) {
+            return (address || '').toLowerCase() === this.address.toLowerCase()
+        },
+        async buy() {
+            const nft = this.nft
+            if (!nft) return
+            const comment = this.$t('collection.comment_buy', { nft: nft.name, price: nft.price })
+            try {
+                await this.$signTx(genesises.main.id, {
+                    message: buyClauses(nft).map(c => ({ ...c, comment })),
+                    options: { comment }
+                })
+                this.$dialog({ component: SuccessDialog, title: comment, message: this.$t('collection.msg_bought'), image: nft.image }).catch(() => { })
+            } catch { }
+        },
+        async makeOffer() {
+            const nft = this.nft
+            if (!nft) return
+            try {
+                const r = await this.$dialog<OfferResult>({ component: OfferDialog, title: this.$t('offers.action_place'), message: nft.name, floor: this.floor })
+                const comment = this.$t('offers.comment_nft', { nft: nft.name, price: `${r.price} ${r.symbol}` })
+                await this.$signTx(genesises.main.id, {
+                    message: offerClauses(nft, toWei(r.price, 18), r.symbol).map(c => ({ ...c, comment })),
+                    options: { comment }
+                })
+                this.$dialog({ component: SuccessDialog, title: comment, message: this.$t('offers.msg_placed'), image: nft.image }).catch(() => { })
+            } catch { }
+        },
+        async withdrawOffer(offer: BVM.Offer) {
+            const nft = this.nft
+            if (!nft) return
+            await this.market(cancelOfferClauses(nft, offer), this.$t('offers.comment_withdraw'), this.$t('offers.msg_withdrawn'))
         },
         async askPrice(title: string, action: string): Promise<{ wei: string, token: string, text: string } | null> {
             const nft = this.nft!
@@ -584,6 +712,12 @@ export default defineComponent({
 <style lang="sass" scoped>
 .offer-amount
   font-size: 16px
+
+.pnl
+  font-size: 13px
+
+.coll-link
+  text-decoration: none
 
 .hero-hint
   display: block

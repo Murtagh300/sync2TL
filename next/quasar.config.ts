@@ -92,7 +92,9 @@ export default defineConfig(() => {
                 '/bvm-api': {
                     target: 'https://blackvemarket.com/api',
                     changeOrigin: true,
-                    rewrite: (path: string) => path.replace(/^\/bvm-api/, '')
+                    rewrite: (path: string) => path.replace(/^\/bvm-api/, ''),
+                    // the sign-in cookie belongs to blackvemarket.com; keep it on localhost in development
+                    cookieDomainRewrite: ''
                 }
             }
         },
@@ -106,7 +108,7 @@ export default defineConfig(() => {
             },
             iconSet: 'material-icons',
             lang: 'en-US',
-            plugins: ['Dialog', 'Notify']
+            plugins: ['Dialog', 'Notify', 'BottomSheet']
         },
 
         animations: [],
@@ -115,6 +117,8 @@ export default defineConfig(() => {
             workboxMode: 'GenerateSW',
             extendPWAGenerateSWOptions(cfg) {
                 cfg.skipWaiting = true
+                // push messages from BlackVeMarket (public/push-sw.js)
+                cfg.importScripts = ['push-sw.js']
                 cfg.clientsClaim = true
                 cfg.runtimeCaching = [{
                     urlPattern: /^https:\/\/vechain.github.io\/token-registry\/assets\//,

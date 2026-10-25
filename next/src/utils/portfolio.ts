@@ -30,10 +30,13 @@ export type Portfolio = {
 
 const units = (amount: string, decimals: number) => new BigNumber(amount).div(new BigNumber(10).pow(decimals)).toNumber()
 
-export async function walletPortfolio(svc: Service, wallet: M.Wallet, opts: { withSeries?: boolean } = {}): Promise<Portfolio | null> {
-    if (wallet.gid !== genesises.main.id) {
+/** the portfolio of one wallet, or of several together ("All wallets"); mainnet only */
+export async function walletPortfolio(svc: Service, walletOrWallets: M.Wallet | M.Wallet[], opts: { withSeries?: boolean, hours?: number } = {}): Promise<Portfolio | null> {
+    const wallets = (Array.isArray(walletOrWallets) ? walletOrWallets : [walletOrWallets]).filter(w => w.gid === genesises.main.id)
+    if (!wallets.length) {
         return null
     }
+    const wallet = { ...wallets[0]!, meta: { ...wallets[0]!.meta, addresses: [...new Set(wallets.flatMap(w => w.meta.addresses))] } }
     const bc = svc.bc(wallet.gid)
     // the tokens each address shows, summed over addresses
     const perAddress = await Promise.all(wallet.meta.addresses.map(async address => {
@@ -70,7 +73,7 @@ export async function walletPortfolio(svc: Service, wallet: M.Wallet, opts: { wi
     let series: number[] = []
     if (opts.withSeries) {
         const priced = holdings.filter(h => h.usd > 0)
-        const history = await svc.prices.history(priced.map(h => h.spec.address))
+        const history = await svc.prices.history(priced.map(h => h.spec.address), opts.hours ?? 168)
         const lines = priced.map(h => ({
             amount: units(h.amount, h.spec.decimals),
             points: history[(h.spec.address || '0x0000000000000000000000000000000000000000').toLowerCase()] || []

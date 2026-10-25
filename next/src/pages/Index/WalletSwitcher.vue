@@ -21,9 +21,13 @@
             class="q-ml-sm text-left"
             style="min-width: 0"
         >
-            <div class="switcher-name ellipsis">{{wallet ? wallet.meta.name : 'BlackVault'}}</div>
+            <div class="switcher-name ellipsis">{{all ? $t('home.label_all_wallets') : wallet ? wallet.meta.name : 'BlackVault'}}</div>
             <div
-                v-if="wallet"
+                v-if="all"
+                class="switcher-sub ellipsis text-muted"
+            >{{$t('home.label_wallet_count', { n: wallets.length })}}</div>
+            <div
+                v-else-if="wallet"
                 class="switcher-sub ellipsis text-muted"
             >
                 <template v-if="profile && profile.displayName">@{{profile.displayName}}</template>
@@ -46,11 +50,26 @@
         >
             <q-list style="min-width: 260px">
                 <q-item
+                    v-if="wallets.length > 1"
+                    v-close-popup
+                    clickable
+                    :active="all"
+                    @click="$emit('select', -1)"
+                >
+                    <q-item-section avatar>
+                        <q-avatar icon="o_account_balance_wallet" />
+                    </q-item-section>
+                    <q-item-section>
+                        <q-item-label>{{$t('home.label_all_wallets')}}</q-item-label>
+                        <q-item-label caption>{{$t('home.label_wallet_count', { n: wallets.length })}}</q-item-label>
+                    </q-item-section>
+                </q-item>
+                <q-item
                     v-for="w in wallets"
                     :key="w.id"
                     v-close-popup
                     clickable
-                    :active="wallet?.id === w.id"
+                    :active="!all && wallet?.id === w.id"
                     @click="$emit('select', w.id)"
                 >
                     <q-item-section avatar>
@@ -69,7 +88,7 @@
                         </q-item-label>
                     </q-item-section>
                     <q-item-section
-                        v-if="wallet?.id === w.id"
+                        v-if="!all && wallet?.id === w.id"
                         side
                     >
                         <q-icon
@@ -104,7 +123,8 @@ export default defineComponent({
     components: { AddressAvatar, AddressLabel },
     props: {
         wallet: Object as () => M.Wallet | null,
-        wallets: { type: Array as () => M.Wallet[], default: () => [] }
+        wallets: { type: Array as () => M.Wallet[], default: () => [] },
+        all: Boolean
     },
     emits: ['select'],
     data: () => ({

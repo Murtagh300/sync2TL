@@ -22,6 +22,9 @@ import Nfts from 'pages/Nfts'
 import More from 'pages/More'
 import Search from 'pages/Search'
 import TxDetail from 'pages/TxDetail'
+import Collection from 'pages/Collection'
+import Notifications from 'pages/Notifications'
+import Portfolio from 'pages/Portfolio'
 import Security, { Dapps } from 'pages/Security'
 
 const routes: RouteRecordRaw[] = [
@@ -68,6 +71,18 @@ const routes: RouteRecordRaw[] = [
             path: 'more',
             name: 'more',
             component: More
+        }, {
+            path: 'portfolio',
+            name: 'portfolio',
+            component: Portfolio
+        }, {
+            path: 'notifications',
+            name: 'notifications',
+            component: Notifications
+        }, {
+            path: 'collection/:slug',
+            name: 'collection',
+            component: Collection
         }, {
             path: 'tx/:gid/:txId',
             name: 'tx',

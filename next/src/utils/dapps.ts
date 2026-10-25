@@ -17,12 +17,14 @@ export function dappsFromActivity(list: M.Activity[]): DappUse[] {
         const origin = a.glob.origin
         if (!origin) continue
         let host: string
+        let base: string
         try {
             host = new URL(origin).host
+            base = new URL(origin).origin
         } catch {
             continue
         }
-        const d = by.get(host) || { host, origin, count: 0, last: 0, txs: 0, certs: 0, activityIds: [] }
+        const d = by.get(host) || { host, origin: base, count: 0, last: 0, txs: 0, certs: 0, activityIds: [] }
         d.count++
         d.last = Math.max(d.last, a.createdTime)
         a.type === 'tx' ? d.txs++ : d.certs++

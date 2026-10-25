@@ -142,6 +142,7 @@
                 :to="{ name: 'nft', params: { walletId, addressIndex, contract: nft.contract, tokenId: nft.tokenId } }"
             >
                 <a
+                    v-touch-hold:600.mouse="() => quickMenu(nft)"
                     :href="href"
                     class="nft bvm-tile"
                     :class="{ 'nft--selected': isSelected(nft), 'nft--selecting': selecting }"
@@ -333,7 +334,9 @@ import { canTrade, listClauses, listingCurrencies, sendClauses, signMarketTx } f
 import { toWei } from 'src/utils/format'
 import { readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 import { navigateWithHero } from 'src/utils/hero'
-import { isHidden, loadHidden, type HiddenNfts } from 'src/utils/hidden-nfts'
+import { isHidden, loadHidden, nftKey, saveHidden, type HiddenNfts } from 'src/utils/hidden-nfts'
+import { shareCard } from 'src/utils/share-card'
+import { haptic } from 'src/utils/prefs'
 import SuccessDialog from 'components/SuccessDialog.vue'
 import RecipientCheckDialog from 'pages/Send/RecipientCheckDialog.vue'
 import { isKnownRecipient, rememberRecipient } from 'src/utils/recipient'
@@ -437,6 +440,36 @@ export default defineComponent({
     },
     methods: {
         openURL,
+        /** a held card: the things to do with this one NFT */
+        quickMenu(nft: BVM.NFT) {
+            if (this.selecting) return
+            haptic()
+            type Action = { label: string, icon: string, id: string }
+            const actions: Action[] = []
+            if (!nft.listed && canTrade(nft)) actions.push({ label: this.$t('market.action_list'), icon: 'o_sell', id: 'list' })
+            if (!nft.listed) actions.push({ label: this.$t('nft.action_send'), icon: 'o_north_east', id: 'send' })
+            actions.push({ label: this.$t('share.action'), icon: 'o_ios_share', id: 'share' })
+            actions.push({ label: this.$t('nft.action_hide'), icon: 'o_visibility_off', id: 'hide' })
+            actions.push({ label: this.$t('nft.action_view_market'), icon: 'o_open_in_new', id: 'market' })
+            this.$q.bottomSheet({ message: nft.name, actions }).onOk((a: Action) => {
+                switch (a.id) {
+                    case 'list': void this.bulkList([nft]); break
+                    case 'send': void this.bulkSend([nft]); break
+                    case 'share': void shareCard({ title: nft.name, subtitle: nft.collection, image: nft.image }).catch(() => { }); break
+                    case 'hide': void this.hideNft(nft); break
+                    case 'market': openURL(this.$svc.bvm.nftPage(nft.contract, nft.tokenId)); break
+                }
+            })
+        },
+        async hideNft(nft: BVM.NFT) {
+            const key = nftKey(nft.contract, nft.tokenId)
+            const h = await loadHidden(this.$svc)
+            h.shown = h.shown.filter(k => k !== key)
+            h.hidden = [...h.hidden.filter(k => k !== key), key]
+            await saveHidden(this.$svc, h)
+            this.hiddenPrefs = h
+            this.$q.notify(this.$t('nft.msg_hidden'))
+        },
         isHiddenNft(nft: BVM.NFT) {
             return isHidden(this.hiddenPrefs, this.verified, nft)
         },
@@ -479,8 +512,8 @@ export default defineComponent({
                 this.$q.notify(this.$t('nft.msg_max_batch', { n: MAX_BATCH }))
             }
         },
-        async bulkSend() {
-            const nfts = this.sendable
+        async bulkSend(only?: BVM.NFT[]) {
+            const nfts = only || this.sendable
             let to: string
             try {
                 const opts: PromptOptions = {
@@ -513,8 +546,8 @@ export default defineComponent({
                 this.toggleSelecting()
             } catch { }
         },
-        async bulkList() {
-            const nfts = this.listable
+        async bulkList(only?: BVM.NFT[]) {
+            const nfts = only || this.listable
             let r: ListResult
             try {
                 r = await this.$dialog<ListResult>({

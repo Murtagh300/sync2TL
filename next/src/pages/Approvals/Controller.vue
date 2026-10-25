@@ -16,7 +16,7 @@
             class="col"
             padding
         >
-            <p class="text-soft q-mb-md">{{$t('approvals.msg_intro')}}</p>
+            <p class="text-soft q-mb-md">{{$t('approvals.msg_intro')}}<help-tip term="approval" /></p>
             <div
                 v-if="loading"
                 class="column flex-center q-py-xl"
@@ -104,6 +104,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import HelpTip from 'components/HelpTip.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
@@ -117,7 +118,7 @@ import SuccessDialog from 'components/SuccessDialog.vue'
 
 // what this address lets others spend or move, with a way to take it back
 export default defineComponent({
-    components: { PageToolbar, PageContent, PageAction, TokenAvatar },
+    components: { PageToolbar, PageContent, PageAction, TokenAvatar, HelpTip },
     props: {
         walletId: { type: String, required: true },
         addressIndex: { type: String, required: true }

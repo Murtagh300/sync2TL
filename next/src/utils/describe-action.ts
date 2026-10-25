@@ -88,6 +88,8 @@ export function describeAction(a: Action, ctx: DescribeContext): ActionText {
             return { icon: 'o_handshake', text: t('action.accept_offer', { nft: nftName(ctx, a.contract, a.tokenId) }), risk: 'ok' }
         case 'cancel-offer':
             return { icon: 'o_cancel', text: t('action.cancel_offer'), risk: 'ok' }
+        case 'collection-offer':
+            return { icon: 'o_local_offer', text: t('action.collection_offer', { amount: money(ctx, a.price, a.paymentToken), n: a.quantity, collection: ctx.collection(a.contract) || short(a.contract) }), risk: 'ok' }
         case 'mint':
             return { icon: 'o_auto_awesome', text: t('action.mint', { n: a.quantity, collection: ctx.collection(a.contract) || short(a.contract) }), risk: 'ok' }
         case 'swap':

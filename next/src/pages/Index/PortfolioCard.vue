@@ -10,7 +10,7 @@
                 class="q-ml-xs text-muted"
                 :icon="prefs.hideBalances ? 'o_visibility_off' : 'o_visibility'"
                 :aria-label="$t('home.action_hide')"
-                @click="toggleHidden()"
+                @click.stop="toggleHidden()"
             />
         </div>
         <div
@@ -58,12 +58,17 @@ import Sparkline from 'components/Sparkline.vue'
 import { walletPortfolio, type Portfolio } from 'src/utils/portfolio'
 import { haptic, money, prefs } from 'src/utils/prefs'
 import { readSnapshot, writeSnapshot } from 'src/utils/snapshot'
+import { recordDayValue } from 'src/utils/value-history'
 
 // what the selected wallet is worth, and how that moved
 export default defineComponent({
     components: { Sparkline },
     props: {
-        wallet: { type: Object as () => M.Wallet, required: true }
+        wallet: { type: Object as () => M.Wallet, required: true },
+        /** the wallets to sum (all of them for "All wallets") */
+        wallets: { type: Array as () => M.Wallet[], default: () => [] },
+        /** where the last value and the daily history are kept */
+        scope: { type: String, default: '' }
     },
     data: () => ({
         prefs,
@@ -75,7 +80,10 @@ export default defineComponent({
     computed: {
         /** the current portfolio, or the last one while it loads */
         shown(): Portfolio | null {
-            return this.portfolio || readSnapshot<Portfolio>(`portfolio:${this.wallet.id}`)?.value || null
+            return this.portfolio || readSnapshot<Portfolio>(`portfolio:${this.key}`)?.value || null
+        },
+        key(): string {
+            return this.scope || String(this.wallet.id)
         },
         supported(): boolean {
             return this.$svc.bvm.supports(this.wallet.gid)
@@ -95,10 +103,11 @@ export default defineComponent({
     },
     asyncComputed: {
         async portfolio(): Promise<Portfolio | null> {
-            const p = await walletPortfolio(this.$svc, this.wallet, { withSeries: true }).catch(() => null)
+            const p = await walletPortfolio(this.$svc, this.wallets.length ? this.wallets : this.wallet, { withSeries: true }).catch(() => null)
             if (p) {
                 // what is drawn next time, before this is computed again
-                writeSnapshot(`portfolio:${this.wallet.id}`, { totalUsd: p.totalUsd, change24h: p.change24h, series: p.series, holdings: [] })
+                writeSnapshot(`portfolio:${this.key}`, { totalUsd: p.totalUsd, change24h: p.change24h, series: p.series, holdings: [] })
+                recordDayValue(this.key, p.totalUsd)
             }
             return p
         }
@@ -119,7 +128,8 @@ export default defineComponent({
                 return
             }
             try {
-                const counts = await Promise.all(this.wallet.meta.addresses.map(a => this.$svc.bvm.holdings(a, { limit: 1 }).then(h => h.summary.total).catch(() => 0)))
+                const addresses = (this.wallets.length ? this.wallets : [this.wallet]).flatMap(w => w.meta.addresses)
+                const counts = await Promise.all(addresses.map(a => this.$svc.bvm.holdings(a, { limit: 1 }).then(h => h.summary.total).catch(() => 0)))
                 const n = counts.reduce((a, b) => a + b, 0)
                 this.nftLine = n ? this.$t('home.label_nfts', { n }) : ''
             } catch { }

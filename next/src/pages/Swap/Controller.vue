@@ -121,7 +121,7 @@
                     <span>1 {{fromSymbol}} ≈ {{rate}} {{toSymbol}}</span>
                 </div>
                 <div class="row">
-                    <span class="text-muted">{{$t('swap.label_min')}}</span>
+                    <span class="text-muted">{{$t('swap.label_min')}}<help-tip term="slippage" /></span>
                     <q-space />
                     <span>{{formatUnits(quoteResult.amountOutMin, toToken?.decimals || 18)}} {{toSymbol}}</span>
                 </div>
@@ -152,6 +152,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import HelpTip from 'components/HelpTip.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
@@ -167,7 +168,7 @@ import type { Prices } from 'boot/services/prices'
 
 // swap tokens through the VeChain DEXes
 export default defineComponent({
-    components: { PageToolbar, PageContent, PageAction, TokenPick },
+    components: { PageToolbar, PageContent, PageAction, TokenPick, HelpTip },
     props: {
         wid: String,
         i: String

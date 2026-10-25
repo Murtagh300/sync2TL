@@ -13,7 +13,10 @@ watch(() => selection.walletId, id => {
     } catch { }
 })
 
-/** the selected wallet among these, or the first */
+/** the id for "All wallets" on the home screen */
+export const ALL_WALLETS = -1
+
+/** the selected wallet among these, or the first (also for "All wallets": actions need one) */
 export function selectedWallet(wallets: M.Wallet[] | null | undefined): M.Wallet | null {
     if (!wallets || !wallets.length) {
         return null

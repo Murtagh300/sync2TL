@@ -8,6 +8,7 @@ import { defineComponent } from 'vue'
 import '@fontsource-variable/geist'
 import { listen } from 'src/utils/external-url'
 import { checkAlerts, notifySystem } from 'src/utils/alerts'
+import { notify as addNotification } from 'src/utils/notifications'
 import dayjs from 'dayjs'
 // import more locales here
 import 'dayjs/locale/zh-cn'
@@ -66,6 +67,12 @@ export default defineComponent({
             try {
                 const fired = await checkAlerts(this.$svc, (key, params) => this.$t(key, params ?? {}))
                 for (const m of fired) {
+                    addNotification({
+                        id: `alert:${m.text}:${new Date().toDateString()}`,
+                        kind: m.slug ? 'alert' : 'offer',
+                        title: m.text,
+                        route: m.slug ? { name: 'collection', params: { slug: m.slug } } : { name: 'nfts' }
+                    })
                     this.$q.notify({
                         message: m.text,
                         icon: 'o_notifications',

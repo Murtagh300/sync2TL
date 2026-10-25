@@ -162,3 +162,25 @@ Production needs CORS on the BlackVeMarket API for the wallet's origin on: `/api
 - **Security**: a check-up with a score (`pages/Security`), the sites you signed for (forget one to remove its
   records), and auto-lock after time in the background with a blurred app-switcher snapshot (`components/AppLock.vue`).
 - **Accessibility**: text size (scales the whole app) and high contrast, also following the system's contrast setting.
+
+## Market, notifications and insight
+
+- **Collections in the wallet** (`pages/Collection`): floor, volume, owners, what is for sale (cheapest first) with
+  Buy, and collection offers. NFTs you don't own can be bought or bid on from their page; your own offers can be
+  withdrawn. Offers in VET are wrapped into VVET in the same transaction (`utils/market.ts`).
+- **Live balances and notifications**: incoming transfers show as a "+50 VET" on home and refresh the total;
+  the bell (`pages/Notifications`) collects transfers, offers, alerts and finished transactions.
+- **Push** (`utils/push.ts`, `public/push-sw.js`): in the installed PWA the wallet signs in to BlackVeMarket with a
+  certificate (as on the site) and subscribes the device with BlackVeMarket's push key. The session is a cookie on
+  blackvemarket.com: in development the proxy keeps it on localhost; a hosted wallet on another domain needs the
+  BVM API to allow credentials (CORS with `Access-Control-Allow-Credentials` and `SameSite=None` cookies), or the
+  wallet hosted on blackvemarket.com itself.
+- **Portfolio** (`pages/Portfolio`): 7 and 30 days from BetterSwap's hourly prices (they reach back 30 days) and a
+  daily value kept on the device for the longer history; best and worst token of the month; what it is made of.
+  "All wallets" in the wallet switcher sums every mainnet wallet.
+- **NFT P&L**: on your NFTs, what you paid (from BlackVeMarket's sale history) against the floor now.
+- **Export**: Activity › download: CSV, or print/PDF, with the value at the time (within BetterSwap's 30 days).
+- **Layout**: a side bar on wide screens, home blocks you order and switch on/off (Edit home), long-press on an
+  NFT for a quick menu, share cards (NFT or address with QR) drawn on a canvas.
+- **Apps and help**: a grid of VeChain apps with favorites, (?) explanations next to fee, approvals, floor, VVET,
+  recovery words and slippage, and a short tour after the first start (More › Show the tour again).

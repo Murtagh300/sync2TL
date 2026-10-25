@@ -7,14 +7,22 @@
         >
             <div
                 v-if="initialized"
-                class="column no-wrap fit"
+                class="no-wrap fit"
+                :class="wide ? 'row' : 'column'"
             >
-                <offline-bar />
-                <div class="col relative-position">
-                    <stacked-router-view class="fit" />
-                    <tx-status-bar />
+                <!-- wide screens: the tabs as a side bar, always there -->
+                <tab-bar
+                    v-if="wide"
+                    vertical
+                />
+                <div class="column no-wrap col">
+                    <offline-bar />
+                    <div class="col relative-position">
+                        <stacked-router-view class="fit" />
+                        <tx-status-bar />
+                    </div>
+                    <tab-bar v-if="!wide && showTabs" />
                 </div>
-                <tab-bar v-if="showTabs" />
             </div>
             <wizard
                 v-else
@@ -60,6 +68,9 @@ export default defineComponent({
         }
     },
     computed: {
+        wide(): boolean {
+            return this.$q.screen.width >= 1024
+        },
         showTabs(): boolean {
             return TAB_ROUTES.includes(String(this.$route.name || ''))
         }

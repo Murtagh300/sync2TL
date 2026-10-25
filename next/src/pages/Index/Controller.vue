@@ -7,9 +7,25 @@
                 <wallet-switcher
                     :wallet="wallet"
                     :wallets="wallets"
+                    :all="all"
                     @select="onSelectWallet($event)"
                 />
                 <q-space />
+                <q-btn
+                    flat
+                    round
+                    icon="o_notifications"
+                    :aria-label="$t('notifications.title')"
+                    @click="$router.push({ name: 'notifications' })"
+                >
+                    <q-badge
+                        v-if="unread"
+                        floating
+                        rounded
+                        color="primary"
+                        text-color="dark"
+                    >{{unread > 9 ? '9+' : unread}}</q-badge>
+                </q-btn>
                 <q-btn
                     flat
                     round
@@ -42,22 +58,61 @@
                         v-show="w.id === wallet?.id && !w.meta.backedUp"
                     />
                     <template v-if="wallet">
-                        <portfolio-card
-                            ref="portfolio"
-                            :key="wallet.id"
-                            :wallet="wallet"
-                        />
-                        <quick-actions
-                            :wallet="wallet"
-                            class="q-mt-lg"
-                        />
-                        <div class="bvm-label q-mt-xl q-mb-xs">{{$t('home.label_addresses', { n: wallet.meta.addresses.length })}}</div>
-                        <address-card-list
-                            ref="list"
-                            :key="'list-' + wallet.id"
-                            :wallet="wallet"
-                            class="address-list"
-                        />
+                        <!-- the blocks in the user's order (WidgetsDialog) -->
+                        <template
+                            v-for="wd in shownWidgets"
+                            :key="wd.key"
+                        >
+                            <template v-if="wd.key === 'portfolio'">
+                                <portfolio-card
+                                    ref="portfolio"
+                                    :key="all ? 'all' : wallet.id"
+                                    :wallet="wallet"
+                                    :wallets="all ? wallets : [wallet]"
+                                    :scope="all ? 'all' : String(wallet.id)"
+                                    class="cursor-pointer"
+                                    @click="$router.push({ name: 'portfolio' })"
+                                />
+                                <balance-pulse
+                                    :wallet-id="wallet.id"
+                                    @changed="onBalanceChanged()"
+                                />
+                            </template>
+                            <quick-actions
+                                v-else-if="wd.key === 'actions'"
+                                :wallet="wallet"
+                                class="q-mt-lg"
+                            />
+                            <template v-else-if="wd.key === 'addresses'">
+                                <template
+                                    v-for="w in (all ? wallets : [wallet])"
+                                    :key="'list-' + w.id"
+                                >
+                                    <div class="bvm-label q-mt-xl q-mb-xs">{{all ? w.meta.name : $t('home.label_addresses', { n: w.meta.addresses.length })}}</div>
+                                    <address-card-list
+                                        :wallet="w"
+                                        class="address-list"
+                                    />
+                                </template>
+                            </template>
+                            <home-widgets
+                                v-else
+                                :key="wd.key + (all ? 'all' : wallet.id)"
+                                :kind="wd.key"
+                                :wallet="wallet"
+                                :wallets="all ? wallets : [wallet]"
+                            />
+                        </template>
+                        <div class="text-center q-mt-xl">
+                            <q-btn
+                                flat
+                                no-caps
+                                icon="o_dashboard_customize"
+                                class="text-muted"
+                                :label="$t('widgets.title')"
+                                @click="editWidgets()"
+                            />
+                        </div>
                     </template>
                     <div
                         v-else
@@ -77,6 +132,7 @@
                     </div>
                 </div>
             </q-pull-to-refresh>
+            <home-tour v-if="wallet" />
         </template>
     </div>
 </template>
@@ -89,11 +145,17 @@ import OptionMenu from './OptionMenu.vue'
 import WalletSwitcher from './WalletSwitcher.vue'
 import PortfolioCard from './PortfolioCard.vue'
 import QuickActions from './QuickActions.vue'
-import { selection, selectedWallet } from 'src/utils/selection'
+import BalancePulse from './BalancePulse.vue'
+import HomeWidgets from './HomeWidgets.vue'
+import HomeTour from './HomeTour.vue'
+import WidgetsDialog from './WidgetsDialog.vue'
+import { homeWidgets, type Widget } from './widgets'
+import { unreadCount } from 'src/utils/notifications'
+import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { haptic } from 'src/utils/prefs'
 
 export default defineComponent({
-    components: { BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions },
+    components: { BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, BalancePulse, HomeWidgets, HomeTour },
     data: () => {
         return {
             selection,
@@ -104,6 +166,15 @@ export default defineComponent({
     computed: {
         wallet(): M.Wallet | null {
             return selectedWallet(this.wallets)
+        },
+        all(): boolean {
+            return selection.walletId === ALL_WALLETS && (this.wallets?.length || 0) > 1
+        },
+        shownWidgets(): Widget[] {
+            return homeWidgets.list.filter(w => w.on)
+        },
+        unread(): number {
+            return unreadCount.value
         }
     },
     asyncComputed: {
@@ -113,7 +184,7 @@ export default defineComponent({
     },
     watch: {
         wallets(newVal: M.Wallet[] | null, oldVal: M.Wallet[] | null) {
-            if (newVal && newVal.length > 0 && !newVal.find(w => w.id === selection.walletId)) {
+            if (newVal && newVal.length > 0 && selection.walletId !== ALL_WALLETS && !newVal.find(w => w.id === selection.walletId)) {
                 // none selected, select the first one
                 selection.walletId = newVal[0].id
                 return
@@ -134,6 +205,13 @@ export default defineComponent({
         onSelectWallet(id: number) {
             selection.walletId = id
             haptic()
+        },
+        editWidgets() {
+            this.$dialog({ component: WidgetsDialog }).catch(() => { })
+        },
+        onBalanceChanged() {
+            // the chain needs a moment to serve the new balance
+            setTimeout(() => (this.$refs.portfolio as { refresh?: () => void } | undefined)?.refresh?.(), 3000)
         },
         refresh(done: () => void) {
             (this.$refs.portfolio as { refresh?: () => void } | undefined)?.refresh?.()

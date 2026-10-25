@@ -7,7 +7,7 @@
                 color="primary"
             />
         </div>
-        <h1 class="bvm-display backup-title q-my-none">{{$t('backup.label_backup_tips')}}</h1>
+        <h1 class="bvm-display backup-title q-my-none">{{$t('backup.label_backup_tips')}}<help-tip term="recovery" /></h1>
         <p class="text-soft q-mt-md q-mb-lg">{{$t('backup.msg_backup_intro')}}</p>
         <q-list class="bvm-list">
             <q-item
@@ -26,7 +26,9 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import HelpTip from 'components/HelpTip.vue'
 export default defineComponent({
+    components: { HelpTip },
     computed: {
         tips(): { icon: string, text: string }[] {
             return [

@@ -39,6 +39,8 @@ export namespace BVM {
         paymentToken?: string | null
         /** the listing price in wei of paymentToken */
         rawPrice?: string | null
+        /** the listing price as text ("60 VET"), or "Unlisted" */
+        price?: string
         offers?: Offer[]
         offerCount?: number
         collectionSlug: string
@@ -132,6 +134,48 @@ export namespace BVM {
         collectionSlug: string
         price: string
         time: number
+    }
+
+    export type CollectionSummary = {
+        collection: Collection & { description?: string, bannerImage?: string }
+        floor: string
+        floorValue: number | null
+        listedCount: number
+        offers: number
+        totalSupply: number
+        owners: number
+        volume: { total: string, vetLabel?: string }
+        sales: { total: number }
+    }
+
+    export type CollectionPage = {
+        summary: CollectionSummary
+        items: NFT[]
+        pagination: { total: number, nextOffset: number, hasMore: boolean }
+    }
+
+    /** an offer on any NFT of a collection (BlackVeMarket offers contract) */
+    export type CollectionOffer = {
+        id: string
+        offerId: string
+        buyer: string
+        pricePerItem: string
+        displayAmount: string
+        currency: string
+        paymentToken: string
+        quantity: number
+        filled?: number
+        expiresAt?: string | number
+    }
+
+    export type ActivityEntry = {
+        action: string
+        actionLabel?: string
+        buyer?: string | null
+        seller?: string | null
+        displayAmount?: string
+        currency?: string
+        timestamp?: string
     }
 
     export type DelegateStatus = { enabled: boolean, genesis: boolean, free: boolean, remainingTx: number }
@@ -261,6 +305,23 @@ export function build() {
         /** the collection page on blackvemarket.com */
         collectionPage(slug: string) {
             return `${marketURL}/collection/${slug}`
+        },
+        /** a collection: its numbers and a page of its NFTs */
+        async collection(slug: string, opts: { offset?: number, limit?: number, status?: 'all' | 'listed', sort?: string } = {}): Promise<BVM.CollectionPage> {
+            const resp = await http.get<BVM.CollectionPage>(`/collection/${encodeURIComponent(slug)}`, {
+                params: { limit: opts.limit ?? 30, offset: opts.offset ?? 0, ...(opts.status === 'listed' ? { status: 'listed' } : {}), ...(opts.sort ? { sort: opts.sort } : {}) }
+            })
+            rememberMarket(resp.data.summary.collection.maasContract)
+            return resp.data
+        },
+        async collectionOffers(slug: string): Promise<{ enabled: boolean, offers: BVM.CollectionOffer[] }> {
+            const resp = await http.get<{ enabled: boolean, offers: BVM.CollectionOffer[] }>(`/collection/${encodeURIComponent(slug)}/collection-offers`)
+            return resp.data
+        },
+        /** an NFT with its history (listings, sales, offers) */
+        async nftWithActivity(contract: string, tokenId: string): Promise<{ nft: BVM.NFT, activity: BVM.ActivityEntry[] }> {
+            const resp = await http.get<{ nft: BVM.NFT, activity: BVM.ActivityEntry[] }>(`/nft/${contract}/${tokenId}`)
+            return { nft: resp.data.nft, activity: resp.data.activity || [] }
         },
         /** launches open for minting, or about to open */
         async launches(): Promise<BVM.Launch[]> {
