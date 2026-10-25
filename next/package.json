@@ -12,17 +12,15 @@
     "typecheck": "vue-tsc --noEmit",
     "test": "vitest run",
     "test:legacy": "vitest run --mode legacy",
+    "markets": "node scripts/update-markets.cjs",
     "postinstall": "quasar prepare"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
-    "@ledgerhq/hw-transport": "^6.36.1",
-    "@ledgerhq/hw-transport-webhid": "^6.36.0",
     "@quasar/extras": "^2.1.0",
     "@vechain/connex-driver": "^2.3.2",
     "@vechain/connex-framework": "^2.3.2",
     "@vechain/connex-types": "^2.2.1",
-    "@vechain/hw-app-vet": "^0.2.0",
     "@vechain/picasso": "^2.1.1",
     "asmcrypto.js": "^2.3.2",
     "axios": "^1.20.0",

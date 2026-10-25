@@ -47,3 +47,13 @@ describe('CSV export', () => {
         expect(row).toBe('1970-01-01T00:00:00.000Z,Sent,"Rent, October",−5 VET,0xab,0x1,"say ""hi""",1.00')
     })
 })
+
+describe('CSV export of what others wrote', () => {
+    it('keeps formulas from running, but leaves negative numbers alone', () => {
+        const row = (note: string, value = '1.00') => toCsv([{ time: 0, type: 'In', title: 't', amount: '1 VET', counterparty: '0xab', txId: '0x1', note, value }], ['a'])
+            .split('\n')[1]
+        expect(row('=HYPERLINK("http://x")')).toContain(`"'=HYPERLINK(""http://x"")"`)
+        expect(row('@SUM(A1)')).toContain("'@SUM(A1)")
+        expect(row('ok', '-12.50')).toMatch(/,-12\.50$/)
+    })
+})

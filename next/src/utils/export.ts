@@ -15,7 +15,12 @@ export type ExportRow = {
     value: string
 }
 
-const csvCell = (v: string) => /[",\n;]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
+// spreadsheet apps run a cell that starts like a formula; a leading quote keeps it text
+const safeCell = (v: string) => /^[=+\-@\t\r]/.test(v) && !/^-[\d.,]+$/.test(v) ? `'${v}` : v
+const csvCell = (raw: string) => {
+    const v = safeCell(raw)
+    return /[",\n;]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
+}
 
 export function toCsv(rows: ExportRow[], headers: string[]): string {
     const lines = [headers, ...rows.map(r => [

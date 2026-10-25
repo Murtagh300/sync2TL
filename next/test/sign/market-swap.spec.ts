@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { address } from 'thor-devkit'
-import { checkClauses } from 'src/utils/swap'
+import { checkClauses, receivedInDryRun } from 'src/utils/swap'
 import { fns, decodeAction, ZERO_ADDRESS } from 'src/utils/actions'
 import { listClauses, acceptOfferClauses, mintClauses } from 'src/utils/market'
 import { buildPaymentLink, parsePaymentRequest } from 'src/utils/payment-request'
@@ -24,6 +24,24 @@ describe('swap routes from a quote service', () => {
         expect(() => checkClauses([{ to: stranger, value: '0', data: '0x1841129c' }], token, 100n)).toThrow()
         expect(() => checkClauses([{ to: router, value: '500', data: '0x1841129c' }], ZERO_ADDRESS, 100n)).toThrow()
         expect(() => checkClauses([], token, 100n)).toThrow()
+    })
+
+    // a dry run that yields these outputs, as thor.explain(...).caller(...).execute() would
+    const thor = (outputs: Partial<Connex.VM.Output>[]) => ({
+        explain: () => ({ caller: () => ({ execute: () => Promise.resolve(outputs.map(o => ({ reverted: false, events: [], transfers: [], ...o }))) }) })
+    }) as unknown as Connex.Thor
+    const me = '0x00000000000000000000000000000000000000a1'
+    const word = (a: string) => '0x' + a.slice(2).padStart(64, '0')
+    const TRANSFER = '0xddf252ad1be2c89b69c2b068fc378daa952ba7f163c4a11628f55a4df523b3ef'
+    const swap = [{ to: router, value: '0', data: '0x1841129c' }]
+
+    it('count only what the dry run pays this account', async () => {
+        const paid = (to: string) => thor([{ events: [{ address: token, topics: [TRANSFER, word(router), word(to)], data: word('0x64') }] as Connex.VM.Event[] }])
+        expect(await receivedInDryRun(paid(me), swap, token, me)).toBe(100n)
+        expect(await receivedInDryRun(paid(stranger), swap, token, me)).toBe(0n)
+        const vet = thor([{ transfers: [{ sender: router, recipient: me, amount: '0x32' }] as Connex.VM.Transfer[] }])
+        expect(await receivedInDryRun(vet, swap, ZERO_ADDRESS, me)).toBe(50n)
+        await expect(receivedInDryRun(thor([{ reverted: true }]), swap, token, me)).rejects.toThrow()
     })
 })
 

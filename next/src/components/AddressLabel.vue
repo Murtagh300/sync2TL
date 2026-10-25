@@ -6,7 +6,12 @@
                 class="address-name"
                 :title="checksumed"
             >{{name}}</span>
-            <template v-else>{{displayString}}</template>
+            <!-- anyone can register a look-alike .vet name: keep the address beside it -->
+            <span
+                v-if="name && isVetName"
+                class="address-short"
+            >{{shortString}}</span>
+            <template v-if="!name">{{displayString}}</template>
         </template>
         <slot v-else>!!Invalid address!!</slot>
     </div>
@@ -31,12 +36,17 @@ export default defineComponent({
         name(): string {
             return this.full || this.noName ? '' : nameOf(this.addr)
         },
+        isVetName(): boolean {
+            return this.name.endsWith('.vet')
+        },
+        shortString(): string {
+            return this.checksumed ? this.checksumed.slice(0, 6) + '⋯' + this.checksumed.slice(-4) : ''
+        },
         displayString(): string {
-            if (!this.addr || !address.test(this.addr)) {
+            if (!this.checksumed) {
                 return ''
             }
-            const checksumed = address.toChecksumed(this.addr)
-            return this.full ? checksumed : checksumed.slice(0, 6) + '⋯' + checksumed.slice(-6)
+            return this.full ? this.checksumed : this.checksumed.slice(0, 6) + '⋯' + this.checksumed.slice(-6)
         }
     },
     methods: {
@@ -59,5 +69,10 @@ export default defineComponent({
 .address-name {
     font-weight: 700;
     letter-spacing: 0;
+}
+.address-short {
+    margin-left: 0.4em;
+    opacity: 0.6;
+    font-size: 0.9em;
 }
 </style>

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
-import { decodeAction, fns, UNLIMITED, contractName, rememberMarket } from 'src/utils/actions'
+import { decodeAction, fns, UNLIMITED, contractName } from 'src/utils/actions'
 import { balanceChanges } from 'src/utils/simulate'
+import { describeAction } from 'src/utils/describe-action'
 
 const me = '0x00000000000000000000000000000000000000a1'
 const other = '0x00000000000000000000000000000000000000b2'
@@ -40,10 +41,9 @@ describe('decodeAction', () => {
         expect(decodeAction(call(token, '0x'))).toBeNull()
     })
 
-    it('names contracts it learned', () => {
-        expect(contractName(market)).toBe('')
-        rememberMarket(market)
+    it('names only the marketplace contracts it ships with', () => {
         expect(contractName(market.toUpperCase().replace('0X', '0x'))).toBe('BlackVeMarket')
+        expect(contractName(other)).toBe('')
         expect(contractName('0x23cbbf0265f55574490ab6eb1ed8730c71e23d6c')).toBe('BetterSwap')
     })
 })
@@ -75,5 +75,16 @@ describe('balanceChanges', () => {
         const ev = (from: string, to: string) => ({ address: market, topics: [TRANSFER, topic(from), topic(to), topic('0x' + num(1n))], data: '0x' })
         const changes = balanceChanges([output({ events: [ev(other, me), ev(me, other)] as Connex.VM.Event[] })], me)
         expect(changes.nfts).toEqual([])
+    })
+})
+
+describe('marketplace contracts the wallet does not ship with', () => {
+    const ctx = { t: (k: string) => k, token: () => undefined, collection: () => undefined }
+
+    it('make a market action a warning', () => {
+        expect(describeAction({ kind: 'buy', market, saleId: '1' }, ctx).risk).toBe('ok')
+        const unknown = describeAction({ kind: 'buy', market: other, saleId: '1' }, ctx)
+        expect(unknown.risk).toBe('warn')
+        expect(unknown.detail).toBe('action.detail_unknown_market')
     })
 })

@@ -113,7 +113,7 @@ export default defineComponent({
             return pushSupported() && !!this.wallet
         },
         wallet(): M.Wallet | null {
-            return selectedWallet(this.wallets.filter(w => w.gid === genesises.main.id && w.meta.type !== 'ledger'))
+            return selectedWallet(this.wallets.filter(w => w.gid === genesises.main.id))
         },
         pushHint(): string {
             if (!pushSupported()) return this.$t('notifications.msg_push_install')

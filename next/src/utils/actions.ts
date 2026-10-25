@@ -1,4 +1,5 @@
 import { abi } from 'thor-devkit'
+import { KNOWN_MARKETS } from './known-markets'
 
 /**
  * Reads what a clause does, in terms a person understands: "approve", "list an NFT",
@@ -165,22 +166,13 @@ const knownSwapRouters = new Set(Object.entries(names)
     .filter(([, n]) => ['VeTrade', 'BetterSwap', 'VeRocket', 'Vexchange'].includes(n))
     .map(([a]) => a))
 
-/** marketplace contracts learned from BlackVeMarket at runtime (one per collection) */
-const markets = new Set<string>()
-
-export function rememberMarket(address: string | null | undefined) {
-    if (address && address !== ZERO_ADDRESS) {
-        markets.add(address.toLowerCase())
-    }
-}
-
 /** a name for a contract, or '' when we don't know it */
 export function contractName(address: string | null | undefined): string {
     const a = (address || '').toLowerCase()
     if (names[a]) {
         return names[a]
     }
-    return markets.has(a) ? 'BlackVeMarket' : ''
+    return KNOWN_MARKETS.has(a) ? 'BlackVeMarket' : ''
 }
 
 export function isKnownSwapRouter(address: string) {

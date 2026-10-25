@@ -70,22 +70,6 @@
                         class="text-muted"
                     />
                 </button>
-                <button
-                    v-if="isSupport"
-                    type="button"
-                    class="bvm-tile choice row no-wrap items-center"
-                    @click="newWallet('linkLedger')"
-                >
-                    <svg-ledger class="choice-ledger" />
-                    <div class="col q-ml-md">
-                        <div class="choice-title">{{$t('newWallet.action_ledger_link')}}</div>
-                        <div class="choice-body">{{$t('newWallet.msg_ledger')}}</div>
-                    </div>
-                    <q-icon
-                        name="o_chevron_right"
-                        class="text-muted"
-                    />
-                </button>
             </div>
         </page-content>
     </div>
@@ -97,18 +81,14 @@ import { genesises } from 'src/consts'
 import { unique } from 'src/utils/array'
 import { Vault } from 'src/core/vault'
 import MnemonicInputDialog from './MnemonicInputDialog.vue'
-import LedgerLinkDialog from 'pages/Ledger/LinkDialog.vue'
 import PopSheets, { Sheet } from 'components/PopSheets.vue'
 import PageContent from 'components/PageContent.vue'
-import { Account } from '@vechain/hw-app-vet'
-import * as Ledger from 'src/utils/ledger'
-import SvgLedger from 'components/SvgLedger.vue'
 import { BackupDialog } from '../Backup'
 
 const defaultGid = genesises.main.id
 
 export default defineComponent({
-    components: { PageToolbar, PopSheets, PageContent, SvgLedger },
+    components: { PageToolbar, PopSheets, PageContent },
     props: {
         defaultGid: String
     },
@@ -124,9 +104,6 @@ export default defineComponent({
         }
     },
     computed: {
-        isSupport(): boolean {
-            return Ledger.supported
-        },
         optionSheets(): Sheet[] {
             return this.gids.map<Sheet>(gid => {
                 return {
@@ -179,34 +156,7 @@ export default defineComponent({
         }
     },
     methods: {
-        async linkLedger() {
-            try {
-                const account = await this.$dialog<Account>({
-                    component: LedgerLinkDialog
-                })
-                try {
-                    await this.$loading(async () => {
-                        const vault = Vault.createUSB(Buffer.from(account.publicKey, 'hex'), Buffer.from(account.chainCode!, 'hex'))
-                        const node0 = vault.derive(0)
-                        await this.$svc.wallet.insert({
-                            gid: this.gid,
-                            vault: vault.encode(),
-                            meta: {
-                                name: this.name,
-                                type: 'ledger',
-                                addresses: [node0.address],
-                                backedUp: true
-                            }
-                        })
-                        this.$backOrHome()
-                        this.$q.notify(this.$t('common.wallet_created'))
-                    })
-                } catch (err) {
-                    this.error = (err as Error).message
-                }
-            } catch { }
-        },
-        async newWallet(type: 'generate' | 'import' | 'linkLedger', wordsCount = 12) {
+        async newWallet(type: 'generate' | 'import', wordsCount = 12) {
             // reset error
             this.error = ''
             await this.$nextTick()
@@ -214,13 +164,6 @@ export default defineComponent({
             // check name
             if (!this.name) {
                 this.error = this.$t('common.required_field').toString()
-                return
-            }
-
-            if (type === 'linkLedger') {
-                try {
-                    await this.linkLedger()
-                } catch { }
                 return
             }
 
@@ -313,9 +256,4 @@ export default defineComponent({
   line-height: 1.4
   color: $text-muted
 
-.choice-ledger
-  width: 24px
-  height: 24px
-  :deep(path)
-    fill: var(--q-primary)
 </style>

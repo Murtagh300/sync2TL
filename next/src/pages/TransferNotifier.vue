@@ -172,9 +172,11 @@ export default defineComponent({
             const parts = formatAmount(amount, { unit: decimals, fixed: 2, fullPrecision: true })!
             amount = `${parts.int}${parts.sep}${parts.dec}`
 
+            // a token picks its own symbol: never as HTML
+            const safeSymbol = symbol.replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]!))
             const message = dir === 'in'
-                ? `${this.$t('common.received')} <strong>${amount}</strong> ${symbol}`
-                : `${this.$t('common.sent')} <strong>${amount}</strong> ${symbol}`
+                ? `${this.$t('common.received')} <strong>${amount}</strong> ${safeSymbol}`
+                : `${this.$t('common.sent')} <strong>${amount}</strong> ${safeSymbol}`
 
             addNotification({
                 id: `${dir}:${walletId}:${addressIndex}:${symbol}:${amount}:${Math.floor(Date.now() / 10000)}`,

@@ -42,6 +42,15 @@ function nftName(ctx: DescribeContext, contract: string | undefined, tokenId: st
 
 /** a sentence for an action, with how careful the signer should be */
 export function describeAction(a: Action, ctx: DescribeContext): ActionText {
+    const text = describe(a, ctx)
+    // a marketplace call to a contract the wallet doesn't ship with: say so, whatever the action
+    if ('market' in a && !contractName(a.market) && text.risk === 'ok') {
+        return { ...text, detail: ctx.t('action.detail_unknown_market', { market: short(a.market) }), risk: 'warn' }
+    }
+    return text
+}
+
+function describe(a: Action, ctx: DescribeContext): ActionText {
     const { t } = ctx
     switch (a.kind) {
         case 'approve': {

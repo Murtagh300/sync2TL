@@ -95,7 +95,6 @@ export default {
         action_import: '导入',
         msg_generate: '生成新的助记词和新地址。',
         msg_import: '使用 12 或 24 个助记词恢复钱包。',
-        msg_ledger: '使用 Ledger 设备中的密钥。',
         label_wallet_name: '钱包名称',
         label_mnemonic: '请输入您的助记词',
         label_advance: '高级模式',
@@ -104,9 +103,7 @@ export default {
         action_eth_path: 'Ethereum',
         label_path: '路径',
         msg_example: '示例',
-        msg_invalid_path: '无效助记词路径',
-        label_ledger_user: 'Ledger用户？',
-        action_ledger_link: '现在绑定'
+        msg_invalid_path: '无效助记词路径'
     },
     authenticationDialog: {
         title: '授权',
@@ -398,7 +395,7 @@ export default {
         label_sponsored: '由赞助方支付',
         label_message: '加密消息',
         action_read: '阅读',
-        msg_message_ledger: '目前只有助记词钱包能阅读消息，Ledger 暂不支持。',
+        msg_message_unsupported: '只有助记词钱包能阅读消息。',
         msg_message_not_for_you: '此消息不是发给该地址的。',
         label_note: '备注',
         hint_note: '仅保存在本设备，显示在记录中',
@@ -631,8 +628,6 @@ export default {
         i_person_text: '你信任的人知道助记词放在哪里，而不是助记词本身。',
         i_letter: '已打印说明',
         i_letter_text: '下方的信：你的钱包、地址以及恢复方法。',
-        i_ledger: 'Ledger 及其 PIN',
-        i_ledger_text: '如果使用 Ledger：它在哪里，PIN 和恢复卡在哪里。',
         i_yearly: '每年检查',
         i_yearly_text: '钱包会变化：每年查看一次此计划。',
         label_letter: '给家人的信',
@@ -789,6 +784,7 @@ export default {
         an_nft: 'NFT',
         approve: '允许 {spender} 最多使用 {amount} {symbol}',
         approve_unlimited: '允许 {spender} 使用你全部的 {symbol}',
+        detail_unknown_market: '{market} 不是本钱包已知的 BlackVeMarket 合约。只有信任它时才继续。',
         detail_unlimited: '无上限：在你撤销之前，它可以转走此地址上现在和以后的全部 {symbol}。',
         approve_nft: '允许 {spender} 转移 {nft}',
         approve_all: '授权 {operator} 管理你全部的 {collection} NFT',
@@ -807,20 +803,6 @@ export default {
         mint: '从 {collection} 铸造 {n} 个',
         message: '发给 {to} 的加密消息',
         swap: '通过 {router} 兑换'
-    },
-    ledger: {
-        title_connecting: '连接中',
-        title_reading_data: '正在读取数据',
-        title_checking_status: '正在状态检查',
-        title_signing_data: '正在对数据签名',
-        // hints
-        msg_connecting: '请连接并解锁您的Ledger',
-        msg_checking_status: '进入VeChain App',
-        msg_signing_data: '请在Ledger上确认',
-        // errors
-        msg_wrong_device: '错误设备',
-        msg_unknown_data: '未知数据类型',
-        label_link: '绑定'
     },
     bioAuth: {
         title: '生物识别验证',

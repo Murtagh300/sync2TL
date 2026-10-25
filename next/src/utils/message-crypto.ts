@@ -19,7 +19,16 @@ export const MAX_MESSAGE = 200
 const subtle = () => globalThis.crypto.subtle
 
 function sharedKey(privateKey: Buffer, publicKey: Buffer): Buffer {
-    const x = ec.keyFromPrivate(privateKey).derive(ec.keyFromPublic(publicKey).getPublic())
+    // the ephemeral key comes from chain data anyone can write: a point off the curve would
+    // leak bits of our private key through the shared secret (invalid-curve attack)
+    if (publicKey.length !== 65 || publicKey[0] !== 4) {
+        throw new Error('bad public key')
+    }
+    const pub = ec.keyFromPublic(publicKey)
+    if (!pub.validate().result) {
+        throw new Error('public key not on the curve')
+    }
+    const x = ec.keyFromPrivate(privateKey).derive(pub.getPublic())
     return blake2b256(Buffer.from(x.toArray('be', 32)), 'bvmsg')
 }
 

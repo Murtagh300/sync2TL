@@ -33,7 +33,7 @@
             >
                 <q-item-section>
                     <q-item-label lines="1">
-                      <svg-ledger v-if="wallet.meta.type === 'ledger'"/> {{wallet.meta.name}}
+                      {{wallet.meta.name}}
                     </q-item-label>
                     <q-item-label
                         v-if="wallet.gid !==mainnetGid"
@@ -49,13 +49,9 @@
 <script lang="ts">
 import { defineComponent, type ComponentPublicInstance } from 'vue'
 import { genesises } from 'src/consts'
-import SvgLedger from 'src/components/SvgLedger.vue'
 
 export default defineComponent({
     emits: ['select'],
-    components: {
-        SvgLedger
-    },
     props: {
         wallets: { type: Array as () => M.Wallet[], required: true },
         current: Number

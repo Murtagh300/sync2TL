@@ -111,7 +111,7 @@ describe('config values', () => {
 
 describe('wallet', () => {
     it('stores wallets and maps meta', async () => {
-        const meta: M.Wallet.Meta = { name: 'W', type: 'ledger', addresses: ['0x1'] }
+        const meta: M.Wallet.Meta = { name: 'W', type: 'hd', addresses: ['0x1'] }
         const id = await wallet.insert({ gid: genesises.main.id, vault: 'v', meta })
         expect(await wallet.get(id)).toEqual({ id, gid: genesises.main.id, vault: 'v', meta })
         expect(await wallet.getByGid(genesises.test.id)).toEqual([])

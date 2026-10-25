@@ -2,7 +2,6 @@
 // BlackVeMarket indexes VeChain mainnet only.
 import axios from 'axios'
 import { genesises } from 'src/consts'
-import { rememberMarket } from 'src/utils/actions'
 
 export namespace BVM {
     export type Trait = {
@@ -210,7 +209,6 @@ async function loadCollections() {
     const value: Record<string, BVM.Collection> = {}
     for (const item of resp.data.items || []) {
         const c = item.collection
-        rememberMarket(c.maasContract)
         value[c.nftContract.toLowerCase()] = {
             ...c,
             floorValue: item.floorValue,
@@ -311,7 +309,6 @@ export function build() {
             const resp = await http.get<BVM.CollectionPage>(`/collection/${encodeURIComponent(slug)}`, {
                 params: { limit: opts.limit ?? 30, offset: opts.offset ?? 0, ...(opts.status === 'listed' ? { status: 'listed' } : {}), ...(opts.sort ? { sort: opts.sort } : {}) }
             })
-            rememberMarket(resp.data.summary.collection.maasContract)
             return resp.data
         },
         async collectionOffers(slug: string): Promise<{ enabled: boolean, offers: BVM.CollectionOffer[] }> {

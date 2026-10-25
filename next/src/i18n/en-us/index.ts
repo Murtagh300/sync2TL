@@ -96,7 +96,6 @@ export default {
         action_import: 'Import recovery words',
         msg_generate: 'Get new recovery words and a fresh address.',
         msg_import: 'Restore a wallet from its 12 or 24 words.',
-        msg_ledger: 'Use the keys on your Ledger device.',
         label_wallet_name: 'Wallet name',
         label_mnemonic: 'Recovery words, separated by spaces',
         label_advance: 'Advanced',
@@ -105,9 +104,7 @@ export default {
         action_eth_path: 'Ethereum',
         label_path: 'Derivation path',
         msg_example: 'Example',
-        msg_invalid_path: 'Invalid path',
-        label_ledger_user: 'Have a Ledger?',
-        action_ledger_link: 'Connect a Ledger'
+        msg_invalid_path: 'Invalid path'
     },
     authenticationDialog: {
         title: 'Unlock',
@@ -399,7 +396,7 @@ export default {
         label_sponsored: 'paid by a sponsor',
         label_message: 'Encrypted message',
         action_read: 'Read',
-        msg_message_ledger: 'Messages can be read with wallets on recovery words, not with a Ledger yet.',
+        msg_message_unsupported: 'Only wallets on recovery words can read messages.',
         msg_message_not_for_you: 'This message is not for this address.',
         label_note: 'Your note',
         hint_note: 'Only on this device, shown in your activity',
@@ -632,8 +629,6 @@ export default {
         i_person_text: 'Someone you trust knows where the words are, not the words themselves.',
         i_letter: 'Instructions printed',
         i_letter_text: 'The letter below: your wallets, addresses and how to restore them.',
-        i_ledger: 'Ledger and its PIN',
-        i_ledger_text: 'If you use a Ledger: where it is, and where its PIN and recovery sheet are.',
         i_yearly: 'Checked every year',
         i_yearly_text: 'Wallets change: look at this plan once a year.',
         label_letter: 'Letter for your family',
@@ -790,6 +785,7 @@ export default {
         an_nft: 'an NFT',
         approve: 'Let {spender} spend up to {amount} {symbol}',
         approve_unlimited: 'Let {spender} spend all your {symbol}',
+        detail_unknown_market: '{market} is not a BlackVeMarket contract this wallet knows. Only go on if you trust it.',
         detail_unlimited: 'No limit: it can take every {symbol} on this address, now and later, until you revoke it.',
         approve_nft: 'Let {spender} move {nft}',
         approve_all: 'Give {operator} access to all your {collection} NFTs',
@@ -808,20 +804,6 @@ export default {
         mint: 'Mint {n} from {collection}',
         message: 'An encrypted message for {to}',
         swap: 'Swap through {router}'
-    },
-    ledger: {
-        title_connecting: 'Connecting',
-        title_reading_data: 'Reading your Ledger',
-        title_checking_status: 'Checking the app',
-        title_signing_data: 'Signing',
-        // hints
-        msg_connecting: 'Connect and unlock your Ledger',
-        msg_checking_status: 'Open the VeChain app on your Ledger',
-        msg_signing_data: 'Confirm on your Ledger',
-        // errors
-        msg_wrong_device: 'This is not the Ledger of this wallet',
-        msg_unknown_data: 'Unknown data type',
-        label_link: 'Connect'
     },
     bioAuth: {
         title: 'Biometric unlock',

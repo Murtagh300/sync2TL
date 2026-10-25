@@ -1,10 +1,11 @@
 import { fns, isKnownSwapRouter, ZERO_ADDRESS } from './actions'
+import { balanceChanges } from './simulate'
 
 /**
  * Swaps: the best route from VeTrade's quote service (it aggregates the VeChain DEXes
  * through BetterSwap), and BetterSwap's on-chain aggregator when that service is down.
- * Clauses from the service are checked before they reach the sign dialog, which then
- * shows the balance changes of a dry run.
+ * Clauses from the service are checked before they reach the sign dialog: they may only
+ * use known routers, and a dry run must pay this account at least the minimum out.
  */
 
 const VETRADE = 'https://vetrade.vet/api'
@@ -25,7 +26,7 @@ export type Quote = {
 /** the address a swap service uses for a token; VET is the zero address */
 const tokenAddress = (address: string | null | undefined) => (address || ZERO_ADDRESS).toLowerCase()
 
-async function vetradeQuote(from: string, to: string, amountIn: bigint, slippageBps: number, account: string, signal?: AbortSignal): Promise<Quote> {
+async function vetradeQuote(thor: Connex.Thor, from: string, to: string, amountIn: bigint, slippageBps: number, account: string, signal?: AbortSignal): Promise<Quote> {
     const params = new URLSearchParams({
         amountIn: amountIn.toString(),
         fromAddress: from,
@@ -41,12 +42,30 @@ async function vetradeQuote(from: string, to: string, amountIn: bigint, slippage
     }
     const clauses = (body.clauses || []).map(c => ({ to: c.to.toLowerCase(), value: BigInt(c.value || 0).toString(), data: c.data }))
     checkClauses(clauses, from, amountIn)
+    const amountOutMin = BigInt(body.amountOutMin || body.amountOut)
+    // known routers can still be told to pay someone else: the dry run must pay this account
+    const received = await receivedInDryRun(thor, clauses, to, account)
+    if (received < amountOutMin) {
+        throw new Error('route does not pay this account')
+    }
     return {
         amountOut: BigInt(body.amountOut),
-        amountOutMin: BigInt(body.amountOutMin || body.amountOut),
+        amountOutMin,
         clauses,
         source: 'VeTrade'
     }
+}
+
+/** how much of a token (VET: the zero address) the clauses pay to an account, net, in a dry run */
+export async function receivedInDryRun(thor: Connex.Thor, clauses: Clause[], token: string, account: string): Promise<bigint> {
+    const outputs = await thor.explain(clauses.map(c => ({ to: c.to, value: c.value, data: c.data })))
+        .caller(account)
+        .execute()
+    if (outputs.length < clauses.length || outputs.some(o => o.reverted)) {
+        throw new Error('route reverts')
+    }
+    const changes = balanceChanges(outputs, account)
+    return token === ZERO_ADDRESS ? changes.vet : (changes.tokens[token] || 0n)
 }
 
 /**
@@ -118,7 +137,7 @@ export async function quote(
     const from = tokenAddress(fromToken)
     const to = tokenAddress(toToken)
     try {
-        return await vetradeQuote(from, to, amountIn, slippageBps, account, signal)
+        return await vetradeQuote(thor, from, to, amountIn, slippageBps, account, signal)
     } catch (err) {
         if (signal?.aborted) {
             throw err

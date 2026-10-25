@@ -34,7 +34,7 @@ tokens, nodes), address/asset pages, send form, transaction dialog (estimation, 
 priority), certificate signing, the dApp sign flow over a (local) relay, activities.
 
 Not checked yet: broadcasting a real transaction (needs testnet funds), transfer history
-and notifications with real transfers, Ledger (needs a device), PWA install/update.
+and notifications with real transfers, PWA install/update.
 
 Platform hooks left for later phases: `utils/external-url.ts`, `utils/bio-pass.ts`,
 `utils/clipboard.ts`, `utils/open-url.ts`, the update tip (phase 5 desktop, phase 6 native).
@@ -192,7 +192,7 @@ Production needs CORS on the BlackVeMarket API for the wallet's origin on: `/api
   when due, the send form filled in; each one is still signed by you.
 - **Encrypted messages** (`utils/message-crypto.ts`): a message sent with a payment in an extra 0-VET clause,
   readable by the sender and the recipient only (ECDH on secp256k1 + AES-GCM). The recipient's public key is
-  recovered from a transaction it signed, so it must have sent one; Ledger wallets can't decrypt yet.
+  recovered from a transaction it signed, so it must have sent one.
 - **Contacts by QR** (`utils/contacts-share.ts`): share the address book as a QR code, add it on another device.
 - **NFTs**: rarest and most valued trait in words (trait floors over 10× the collection floor are ignored as
   asking prices), listing price suggestions (floor, trait floor, median of recent sales), a slideshow, and an
@@ -201,3 +201,14 @@ Production needs CORS on the BlackVeMarket API for the wallet's origin on: `/api
   positions (amounts from the pool price, in range or not), VeTrade V3 positions (counted, linked).
 - **Emergency plan** (`pages/Emergency`): a checklist for your family and a printable letter with wallets,
   addresses and restore steps; never the recovery words.
+
+## Security
+
+Reviewed internally on 2026-10-25: see [SECURITY-AUDIT.md](SECURITY-AUDIT.md) for the findings, the fixes,
+what hosting has to add (frame-ancestors, HSTS, its own origin) and what still needs an external audit.
+
+- Ledger support is gone: recovery-word wallets only.
+- Swap routes from VeTrade's service must pay this account in a dry run.
+- BlackVeMarket marketplace contracts ship with the wallet (`src/utils/known-markets.ts`, refresh
+  with `npm run markets`); anything else is a warning when signing.
+- Production builds carry a Content-Security-Policy (no inline or foreign scripts).

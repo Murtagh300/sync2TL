@@ -19,4 +19,12 @@ describe('payment messages', () => {
         const data = await encryptMessage('x'.repeat(500), [secp256k1.derivePublicKey(recipient)])
         expect((await decryptMessage(data, recipient))!.length).toBe(200)
     })
+
+    it('refuses an ephemeral key that is not on the curve', async () => {
+        const data = await encryptMessage('hi', [secp256k1.derivePublicKey(recipient)])
+        // "BVMSG1" is 6 bytes: the key's last byte sits at 6 + 64
+        const at = 2 + (6 + 64) * 2
+        const flipped = (parseInt(data.slice(at, at + 2), 16) ^ 1).toString(16).padStart(2, '0')
+        await expect(decryptMessage(data.slice(0, at) + flipped + data.slice(at + 2), recipient)).rejects.toThrow()
+    })
 })

@@ -2,7 +2,6 @@ import { defineComponent } from 'vue'
 import { SignerGroup } from './models'
 import { Transaction, secp256k1, Certificate, blake2b256 } from 'thor-devkit'
 import { Vault } from 'src/core/vault'
-import LedgerSignDialog from 'pages/Ledger/SignDialog.vue'
 
 // base of TxDialog and CertDialog (`extends: Common`)
 export default defineComponent({
@@ -68,16 +67,6 @@ export default defineComponent({
                 const node = vault.derive(wallet.meta.addresses.indexOf(signer))
                 const sk = node.unlock(umk)
                 return secp256k1.sign(tx.signingHash(), sk)
-            } else if (wallet.meta.type === 'ledger') {
-                const tx = await buildTx()
-                return this.$dialog({
-                    component: LedgerSignDialog,
-                    arg: {
-                        signer,
-                        index: wallet.meta.addresses.indexOf(signer),
-                        tx: tx.encode()
-                    }
-                })
             } else {
                 throw new Error(`unsupported wallet type '${wallet.meta.type}'`)
             }
@@ -91,15 +80,6 @@ export default defineComponent({
                 const node = vault.derive(wallet.meta.addresses.indexOf(cert.signer))
                 const sk = node.unlock(umk)
                 return secp256k1.sign(blake2b256(Certificate.encode(cert)), sk)
-            } else if (wallet.meta.type === 'ledger') {
-                return this.$dialog({
-                    component: LedgerSignDialog,
-                    arg: {
-                        signer: cert.signer,
-                        index: wallet.meta.addresses.indexOf(cert.signer),
-                        cert: Buffer.from(Certificate.encode(cert), 'utf8')
-                    }
-                })
             } else {
                 throw new Error(`unsupported wallet type '${wallet.meta.type}'`)
             }

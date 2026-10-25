@@ -87,7 +87,7 @@ export default defineComponent({
     }),
     computed: {
         notBackedUp(): M.Wallet[] {
-            return this.wallets.filter(w => w.meta.type !== 'ledger' && !w.meta.backedUp)
+            return this.wallets.filter(w => !w.meta.backedUp)
         },
         checks(): Check[] {
             const list: Check[] = [
