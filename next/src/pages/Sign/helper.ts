@@ -100,3 +100,35 @@ export function decodeAsTokenTransferClause(clause: Connex.VM.Clause, spec: M.To
     }
     return null
 }
+
+// ERC-721 / ERC-1155 transfers, by function selector
+const nftTransfers: Record<string, abi.Function> = {
+    // ERC-721 transferFrom(from, to, tokenId) (ERC-20 shares it: token contracts are matched before this)
+    '0x23b872dd': new abi.Function({ constant: false, inputs: [{ name: 'from', type: 'address' }, { name: 'to', type: 'address' }, { name: 'tokenId', type: 'uint256' }], name: 'transferFrom', outputs: [], payable: false, stateMutability: 'nonpayable', type: 'function' }),
+    // ERC-721 safeTransferFrom(from, to, tokenId)
+    '0x42842e0e': new abi.Function({ constant: false, inputs: [{ name: 'from', type: 'address' }, { name: 'to', type: 'address' }, { name: 'tokenId', type: 'uint256' }], name: 'safeTransferFrom', outputs: [], payable: false, stateMutability: 'nonpayable', type: 'function' }),
+    // ERC-721 safeTransferFrom(from, to, tokenId, data)
+    '0xb88d4fde': new abi.Function({ constant: false, inputs: [{ name: 'from', type: 'address' }, { name: 'to', type: 'address' }, { name: 'tokenId', type: 'uint256' }, { name: 'data', type: 'bytes' }], name: 'safeTransferFrom', outputs: [], payable: false, stateMutability: 'nonpayable', type: 'function' }),
+    // ERC-1155 safeTransferFrom(from, to, id, amount, data)
+    '0xf242432a': new abi.Function({ constant: false, inputs: [{ name: 'from', type: 'address' }, { name: 'to', type: 'address' }, { name: 'id', type: 'uint256' }, { name: 'amount', type: 'uint256' }, { name: 'data', type: 'bytes' }], name: 'safeTransferFrom', outputs: [], payable: false, stateMutability: 'nonpayable', type: 'function' })
+}
+
+/** the NFT and recipient of an NFT transfer clause, or null */
+export function decodeAsNftTransferClause(clause: Connex.VM.Clause): { tokenId: string, to: string, amount?: string } | null {
+    const data = clause.data || ''
+    const fn = nftTransfers[data.slice(0, 10).toLowerCase()]
+    if (!fn) {
+        return null
+    }
+    try {
+        // the call's arguments (Function.decode reads return values, not arguments)
+        const d = abi.decodeParameters(fn.definition.inputs, '0x' + data.slice(10))
+        return {
+            to: d.to as string,
+            tokenId: String(d.tokenId ?? d.id),
+            ...(d.amount !== undefined ? { amount: String(d.amount) } : {})
+        }
+    } catch {
+        return null
+    }
+}

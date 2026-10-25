@@ -87,3 +87,20 @@ outlined Material set (`o_…`).
 app (ethers for HD keys, Node crypto for the cipher format, see `test/fixtures.ts`).
 Run both `npm test` and `npm run test:legacy` after touching `src/core`: if either
 fails, wallets saved by an earlier version may no longer open.
+
+## BlackVeMarket integration
+
+- `src/boot/services/bvm.ts` talks to the BlackVeMarket API (`/profile`, `/nft`, `/wallet/:addr/vet-name`, `/rates`), mainnet only.
+- The BVM API sends no CORS headers. `quasar dev` proxies it through `/bvm-api`; a production build calls
+  `https://blackvemarket.com/api` directly, so the backend must allow the wallet's origin
+  (or set `BVM_API_URL` at build time to a proxy that does).
+- Asking `/profile/:addr` for an address BlackVeMarket has never seen creates a profile row for it.
+- NFTs: the address page has an NFTs tab (`pages/Address/NftGrid.vue`), each NFT opens `pages/Nft`
+  (traits, last sale, send as ERC-721 `transferFrom` or ERC-1155 `safeTransferFrom`); the sign dialog
+  recognises NFT transfers (`decodeAsNftTransferClause` in `pages/Sign/helper.ts`).
+
+## Token auto-detection
+
+`src/utils/tokens.ts` dry-runs `balanceOf` for every registry token in batches of 40 clauses through
+`thor.explain`, and shows every token with a balance next to the ones switched on in Settings › Tokens.
+Results are cached for 5 minutes per address; the token registry itself refreshes every hour.

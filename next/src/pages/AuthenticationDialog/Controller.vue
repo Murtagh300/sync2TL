@@ -36,7 +36,7 @@
                     <q-btn
                         v-disableFocusHelper
                         :loading="loading"
-                        class="w40 q-mx-auto"
+                        class="full-width"
                         :label="$t('authenticationDialog.action_unlock')"
                         unelevated
                         color="positive"

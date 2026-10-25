@@ -44,7 +44,7 @@
             <q-card-actions>
                 <q-btn
                     v-disableFocusHelper
-                    class="w40 q-mx-auto"
+                    class="full-width"
                     unelevated
                     color="primary"
                     :label="$t('common.ok')"

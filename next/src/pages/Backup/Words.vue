@@ -8,7 +8,7 @@
                 class="col-4 row q-py-sm"
             >
                 <div class="col-2 text-caption text-grey text-right q-pr-sm">{{index+1}}.</div>
-                <div class="col-10 text-h6 serif">{{item}}</div>
+                <div class="col-10 text-h6 bvm-amount">{{item}}</div>
             </div>
         </div>
         <slot />

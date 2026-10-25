@@ -69,19 +69,19 @@
                             <q-icon
                                 size="4rem"
                                 class="q-mx-auto"
-                                name="verified_user"
-                                color="positive"
+                                name="o_verified_user"
+                                color="primary"
                             />
                         </q-item-section>
                     </q-item>
                     <q-item>
                         <q-item-section>
-                            <q-item-label class="text-h6 text-white">{{$t('backup.label_backed_up')}}</q-item-label>
+                            <q-item-label class="bvm-display text-h5">{{$t('backup.label_backed_up')}}</q-item-label>
                         </q-item-section>
                     </q-item>
                     <q-item>
                         <q-item-section>
-                            <q-item-label class="text-body1 text-white">{{$t('backup.msg_backed_up')}}</q-item-label>
+                            <q-item-label class="text-body1 text-soft">{{$t('backup.msg_backed_up')}}</q-item-label>
                         </q-item-section>
                     </q-item>
 

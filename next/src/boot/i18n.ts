@@ -8,7 +8,10 @@ export const i18n = createI18n({
     locale: 'en-us',
     fallbackLocale: 'en-us',
     messages,
-    silentFallbackWarn: true
+    silentFallbackWarn: true,
+    // en-us is complete; other locales may lack a few strings
+    missingWarn: false,
+    fallbackWarn: false
 })
 
 export default defineBoot(({ app }) => {

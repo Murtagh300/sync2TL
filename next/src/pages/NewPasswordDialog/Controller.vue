@@ -33,7 +33,7 @@
                 <q-card-actions>
                     <q-btn
                         v-disableFocusHelper
-                        class="w40 q-mx-auto"
+                        class="full-width"
                         :label="action"
                         unelevated
                         color="primary"

@@ -22,25 +22,23 @@
                     >
                     <div
                         v-else
-                        class="fit text-h4 bg-surface-2 column justify-center"
+                        class="fit text-h4 text-weight-bolder column justify-center"
                     >{{(host[0]|| '?').toUpperCase()}}</div>
                 </transition>
             </div>
-            <p />
-            <p class="text-subtitle1">{{$t('sign.msg_request_signature')}}</p>
+            <h1 class="bvm-display summary-title q-mt-lg q-mb-lg">{{$t('sign.msg_request_signature')}}</h1>
         </div>
         <!-- descriptions -->
-        <q-list>
-            <q-item
+        <div class="bvm-tile summary-rows">
+            <div
                 v-for="(item, i) in items"
                 :key="i"
+                class="summary-row"
             >
-                <q-item-section>
-                    <q-item-label caption>{{item.caption}}</q-item-label>
-                    <q-item-label>{{item.text}}</q-item-label>
-                </q-item-section>
-            </q-item>
-        </q-list>
+                <div class="text-muted summary-caption">{{item.caption}}</div>
+                <div class="summary-text">{{item.text}}</div>
+            </div>
+        </div>
     </div>
 </template>
 <script lang="ts">
@@ -118,9 +116,31 @@ export default defineComponent({
     }
 })
 </script>
-<style scoped>
-.favicon-frame {
-    width: 64px;
-    height: 64px;
-}
+<style lang="sass" scoped>
+.favicon-frame
+  width: 72px
+  height: 72px
+  border-radius: 20px
+  overflow: hidden
+  border: 1px solid $hairline-2
+  background: rgba(255, 255, 255, 0.05)
+
+.summary-title
+  font-size: 28px
+
+.summary-rows
+  text-align: left
+
+.summary-row
+  padding: 12px 16px
+  & + &
+    border-top: 1px solid $hairline
+
+.summary-caption
+  font-size: 12px
+  font-weight: 700
+
+.summary-text
+  font-weight: 700
+  word-break: break-word
 </style>

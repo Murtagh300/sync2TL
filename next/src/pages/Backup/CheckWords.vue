@@ -14,7 +14,7 @@
                         :key="i"
                     >
                         <div class="col-2 text-caption text-grey text-right q-pr-sm">{{groupSize * (row - 1) + i}}.</div>
-                        <div class="col-10 text-h6 serif">{{words[(i - 1) + groupSize * (row - 1)]}}</div>
+                        <div class="col-10 text-h6 bvm-amount">{{words[(i - 1) + groupSize * (row - 1)]}}</div>
                     </div>
                 </div>
                 <div
@@ -28,7 +28,7 @@
                     >
                         <div class="col-2 text-caption text-grey text-right q-pr-sm">{{i + groupSize * verifyRowNum }}.</div>
                         <div
-                            class="col-10 text-h6 serif"
+                            class="col-10 text-h6 bvm-amount"
                             :class="{'text-negative' :isError,' text-grey': !isError}"
                         >{{verifyingItems && words[verifyingItems[i-1]]}}</div>
                     </div>

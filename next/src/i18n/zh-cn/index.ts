@@ -114,7 +114,14 @@ export default {
         action_nodes: '节点设置',
         action_language: '语言偏好',
         msg_password_changed: '密码已修改',
-        action_user_guide: '用户指南'
+        action_user_guide: 'BlackVeMarket',
+        label_general: '通用',
+        label_network: '网络'
+    },
+    tokens: {
+        msg_auto: '持有的代币会自动显示。开启后，即使余额为零也会显示。',
+        label_search: '搜索代币',
+        msg_no_match: '没有匹配的代币'
     },
     nodes: {
         title_add_dialog: '添加节点',
@@ -127,6 +134,31 @@ export default {
         title: '地址',
         label_assets: '资产',
         action_receive: '接收'
+    },
+    nft: {
+        label_nfts: 'NFT',
+        label_all: '全部',
+        label_collection: '系列',
+        label_traits: '属性',
+        label_details: '详情',
+        label_rank: '排名',
+        label_last_sale: '最近成交',
+        label_listed: '挂单价格',
+        label_unlisted: '未挂单',
+        label_contract: '合约',
+        label_token_id: 'Token ID',
+        label_standard: '标准',
+        action_send: '发送 NFT',
+        action_view_market: '在 BlackVeMarket 查看',
+        action_explore: '浏览 BlackVeMarket',
+        action_load_more: '加载更多',
+        action_retry: '重试',
+        msg_empty: '该地址暂无 NFT。',
+        msg_unreachable: '暂时无法连接 BlackVeMarket。',
+        msg_listed_cannot_send: '已在 BlackVeMarket 挂单，请先取消挂单再发送。',
+        msg_send_to: '接收此 NFT 的地址',
+        msg_sent: 'NFT 已发送，转账确认后会显示在新钱包中。',
+        msg_not_owner: '该地址已不再持有此 NFT。'
     },
     asset: {
         title: '资产',
@@ -214,6 +246,7 @@ export default {
 
         // clause op type
         op_transfer_asset: '转账',
+        op_nft_transfer: 'NFT 转账',
         op_contract_call: '合约调用',
         op_contract_creation: '合约创建',
 

@@ -9,10 +9,9 @@
             <prompt-dialog-toolbar>{{opts.title}}</prompt-dialog-toolbar>
             <q-form @submit="onSubmit">
                 <q-card-section>
-                    <q-item-label header>{{opts.message}}</q-item-label>
+                    <p class="prompt-message">{{opts.message}}</p>
                     <q-input
                         ref="input"
-                        class="q-mx-sm"
                         dense
                         autofocus
                         outlined
@@ -26,7 +25,7 @@
                 <q-card-actions>
                     <q-btn
                         v-disableFocusHelper
-                        class="w40 q-mx-auto"
+                        class="full-width"
                         unelevated
                         :color="opts.action.color"
                         type="submit"
@@ -99,3 +98,10 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.prompt-message
+  margin: 0 0 12px
+  font-size: 14px
+  line-height: 1.5
+  color: $text-soft
+</style>

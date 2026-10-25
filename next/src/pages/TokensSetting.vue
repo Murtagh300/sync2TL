@@ -1,20 +1,29 @@
 <template>
-    <div class="column fit">
+    <div class="column fit no-wrap">
         <page-toolbar :title="$t('settings.action_token_list')" />
         <page-content class="col">
-            <q-list
+            <div
                 v-if="tokens.length>0"
-                padding
+                class="q-pa-md"
             >
-                <template
-                    v-for="(item, index) in tokens"
-                    :key="item.symbol"
+                <p class="text-soft q-mb-md">{{$t('tokens.msg_auto')}}</p>
+                <q-input
+                    v-model="search"
+                    class="q-mb-md"
+                    dense
+                    outlined
+                    clearable
+                    :placeholder="$t('tokens.label_search')"
                 >
-                    <q-separator
-                        v-if="index !==0 "
-                        inset="item"
-                    />
-                    <q-item>
+                    <template #prepend>
+                        <q-icon name="o_search" />
+                    </template>
+                </q-input>
+                <q-list class="bvm-list">
+                    <q-item
+                        v-for="item in shown"
+                        :key="item.symbol"
+                    >
                         <q-item-section avatar>
                             <token-avatar
                                 :spec="item"
@@ -27,14 +36,17 @@
                         </q-item-section>
                         <q-item-section side>
                             <q-toggle
-                                color="positive"
+                                color="primary"
                                 v-model="activeSymbols"
                                 :val="item.symbol"
                             />
                         </q-item-section>
                     </q-item>
-                </template>
-            </q-list>
+                    <q-item v-if="shown.length === 0">
+                        <q-item-section class="text-muted">{{$t('tokens.msg_no_match')}}</q-item-section>
+                    </q-item>
+                </q-list>
+            </div>
             <div
                 v-else
                 class="fit column flex-center"
@@ -49,7 +61,7 @@
                         unelevated
                         color="primary"
                         @click="$asyncComputed.tokens.update()"
-                    >Refresh</q-btn>
+                    >{{$t('nft.action_retry')}}</q-btn>
                 </template>
             </div>
         </page-content>
@@ -66,8 +78,17 @@ export default defineComponent({
     data: () => {
         return {
             activeSymbols: null as string[] | null,
+            search: '' as string | null,
             // async computed (see src/shims-async-computed.d.ts)
             tokens: [] as M.TokenSpec[]
+        }
+    },
+    computed: {
+        shown(): M.TokenSpec[] {
+            const q = (this.search || '').trim().toLowerCase()
+            return q
+                ? this.tokens.filter(t => t.symbol.toLowerCase().includes(q) || t.name.toLowerCase().includes(q))
+                : this.tokens
         }
     },
     asyncComputed: {

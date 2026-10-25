@@ -5,14 +5,14 @@
             class="q-my-auto text-center"
             padding
         >
-            <p>
+            <div class="success-mark flex flex-center q-mx-auto q-mb-lg">
                 <q-icon
-                    size="4rem"
-                    name="check_circle_outline"
-                    color="positive"
+                    size="40px"
+                    name="o_check"
+                    color="primary"
                 />
-            </p>
-            <p class="text-h6">{{ $t('sign.msg_signed', { content_type: typeText }) }}</p>
+            </div>
+            <h1 class="bvm-display success-title q-my-none">{{ $t('sign.msg_signed', { content_type: typeText.toLowerCase() }) }}</h1>
         </page-content>
         <page-action>
             <q-btn
@@ -42,7 +42,7 @@ export default defineComponent({
         type: String as () => 'tx' | 'cert'
     },
     computed: {
-        typeText() {
+        typeText(): string {
             switch (this.type) {
                 case 'tx':
                     return this.$t('common.transaction')
@@ -60,3 +60,14 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.success-mark
+  width: 76px
+  height: 76px
+  border-radius: 20px
+  border: 1px solid rgba(110, 231, 183, 0.35)
+  background: rgba(110, 231, 183, 0.08)
+
+.success-title
+  font-size: 30px
+</style>

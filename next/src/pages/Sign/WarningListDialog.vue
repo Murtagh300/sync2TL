@@ -24,7 +24,7 @@
                 align="right"
             >
                 <q-btn
-                    class="w40 q-mx-auto"
+                    class="full-width"
                     unelevated
                     color="warning"
                     :label="$t('common.continue')"

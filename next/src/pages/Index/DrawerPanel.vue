@@ -82,7 +82,7 @@ export default defineComponent({
             switch (import.meta.env.QUASAR_MODE) {
                 case 'spa':
                 case 'pwa':
-                    return 'lite'
+                    return 'web app'
                 default: return import.meta.env.QUASAR_MODE || ''
             }
         }

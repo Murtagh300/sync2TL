@@ -10,9 +10,29 @@
                     :address="address"
                     :name="wallet.meta.name"
                 />
-                <div class="row items-center q-px-md q-pt-md">
-                    <div class="bvm-label">{{$t('address.label_assets')}}</div>
+                <div class="row items-center no-wrap q-px-md q-pt-sm">
+                    <q-tabs
+                        v-model="tab"
+                        dense
+                        no-caps
+                        inline-label
+                        align="left"
+                        active-color="primary"
+                        indicator-color="primary"
+                        class="address-tabs"
+                    >
+                        <q-tab
+                            name="tokens"
+                            :label="$t('address.label_assets')"
+                        />
+                        <q-tab
+                            v-if="nftSupported"
+                            name="nfts"
+                            :label="nftTotal ? `${$t('nft.label_nfts')} ${nftTotal}` : $t('nft.label_nfts')"
+                        />
+                    </q-tabs>
                     <q-btn
+                        v-show="tab === 'tokens'"
                         class="q-ml-auto"
                         :to="{name: 'tokens-setting'}"
                         flat
@@ -23,7 +43,10 @@
                     />
                 </div>
             </page-content>
-            <page-content class="col">
+            <page-content
+                v-show="tab === 'tokens'"
+                class="col"
+            >
                 <q-list>
                     <async-resolve
                         v-for="(token, index) in tokenList"
@@ -70,6 +93,19 @@
                     </async-resolve>
                 </q-list>
             </page-content>
+            <page-content
+                v-if="nftSupported"
+                v-show="tab === 'nfts'"
+                class="col"
+                size="lg"
+            >
+                <nft-grid
+                    :address="address"
+                    :wallet-id="walletId"
+                    :address-index="addressIndex"
+                    @total="nftTotal = $event"
+                />
+            </page-content>
         </template>
     </div>
 </template>
@@ -80,6 +116,8 @@ import HeadItem from './HeadItem.vue'
 import AsyncResolve from 'components/AsyncResolve'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
+import NftGrid from './NftGrid.vue'
+import { visibleTokens } from 'src/utils/tokens'
 
 export default defineComponent({
     components: {
@@ -87,13 +125,16 @@ export default defineComponent({
         HeadItem,
         AsyncResolve,
         PageToolbar,
-        PageContent
+        PageContent,
+        NftGrid
     },
     props: {
         walletId: { type: String, required: true },
         addressIndex: { type: String, required: true }
     },
     data: () => ({
+        tab: 'tokens' as 'tokens' | 'nfts',
+        nftTotal: 0,
         // async computed (see src/shims-async-computed.d.ts)
         wallet: null as M.Wallet | null,
         tokenList: [] as M.TokenSpec[]
@@ -108,19 +149,28 @@ export default defineComponent({
                 if (!wallet) {
                     return []
                 }
-                const [tokens, activeSymbols] = await Promise.all([
-                    this.$svc.config.token.all(),
-                    this.$svc.config.token.activeSymbols()
-                ])
-                return tokens.filter(token => token.gid === wallet.gid && (activeSymbols.includes(token.symbol) || token.permanent))
+                return visibleTokens(this.$svc, wallet.gid, this.address)
             },
             default: []
         }
     },
     computed: {
+        nftSupported(): boolean {
+            return !!this.wallet && this.$svc.bvm.supports(this.wallet.gid)
+        },
         address(): string {
             return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex)] : ''
         }
     }
 })
 </script>
+<style lang="sass" scoped>
+.address-tabs
+  font-weight: 800
+  :deep(.q-tab)
+    padding: 0 12px 0 0
+    min-height: 40px
+  :deep(.q-tab__label)
+    font-size: 15px
+    font-weight: 800
+</style>

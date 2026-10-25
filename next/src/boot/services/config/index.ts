@@ -76,7 +76,8 @@ export function build(storage: Storage) {
                 main: [],
                 test: []
             }
-            if (registry.updated + 6 * 60 * 60 * 1000 < Date.now()) {
+            // refreshed hourly, so new tokens show up soon after they are listed
+            if (registry.updated + 60 * 60 * 1000 < Date.now()) {
                 // fetch in background and don't block
                 TokenRegistry.fetch()
                     .then(r => set('tokenRegistry', JSON.stringify(r)))

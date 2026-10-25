@@ -10,36 +10,23 @@
             />
         </page-toolbar>
         <page-content class="col">
-            <q-list padding>
+            <div class="q-pa-md">
                 <template
                     v-for="(group, gi) in groups"
                     :key="gi"
                 >
-                    <q-separator
-                        v-if="gi > 0"
-                        spaced
-                    />
-                    <q-item-label
-                        header
-                    >{{$netDisplayName(group.list[0].genesis.id)}}</q-item-label>
-                    <template
-                        v-for="(node, i) in group.list"
-                        :key="`${gi}-${i}`"
-                    >
-                        <q-separator
-                            v-if="i > 0"
-                            spaced
-                            inset="item"
-                        />
+                    <div class="bvm-label q-mb-sm q-ml-xs">{{$netDisplayName(group.list[0].genesis.id)}}</div>
+                    <q-list class="bvm-list q-mb-lg">
                         <q-item
+                            v-for="(node, i) in group.list"
+                            :key="`${gi}-${i}`"
                             clickable
                             @click="onSelect(node)"
                         >
                             <q-item-section avatar>
                                 <q-icon
-                                    color="primary"
-                                    name="done"
-                                    v-show="group.selection === i"
+                                    :color="group.selection === i ? 'primary' : 'grey-8'"
+                                    :name="group.selection === i ? 'radio_button_checked' : 'radio_button_unchecked'"
                                 />
                             </q-item-section>
                             <q-item-section>
@@ -58,13 +45,13 @@
                                     flat
                                     dense
                                     round
-                                    icon="delete_forever"
+                                    icon="o_delete"
                                 />
                             </q-item-section>
                         </q-item>
-                    </template>
+                    </q-list>
                 </template>
-            </q-list>
+            </div>
         </page-content>
     </div>
 </template>

@@ -12,7 +12,7 @@
                 spellcheck="false"
             >
                 <q-card-section>
-                    <q-item-label header>URL</q-item-label>
+                    <p class="text-soft q-mb-sm">Node URL</p>
                     <q-input
                         ref="input"
                         class="q-mx-sm"
@@ -30,7 +30,7 @@
                 <q-card-actions>
                     <q-btn
                         v-disableFocusHelper
-                        class="w40 q-mx-auto"
+                        class="full-width"
                         unelevated
                         color="primary"
                         type="submit"

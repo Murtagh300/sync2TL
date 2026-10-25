@@ -1,62 +1,64 @@
 <template>
-    <div class="column fit">
+    <div class="column fit no-wrap">
         <page-toolbar :title="$t('settings.title')" />
         <page-content class="col">
-            <q-list padding>
-                <language-list-popup
-                    v-slot="{displayName}"
-                    anchor="bottom right"
-                    self="top right"
-                    :offset="[-16, 0]"
-                >
+            <div class="settings q-pa-md">
+                <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_general')}}</div>
+                <q-list class="bvm-list q-mb-lg">
+                    <language-list-popup
+                        v-slot="{displayName}"
+                        anchor="bottom right"
+                        self="top right"
+                        :offset="[-16, 0]"
+                    >
+                        <item
+                            icon="o_language"
+                            :title="$t('settings.action_language')"
+                            :value="displayName"
+                            clickable
+                        />
+                    </language-list-popup>
                     <item
-                        icon="o_language"
-                        :title="$t('settings.action_language')"
-                        :value="displayName"
+                        icon="o_lock"
+                        :title="$t('settings.action_change_password')"
                         clickable
+                        @click="onClickChangePassword()"
                     />
-                </language-list-popup>
-                <q-separator inset="item" />
-                <item
-                    icon="o_lock"
-                    :title="$t('settings.action_change_password')"
-                    clickable
-                    @click="onClickChangePassword()"
-                />
-                <q-separator inset="item" />
-                <template v-if="bioPass">
                     <item
+                        v-if="bioPass"
                         icon="o_fingerprint"
                         :title="$t('bioAuth.title')"
                     >
                         <q-toggle
-                            color="green"
+                            color="primary"
                             :model-value="!!bioPassSaved"
                             :disable="!bioPass"
                             @update:model-value="toggleBioPass"
                         />
                     </item>
-                    <q-separator inset="item" />
-                </template>
-                <item
-                    icon="o_toll"
-                    :title="$t('settings.action_token_list')"
-                    :to="{name: 'tokens-setting'}"
-                />
-                <q-separator inset="item" />
-                <item
-                    icon="o_dns"
-                    :title="$t('settings.action_nodes')"
-                    :to="{name: 'nodes-setting'}"
-                />
-                <q-separator inset="item" />
-                <item
-                    icon="o_menu_book"
-                    :title="$t('settings.action_user_guide')"
-                    clickable
-                    @click="openGuide()"
-                />
-            </q-list>
+                </q-list>
+                <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_network')}}</div>
+                <q-list class="bvm-list q-mb-lg">
+                    <item
+                        icon="o_toll"
+                        :title="$t('settings.action_token_list')"
+                        :to="{name: 'tokens-setting'}"
+                    />
+                    <item
+                        icon="o_dns"
+                        :title="$t('settings.action_nodes')"
+                        :to="{name: 'nodes-setting'}"
+                    />
+                </q-list>
+                <q-list class="bvm-list">
+                    <item
+                        icon="o_storefront"
+                        :title="$t('settings.action_user_guide')"
+                        clickable
+                        @click="openGuide()"
+                    />
+                </q-list>
+            </div>
         </page-content>
     </div>
 </template>
@@ -70,6 +72,7 @@ import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'src/components/PageContent.vue'
 import { kdfEncrypt } from 'src/core/vault'
 import { openURL } from 'src/utils/open-url'
+import { marketURL } from 'boot/services/bvm'
 
 export default defineComponent({
     components: { Item, LanguageListPopup, PageToolbar, PageContent },
@@ -140,7 +143,7 @@ export default defineComponent({
             } catch { }
         },
         openGuide() {
-            openURL('https://docs.vechain.org/sync2/user-guide/')
+            openURL(marketURL)
         }
     }
 })

@@ -27,7 +27,7 @@
             <q-card-actions>
                 <q-btn
                     @click="onCopy"
-                    class="w40 q-mx-auto"
+                    class="full-width"
                     unelevated
                     color="primary"
                 >{{$t('common.copy')}}</q-btn>

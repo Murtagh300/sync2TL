@@ -59,7 +59,9 @@ export default defineConfig(() => {
                 APP_BUILD: appBuild,
                 DIST_TAG: process.env.DIST_TAG || '',
                 // analytics only when a measurement id is supplied at build time (GA_ID=G-XXXX)
-                GA_ID: process.env.GA_ID || ''
+                GA_ID: process.env.GA_ID || '',
+                // the BlackVeMarket API; needs CORS for the wallet's origin (see README)
+                BVM_API_URL: process.env.BVM_API_URL || ''
             },
 
             extendViteConf(viteConf) {
@@ -77,7 +79,15 @@ export default defineConfig(() => {
 
         devServer: {
             port: 8090,
-            open: false
+            open: false,
+            // the BlackVeMarket API sends no CORS headers; proxy it in development
+            proxy: {
+                '/bvm-api': {
+                    target: 'https://blackvemarket.com/api',
+                    changeOrigin: true,
+                    rewrite: (path: string) => path.replace(/^\/bvm-api/, '')
+                }
+            }
         },
 
         framework: {

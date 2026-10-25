@@ -9,12 +9,13 @@
             <q-item-label lines="1">{{title}}</q-item-label>
         </q-item-section>
         <q-item-section side>
-            {{value}}
+            <span class="text-muted">{{value}}</span>
         </q-item-section>
         <q-item-section side>
             <q-icon
                 v-if="!$slots.default"
                 name="chevron_right"
+                class="text-muted"
             ></q-icon>
             <slot />
         </q-item-section>

@@ -47,8 +47,11 @@ export default defineComponent({
     watch: {
         // watch the language setting change
         lang(newVal: string | null) {
-            // if language not set (auto), use the navigator lang
-            const lang = (newVal || navigator.language).toLowerCase()
+            // if language not set (auto), use the navigator lang when there is a translation for it
+            const wanted = (newVal || navigator.language).toLowerCase()
+            const lang = this.$i18n.availableLocales.includes(wanted)
+                ? wanted
+                : wanted.startsWith('zh') ? 'zh-cn' : 'en-us'
             this.$i18n.locale = lang
 
             // should set to default first

@@ -12,6 +12,7 @@ import NodesSetting from 'pages/NodesSetting'
 import Sign from 'pages/Sign'
 import SignSuccess from 'pages/SignSuccess.vue'
 import Activities from 'pages/Activities'
+import Nft from 'pages/Nft'
 
 const routes: RouteRecordRaw[] = [
     {
@@ -29,6 +30,10 @@ const routes: RouteRecordRaw[] = [
             path: 'w/:walletId(\\d+)/:addressIndex(\\d+)/:symbol',
             name: 'asset',
             component: Asset
+        }, {
+            path: 'w/:walletId(\\d+)/:addressIndex(\\d+)/nft/:contract/:tokenId',
+            name: 'nft',
+            component: Nft
         }, {
             path: 'w/:walletId(\\d+)/backup',
             name: 'backup',

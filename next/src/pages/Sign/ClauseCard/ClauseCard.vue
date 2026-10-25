@@ -19,6 +19,11 @@
                 v-if="op.type==='transfer'"
                 :op="op"
             />
+            <nft-item
+                v-if="op.type==='nft'"
+                :op="op"
+                :gid="tokens[0]?.gid"
+            />
             <call-item
                 v-if="op.type==='call'"
                 :op="op"
@@ -35,11 +40,13 @@ import { defineComponent } from 'vue'
 import TransferItem, { OpTransfer } from './TransferItem.vue'
 import CallItem, { OpCall } from './CallItem.vue'
 import CreateItem, { OpCreate } from './CreateItem.vue'
+import NftItem, { type OpNft } from './NftItem.vue'
+import { decodeAsNftTransferClause } from '../helper'
 import BigNumber from 'bignumber.js'
 import { decodeAsTokenTransferClause } from '../helper'
 
 export default defineComponent({
-    components: { TransferItem, CallItem, CreateItem },
+    components: { TransferItem, CallItem, CreateItem, NftItem },
     props: {
         index: { type: Number, required: true },
         clause: { type: Object as () => Connex.Vendor.TxMessage[0], required: true },
@@ -48,7 +55,7 @@ export default defineComponent({
     computed: {
         // convert clause into ops
         ops() {
-            const ret: Array<OpTransfer | OpCall | OpCreate> = []
+            const ret: Array<OpTransfer | OpCall | OpCreate | OpNft> = []
             const { to, value, data } = this.clause
 
             if (to) {
@@ -69,8 +76,13 @@ export default defineComponent({
                         }
                     }
                     if (!isTokenTransfer) {
-                        // contract call
-                        ret.push({ type: 'call', to })
+                        const nft = decodeAsNftTransferClause(this.clause)
+                        if (nft) {
+                            ret.push({ type: 'nft', contract: to, ...nft })
+                        } else {
+                            // contract call
+                            ret.push({ type: 'call', to })
+                        }
                     }
                 }
             } else {
@@ -96,8 +108,9 @@ export default defineComponent({
         }
     },
     methods: {
-        opLabel(op: OpTransfer | OpCall | OpCreate) {
+        opLabel(op: OpTransfer | OpCall | OpCreate | OpNft) {
             switch (op.type) {
+                case 'nft': return this.$t('sign.op_nft_transfer')
                 case 'transfer': return this.$t('sign.op_transfer_asset')
                 case 'call': return this.$t('sign.op_contract_call')
                 case 'create': return this.$t('sign.op_contract_creation')

@@ -10,8 +10,8 @@
                     caption
                     lines="1"
                 >{{ entry.walletName || $t('common.unknown') }}</q-item-label>
-                <q-item-label caption>
-                    ┗
+                <q-item-label caption class="row no-wrap items-center">
+                    <q-icon name="o_account_balance_wallet" size="14px" class="q-mr-xs" />
                     <address-label :addr="entry.signer" />
                 </q-item-label>
                 <q-item-label caption>

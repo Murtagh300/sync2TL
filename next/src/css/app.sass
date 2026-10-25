@@ -186,6 +186,32 @@ body
 .q-item.q-router-link--active, .q-item--active
   color: $primary
 
+// a list set in a tile (settings, nodes, tokens): rows split by hairlines,
+// icons in small rounded squares
+.bvm-list
+  @extend .bvm-tile
+  overflow: hidden
+  padding: 0
+  > .q-item + .q-item,
+  > * + .q-item
+    border-top: 1px solid $hairline
+  .q-item
+    min-height: 56px
+    padding: 10px 16px
+  .q-item__section--avatar
+    min-width: 48px
+  .q-avatar
+    width: 34px
+    height: 34px
+    font-size: 34px
+    border-radius: 10px
+    background: rgba(255, 255, 255, 0.05)
+    color: $text-soft
+    .q-icon
+      font-size: 19px
+  .q-item__label
+    font-weight: 700
+
 // ---- dialogs ----------------------------------------------------
 // the dialog shell only (cards inside dialogs keep their own look)
 .q-dialog__inner > .q-card

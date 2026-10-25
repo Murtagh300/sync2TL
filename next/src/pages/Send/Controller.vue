@@ -57,6 +57,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { event as gtagEvent } from 'vue-gtag'
+import { visibleTokens } from 'src/utils/tokens'
 import { abi, address } from 'thor-devkit'
 import { abis } from 'src/consts'
 import To from './To.vue'
@@ -124,16 +125,7 @@ export default defineComponent({
                 if (!w) {
                     return []
                 }
-                const [tokens = [], activeSymbols = []] = await Promise.all(
-                    [
-                        this.$svc.config.token.all(),
-                        this.$svc.config.token.activeSymbols()
-                    ]
-                )
-                return tokens.filter(token => {
-                    return token.gid === w.gid &&
-                        (activeSymbols.includes(token.symbol) || token.permanent)
-                })
+                return visibleTokens(this.$svc, w.gid, w.meta.addresses[parseInt(this.i || '0')] || '')
             },
             default: []
         }

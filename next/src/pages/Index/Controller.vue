@@ -42,11 +42,11 @@
                 v-else
                 class="narrow-page q-my-auto text-center self-center"
             >
-                <p class="text-grey text-h5 text-center col-12">{{$t('common.no_wallet')}}</p>
+                <p class="bvm-display text-h4 text-center col-12 q-mb-lg">{{$t('common.no_wallet')}}</p>
                 <q-btn
                     unelevated
                     color="primary"
-                    class="w40"
+                    class="q-px-lg"
                     :label="$t('index.action_create')"
                     :to="{name: 'new-wallet'}"
                 />

@@ -5,4 +5,5 @@ interface ImportMetaEnv {
     readonly APP_BUILD: string
     readonly DIST_TAG: string
     readonly GA_ID: string
+    readonly BVM_API_URL: string
 }

@@ -4,6 +4,7 @@ import * as Blockchain from './blockchain'
 import * as Config from './config'
 import * as Wallet from './wallet'
 import * as Activity from './activity'
+import * as Bvm from './bvm'
 import { groupBy } from 'src/utils/array'
 
 export type Service = {
@@ -11,6 +12,7 @@ export type Service = {
     config: ReturnType<typeof Config.build>
     wallet: ReturnType<typeof Wallet.build>
     activity: ReturnType<typeof Activity.build>
+    bvm: ReturnType<typeof Bvm.build>
 }
 
 declare module 'vue' {
@@ -62,6 +64,6 @@ export default defineBoot(async ({ app }) => {
         }
     })()
 
-    instance = { bc, config, wallet, activity }
+    instance = { bc, config, wallet, activity, bvm: Bvm.build() }
     app.config.globalProperties.$svc = instance
 })

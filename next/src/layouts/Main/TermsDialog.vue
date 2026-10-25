@@ -19,7 +19,7 @@
             <q-card-actions>
                 <q-btn
                     :disable="!accepted"
-                    class="w40 q-mx-auto"
+                    class="full-width"
                     color="primary"
                     unelevated
                     :label="$t('common.continue')"
