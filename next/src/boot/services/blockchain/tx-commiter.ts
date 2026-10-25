@@ -1,5 +1,6 @@
 import axios from 'axios'
 import { blake2b256 } from 'thor-devkit'
+import { whenOnline } from 'src/utils/network'
 
 type Context = {
     retries: number
@@ -22,6 +23,7 @@ export function commitTx(nodeUrl: string, raw: string) {
                 const url = new URL('transactions', nodeUrl).href
                 const data = JSON.stringify({ raw })
                 while (c.retries++ < 5) {
+                    await whenOnline()
                     try {
                         await axios.post(url, data, {
                             headers: { 'content-type': 'application/json' },

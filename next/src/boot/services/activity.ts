@@ -33,6 +33,10 @@ export function build(storage: Storage) {
         add(a: M.Activity<'id?'>) {
             return t.insert(a)
         },
+        /** forget one record (a dApp's history) */
+        remove(id: number) {
+            return t.delete({ id })
+        },
         // only tx activity is allowed to be updated
         update(id: number, values: { status?: M.Activity['status'], glob?: M.Activity.TxGlob }) {
             return t.update({ id }, values)

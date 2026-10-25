@@ -37,6 +37,32 @@
                         />
                     </item>
                 </q-list>
+                <q-list class="bvm-list q-mb-lg">
+                    <item
+                        icon="o_shield"
+                        :title="$t('security.title')"
+                        :to="{name: 'security'}"
+                    />
+                    <q-item>
+                        <q-item-section avatar>
+                            <q-avatar icon="o_lock_clock" />
+                        </q-item-section>
+                        <q-item-section>
+                            <q-item-label>{{$t('settings.label_autolock')}}</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                            <q-select
+                                v-model="prefs.autoLockMinutes"
+                                dense
+                                borderless
+                                emit-value
+                                map-options
+                                :options="lockOptions"
+                                style="min-width: 110px"
+                            />
+                        </q-item-section>
+                    </q-item>
+                </q-list>
                 <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_appearance')}}</div>
                 <q-list class="bvm-list q-mb-lg">
                     <q-item>
@@ -86,6 +112,34 @@
                     >
                         <q-toggle
                             v-model="prefs.hideBalances"
+                            color="primary"
+                        />
+                    </item>
+                    <q-item>
+                        <q-item-section avatar>
+                            <q-avatar icon="o_format_size" />
+                        </q-item-section>
+                        <q-item-section>
+                            <q-item-label>{{$t('settings.label_text_size')}}</q-item-label>
+                            <q-slider
+                                v-model="prefs.textScale"
+                                :min="0.9"
+                                :max="1.3"
+                                :step="0.1"
+                                markers
+                                snap
+                                color="primary"
+                                :label-value="`${Math.round(prefs.textScale * 100)}%`"
+                                label
+                            />
+                        </q-item-section>
+                    </q-item>
+                    <item
+                        icon="o_contrast"
+                        :title="$t('settings.label_contrast')"
+                    >
+                        <q-toggle
+                            v-model="prefs.highContrast"
                             color="primary"
                         />
                     </item>
@@ -157,6 +211,17 @@ export default defineComponent({
         },
         bioPassSaved(): Promise<boolean> {
             return this.$svc.config.getBioPassOn()
+        }
+    },
+    computed: {
+        lockOptions(): { label: string, value: number }[] {
+            return [
+                { label: this.$t('settings.lock_now'), value: 0 },
+                { label: this.$t('settings.lock_minutes', { n: 1 }), value: 1 },
+                { label: this.$t('settings.lock_minutes', { n: 5 }), value: 5 },
+                { label: this.$t('settings.lock_minutes', { n: 15 }), value: 15 },
+                { label: this.$t('settings.lock_never'), value: -1 }
+            ]
         }
     },
     methods: {

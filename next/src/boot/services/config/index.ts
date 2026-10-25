@@ -29,6 +29,8 @@ const presetNodes: M.Node[] = [
     }
 ]
 
+type JsonKey = 'watchlist' | 'alerts' | 'alert-state' | 'token-prefs' | 'hidden-nfts'
+
 export function build(storage: Storage) {
     const t = delegateTable<Storage.ConfigEntity, Storage.ConfigEntity>(
         storage.configs,
@@ -36,7 +38,7 @@ export function build(storage: Storage) {
         m => m
     )
     type Key = 'nodes' | 'activeNodeMap' | 'userMasterKeyGlob' |
-        'tokenRegistry' | 'activeTokenSymbols' | 'recentRecipients' | 'language' | 'bio-pass-on' | 'contacts' | 'watchlist' | 'alerts' | 'alert-state'
+        'tokenRegistry' | 'activeTokenSymbols' | 'recentRecipients' | 'language' | 'bio-pass-on' | 'contacts' | 'watchlist' | 'alerts' | 'alert-state' | 'token-prefs' | 'hidden-nfts'
 
     const getSubKey = async (key: Key, subKey: string) => {
         const row = (await t.all().where({ key, subKey }).query())[0]
@@ -136,7 +138,7 @@ export function build(storage: Storage) {
             setContacts(list)
         },
         /** small JSON settings: the watchlist, price alerts and what they last saw */
-        async getJSON<T>(key: 'watchlist' | 'alerts' | 'alert-state', fallback: T): Promise<T> {
+        async getJSON<T>(key: JsonKey, fallback: T): Promise<T> {
             const raw = await get(key)
             try {
                 return raw ? JSON.parse(raw) as T : fallback
@@ -144,7 +146,7 @@ export function build(storage: Storage) {
                 return fallback
             }
         },
-        setJSON(key: 'watchlist' | 'alerts' | 'alert-state', value: unknown) {
+        setJSON(key: JsonKey, value: unknown) {
             return set(key, JSON.stringify(value))
         },
         getLanguage() {

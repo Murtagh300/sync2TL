@@ -7,6 +7,21 @@
                 class="q-pa-md"
             >
                 <p class="text-soft q-mb-md">{{$t('tokens.msg_auto')}}</p>
+                <div
+                    v-if="hidden.length"
+                    class="bvm-tile q-pa-md q-mb-md"
+                >
+                    <div class="text-weight-bold q-mb-sm">{{$t('tokens.label_hidden')}}</div>
+                    <div class="row q-gutter-sm">
+                        <q-chip
+                            v-for="s in hidden"
+                            :key="s"
+                            removable
+                            :label="s"
+                            @remove="unhide(s)"
+                        />
+                    </div>
+                </div>
                 <q-input
                     v-model="search"
                     class="q-mb-md"
@@ -72,6 +87,7 @@ import { defineComponent } from 'vue'
 import PageContent from 'components/PageContent.vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import TokenAvatar from 'components/TokenAvatar.vue'
+import type { TokenPrefs } from 'src/utils/tokens'
 
 export default defineComponent({
     components: { PageContent, TokenAvatar, PageToolbar },
@@ -79,8 +95,20 @@ export default defineComponent({
         return {
             activeSymbols: null as string[] | null,
             search: '' as string | null,
+            hidden: [] as string[],
             // async computed (see src/shims-async-computed.d.ts)
             tokens: [] as M.TokenSpec[]
+        }
+    },
+    async created() {
+        this.hidden = (await this.$svc.config.getJSON<TokenPrefs>('token-prefs', { pinned: [], hidden: [] })).hidden
+    },
+    methods: {
+        async unhide(symbol: string) {
+            const p = await this.$svc.config.getJSON<TokenPrefs>('token-prefs', { pinned: [], hidden: [] })
+            p.hidden = p.hidden.filter(s => s !== symbol)
+            await this.$svc.config.setJSON('token-prefs', p)
+            this.hidden = p.hidden
         }
     },
     computed: {

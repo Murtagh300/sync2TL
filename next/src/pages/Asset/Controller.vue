@@ -43,6 +43,15 @@
                     </template>
                 </head-item>
             </async-resolve>
+            <div
+                v-if="token && charted"
+                class="bvm-tile q-mx-md q-mt-md q-pa-md"
+            >
+                <price-chart
+                    :token="token"
+                    :marks="marks"
+                />
+            </div>
             <div class="bvm-label q-px-md q-pt-lg q-pb-sm">{{$t('asset.label_history')}}</div>
         </page-content>
         <page-content class="col">
@@ -51,6 +60,7 @@
                 :address="address"
                 :token="token"
                 :pageSize="20"
+                @logs="onLogs"
             />
         </page-content>
     </div>
@@ -64,6 +74,8 @@ import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import AddressLabel from 'components/AddressLabel.vue'
 import AmountLabel from 'components/AmountLabel.vue'
+import PriceChart, { type ChartMark } from './PriceChart.vue'
+import type { TransferLogItem } from './models'
 export default defineComponent({
     components: {
         Logs,
@@ -72,11 +84,13 @@ export default defineComponent({
         PageToolbar,
         PageContent,
         AddressLabel,
-        AmountLabel
+        AmountLabel,
+        PriceChart
     },
     data() {
         return {
             showQR: false,
+            marks: [] as ChartMark[],
             // async computed (see src/shims-async-computed.d.ts)
             wallet: null as M.Wallet | null,
             token: null as M.TokenSpec | null
@@ -97,19 +111,23 @@ export default defineComponent({
                 if (!wallet) {
                     return null
                 }
-                const [tokens, activeSymbols] = await Promise.all([
-                    this.$svc.config.token.all(),
-                    this.$svc.config.token.activeSymbols()
-                ])
-                return tokens.filter(token => {
-                    return token.gid === wallet.gid &&
-                        (activeSymbols.includes(token.symbol) || token.permanent)
-                }).find(token => token.symbol === this.symbol) || null
+                // any token of the network: also the ones found on the address, not switched on
+                const tokens = await this.$svc.config.token.all()
+                return tokens.find(token => token.gid === wallet.gid && token.symbol === this.symbol) || null
             },
             default: null
         }
     },
+    methods: {
+        onLogs(logs: TransferLogItem[]) {
+            this.marks = logs.map(l => ({ time: l.meta.blockTimestamp * 1000, direction: l.direction }))
+        }
+    },
     computed: {
+        /** prices are for mainnet */
+        charted(): boolean {
+            return !!this.wallet && this.$svc.bvm.supports(this.wallet.gid)
+        },
         address(): string {
             return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex)] : ''
         }

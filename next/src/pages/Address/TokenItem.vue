@@ -40,7 +40,28 @@
                 >{{money(value)}}</q-item-label>
             </q-item-section>
         </template>
-        <div class="row justify-end q-gutter-sm q-px-md q-pb-md">
+        <div class="row items-center justify-end q-gutter-sm q-px-md q-pb-md">
+            <q-btn
+                flat
+                round
+                dense
+                size="sm"
+                :icon="pinned ? 'push_pin' : 'o_push_pin'"
+                :color="pinned ? 'primary' : undefined"
+                :aria-label="pinned ? $t('tokens.action_unpin') : $t('tokens.action_pin')"
+                @click="$emit('pin', !pinned)"
+            />
+            <q-btn
+                v-if="!token.permanent"
+                flat
+                round
+                dense
+                size="sm"
+                icon="o_visibility_off"
+                :aria-label="$t('tokens.action_hide')"
+                @click="$emit('hide')"
+            />
+            <q-space />
             <slot />
         </div>
     </q-expansion-item>
@@ -63,8 +84,10 @@ export default defineComponent({
         balance: String as () => '',
         stat: Object as () => Prices.Stat | undefined,
         /** fiat per USD */
-        fx: { type: Number, default: 1 }
+        fx: { type: Number, default: 1 },
+        pinned: Boolean
     },
+    emits: ['pin', 'hide'],
     computed: {
         /** the balance in fiat, when priced */
         value(): number | null {

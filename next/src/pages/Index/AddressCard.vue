@@ -65,13 +65,15 @@ import Color from 'color'
 import AddressLabel from 'src/components/AddressLabel.vue'
 import AmountLabel from 'src/components/AmountLabel.vue'
 import AddressAvatar from 'src/components/AddressAvatar.vue'
+import { balanceKey, readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 
 export default defineComponent({
     components: { AddressLabel, AmountLabel, AddressAvatar },
     props: {
         address: { type: String, required: true },
         index: { type: Number, required: true },
-        account: Object as () => (Connex.Thor.Account | null)
+        account: Object as () => (Connex.Thor.Account | null),
+        gid: { type: String, default: '' }
     },
     computed: {
         // a faint glow in the address' own avatar color tells the cards apart
@@ -83,10 +85,23 @@ export default defineComponent({
             }
         },
         vet(): string | null {
-            return this.account ? this.account.balance : null
+            return this.account ? this.account.balance : this.cached('VET')
         },
         vtho(): string | null {
-            return this.account ? this.account.energy : null
+            return this.account ? this.account.energy : this.cached('VTHO')
+        }
+    },
+    watch: {
+        account(a: Connex.Thor.Account | null) {
+            if (a && this.gid) {
+                writeSnapshot(balanceKey(this.gid, this.address, 'VET'), a.balance)
+                writeSnapshot(balanceKey(this.gid, this.address, 'VTHO'), a.energy)
+            }
+        }
+    },
+    methods: {
+        cached(symbol: string): string | null {
+            return this.gid ? readSnapshot<string>(balanceKey(this.gid, this.address, symbol))?.value ?? null : null
         }
     }
 })

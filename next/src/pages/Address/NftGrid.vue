@@ -114,11 +114,28 @@
 
         <!-- the NFTs -->
         <div
-            v-if="items.length"
+            v-if="hiddenCount"
+            class="q-px-md q-pb-sm"
+        >
+            <button
+                type="button"
+                class="chip"
+                :class="{ 'chip--active': showHidden }"
+                @click="showHidden = !showHidden"
+            >
+                <q-icon
+                    :name="showHidden ? 'o_visibility' : 'o_visibility_off'"
+                    size="14px"
+                />
+                {{showHidden ? $t('nft.action_hide_hidden') : $t('nft.label_hidden', { n: hiddenCount })}}
+            </button>
+        </div>
+        <div
+            v-if="visibleItems.length"
             class="grid"
         >
             <router-link
-                v-for="nft in items"
+                v-for="nft in visibleItems"
                 :key="nft.contract + nft.tokenId"
                 v-slot="{ href, navigate }"
                 custom
@@ -128,7 +145,7 @@
                     :href="href"
                     class="nft bvm-tile"
                     :class="{ 'nft--selected': isSelected(nft), 'nft--selecting': selecting }"
-                    @click="selecting ? ($event.preventDefault(), toggle(nft)) : navigate($event)"
+                    @click="selecting ? ($event.preventDefault(), toggle(nft)) : openNft($event, nft, navigate)"
                 >
                     <div
                         v-if="selecting"
@@ -154,6 +171,10 @@
                     </q-img>
                     <div class="nft-body">
                         <div class="nft-name ellipsis">{{nft.name}}</div>
+                    <div
+                        v-if="showHidden && isHiddenNft(nft)"
+                        class="nft-hidden-tag"
+                    >{{verified && !verified.has(nft.collectionSlug) ? $t('nft.label_unverified') : $t('nft.label_hidden_one')}}</div>
                         <div class="nft-collection ellipsis">{{nft.collection}}</div>
                         <div
                             v-if="nft.listed && nft.displayPrice"
@@ -166,7 +187,32 @@
 
         <!-- states -->
         <div
-            v-if="loading"
+            v-if="loading && !items.length"
+            class="grid"
+        >
+            <div
+                v-for="i in 6"
+                :key="i"
+                class="nft bvm-tile"
+            >
+                <q-skeleton
+                    square
+                    class="skeleton-image"
+                />
+                <div class="nft-body">
+                    <q-skeleton
+                        type="text"
+                        width="70%"
+                    />
+                    <q-skeleton
+                        type="text"
+                        width="45%"
+                    />
+                </div>
+            </div>
+        </div>
+        <div
+            v-else-if="loading"
             class="row justify-center q-py-lg"
         >
             <q-spinner-dots
@@ -285,6 +331,9 @@ import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
 import ListDialog, { type ListResult } from 'pages/Nft/ListDialog.vue'
 import { canTrade, listClauses, listingCurrencies, sendClauses, signMarketTx } from 'src/utils/market'
 import { toWei } from 'src/utils/format'
+import { readSnapshot, writeSnapshot } from 'src/utils/snapshot'
+import { navigateWithHero } from 'src/utils/hero'
+import { isHidden, loadHidden, type HiddenNfts } from 'src/utils/hidden-nfts'
 import SuccessDialog from 'components/SuccessDialog.vue'
 import RecipientCheckDialog from 'pages/Send/RecipientCheckDialog.vue'
 import { isKnownRecipient, rememberRecipient } from 'src/utils/recipient'
@@ -318,10 +367,19 @@ export default defineComponent({
         sort: 'default',
         status: 'all' as 'all' | 'listed' | 'unlisted',
         ideas: [] as BVM.Collection[],
+        hiddenPrefs: { hidden: [], shown: [] } as HiddenNfts,
+        verified: null as Set<string> | null,
+        showHidden: false,
         selected: [] as BVM.NFT[],
         marketURL
     }),
     computed: {
+        visibleItems(): BVM.NFT[] {
+            return this.showHidden ? this.items : this.items.filter(n => !this.isHiddenNft(n))
+        },
+        hiddenCount(): number {
+            return this.items.filter(n => this.isHiddenNft(n)).length
+        },
         sortOptions(): { value: string, label: string }[] {
             return [
                 { value: 'default', label: this.$t('nft.sort_default') },
@@ -371,8 +429,28 @@ export default defineComponent({
             }
         }
     },
+    async created() {
+        this.hiddenPrefs = await loadHidden(this.$svc)
+        this.$svc.bvm.collections()
+            .then(c => { this.verified = new Set(Object.values(c).map(x => x.slug)) })
+            .catch(() => { })
+    },
     methods: {
         openURL,
+        isHiddenNft(nft: BVM.NFT) {
+            return isHidden(this.hiddenPrefs, this.verified, nft)
+        },
+        openNft(ev: MouseEvent, nft: BVM.NFT, navigate: (e?: MouseEvent) => unknown) {
+            // a modified click (new tab) is the browser's
+            if (ev.metaKey || ev.ctrlKey || ev.shiftKey || ev.button !== 0) {
+                return navigate(ev)
+            }
+            ev.preventDefault()
+            const img = (ev.currentTarget as HTMLElement).querySelector<HTMLElement>('.nft-image')
+            void navigateWithHero(this.$router,
+                { name: 'nft', params: { walletId: this.walletId, addressIndex: this.addressIndex, contract: nft.contract, tokenId: nft.tokenId } },
+                `${nft.contract.toLowerCase()}:${nft.tokenId}`, nft.image, img)
+        },
         setSort(v: string) {
             if (v !== this.sort) {
                 this.sort = v
@@ -463,7 +541,12 @@ export default defineComponent({
             }
         },
         reload() {
-            this.items = []
+            // last time's first page, until this one arrives
+            const snap = !this.collection && this.sort === 'default' && this.status === 'all'
+                ? readSnapshot<{ items: BVM.NFT[], total: number }>(`nfts:${this.address.toLowerCase()}`)?.value
+                : null
+            this.items = snap ? snap.items.map(n => markRaw(n)) : []
+            this.total = snap ? snap.total : this.total
             this.offset = 0
             this.hasMore = false
             return this.load()
@@ -482,7 +565,11 @@ export default defineComponent({
                 if (address !== this.address || collection !== this.collection) {
                     return
                 }
-                this.items = [...this.items, ...r.holdings.map(n => markRaw(n))]
+                const first = this.offset === 0
+                this.items = [...(first ? [] : this.items), ...r.holdings.map(n => markRaw(n))]
+                if (first && !collection && this.sort === 'default' && this.status === 'all') {
+                    writeSnapshot(`nfts:${address.toLowerCase()}`, { items: r.holdings.slice(0, 12), total: r.summary.total })
+                }
                 this.offset = r.pagination.nextOffset
                 this.hasMore = r.pagination.hasMore
                 if (!r.summary.total && !this.ideas.length) {
@@ -577,6 +664,16 @@ export default defineComponent({
   border-radius: $radius-lg
   background: rgba(17, 20, 19, 0.96)
   backdrop-filter: blur(6px)
+
+.nft-hidden-tag
+  font-size: 11px
+  font-weight: 800
+  color: $warning
+
+.skeleton-image
+  width: 100%
+  height: auto
+  aspect-ratio: 1
 
 .sort-btn
   flex: none

@@ -17,7 +17,7 @@
             v-if="supported"
             class="portfolio-total bvm-display"
         >
-            <template v-if="portfolio">{{money(fiat(portfolio.totalUsd))}}</template>
+            <template v-if="shown">{{money(fiat(shown.totalUsd))}}</template>
             <q-skeleton
                 v-else
                 type="text"
@@ -30,13 +30,13 @@
             class="text-muted q-mt-sm"
         >{{$t('home.msg_no_prices')}}</div>
         <div
-            v-if="portfolio && supported"
+            v-if="shown && supported"
             class="row items-center q-mt-xs"
         >
             <span
                 class="change-pill"
-                :class="portfolio.change24h >= 0 ? 'change-pill--up' : 'change-pill--down'"
-            >{{portfolio.change24h >= 0 ? '▲' : '▼'}} {{Math.abs(portfolio.change24h).toFixed(2)}}%</span>
+                :class="shown.change24h >= 0 ? 'change-pill--up' : 'change-pill--down'"
+            >{{shown.change24h >= 0 ? '▲' : '▼'}} {{Math.abs(shown.change24h).toFixed(2)}}%</span>
             <span class="text-muted q-ml-sm change-label">{{$t('home.label_24h')}}</span>
             <q-space />
             <span
@@ -45,9 +45,9 @@
             >{{nftLine}}</span>
         </div>
         <sparkline
-            v-if="portfolio && portfolio.series.length > 2 && !prefs.hideBalances"
+            v-if="shown && shown.series.length > 2 && !prefs.hideBalances"
             class="q-mt-md"
-            :values="portfolio.series"
+            :values="shown.series"
             :label="$t('home.label_7d')"
         />
     </div>
@@ -57,6 +57,7 @@ import { defineComponent } from 'vue'
 import Sparkline from 'components/Sparkline.vue'
 import { walletPortfolio, type Portfolio } from 'src/utils/portfolio'
 import { haptic, money, prefs } from 'src/utils/prefs'
+import { readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 
 // what the selected wallet is worth, and how that moved
 export default defineComponent({
@@ -72,6 +73,10 @@ export default defineComponent({
         portfolio: null as Portfolio | null
     }),
     computed: {
+        /** the current portfolio, or the last one while it loads */
+        shown(): Portfolio | null {
+            return this.portfolio || readSnapshot<Portfolio>(`portfolio:${this.wallet.id}`)?.value || null
+        },
         supported(): boolean {
             return this.$svc.bvm.supports(this.wallet.gid)
         }
@@ -89,8 +94,13 @@ export default defineComponent({
         }
     },
     asyncComputed: {
-        portfolio(): Promise<Portfolio | null> {
-            return walletPortfolio(this.$svc, this.wallet, { withSeries: true }).catch(() => null)
+        async portfolio(): Promise<Portfolio | null> {
+            const p = await walletPortfolio(this.$svc, this.wallet, { withSeries: true }).catch(() => null)
+            if (p) {
+                // what is drawn next time, before this is computed again
+                writeSnapshot(`portfolio:${this.wallet.id}`, { totalUsd: p.totalUsd, change24h: p.change24h, series: p.series, holdings: [] })
+            }
+            return p
         }
     },
     methods: {

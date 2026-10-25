@@ -28,6 +28,16 @@
             <div class="bvm-label q-mb-sm q-ml-xs">{{$t('more.label_wallet')}}</div>
             <q-list class="bvm-list q-mb-lg">
                 <more-item
+                    icon="o_shield"
+                    :title="$t('security.title')"
+                    :to="{ name: 'security' }"
+                />
+                <more-item
+                    icon="o_apps"
+                    :title="$t('dapps.title')"
+                    :to="{ name: 'dapps' }"
+                />
+                <more-item
                     icon="o_contacts"
                     :title="$t('contacts.title')"
                     :to="{ name: 'contacts' }"

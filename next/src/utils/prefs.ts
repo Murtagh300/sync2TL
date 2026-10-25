@@ -20,12 +20,17 @@ type Prefs = {
     currency: 'EUR' | 'USD'
     accent: Accent
     haptics: boolean
+    /** lock after this many minutes in the background; -1: never */
+    autoLockMinutes: number
+    /** text size, 1 = normal */
+    textScale: number
+    highContrast: boolean
 }
 
 const KEY = 'bv-prefs'
 
 function load(): Prefs {
-    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true }
+    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, highContrast: false }
     try {
         return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') as Partial<Prefs> }
     } catch {
@@ -49,6 +54,16 @@ export function applyAccent(accent: Accent = prefs.accent) {
     root.setProperty('--bv-accent-soft', a.soft)
 }
 
+/** text size and contrast: the whole app scales, and high contrast lifts the quiet greys */
+export function applyDisplay() {
+    const root = document.documentElement
+    root.style.setProperty('--bv-text-scale', String(prefs.textScale || 1))
+    const systemMore = window.matchMedia?.('(prefers-contrast: more)').matches
+    document.body.classList.toggle('bv-contrast', prefs.highContrast || !!systemMore)
+}
+
+watch(() => [prefs.textScale, prefs.highContrast], () => applyDisplay())
+
 /** a short vibration on devices that have one, for confirmations */
 export function haptic(kind: 'tap' | 'success' | 'warning' = 'tap') {
     if (!prefs.haptics || typeof navigator.vibrate !== 'function') {
@@ -63,6 +78,10 @@ export function haptic(kind: 'tap' | 'success' | 'warning' = 'tap') {
 export function money(value: number, currency = prefs.currency, opts: { compact?: boolean } = {}): string {
     if (prefs.hideBalances) {
         return '••••'
+    }
+    // fractions of a cent (small tokens): three significant digits
+    if (value !== 0 && Math.abs(value) < 0.01) {
+        return new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumSignificantDigits: 3 }).format(value)
     }
     const digits = Math.abs(value) >= 1000 ? 0 : Math.abs(value) >= 1 ? 2 : 4
     return new Intl.NumberFormat(undefined, {

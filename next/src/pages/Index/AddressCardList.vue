@@ -36,6 +36,7 @@
                                 :index="i"
                                 :address="address"
                                 :account="data"
+                                :gid="wallet.gid"
                                 @click="onClickCard(i)"
                             />
                         </q-responsive>

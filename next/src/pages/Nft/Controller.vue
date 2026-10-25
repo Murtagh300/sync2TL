@@ -8,6 +8,30 @@
                 v-if="nft"
                 flat
                 round
+                icon="more_vert"
+            >
+                <q-menu
+                    anchor="bottom right"
+                    self="top right"
+                >
+                    <q-list style="min-width: 200px">
+                        <q-item
+                            v-close-popup
+                            clickable
+                            @click="toggleHidden()"
+                        >
+                            <q-item-section avatar>
+                                <q-icon :name="hidden ? 'o_visibility' : 'o_visibility_off'" />
+                            </q-item-section>
+                            <q-item-section>{{hidden ? $t('nft.action_unhide') : $t('nft.action_hide')}}</q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-menu>
+            </q-btn>
+            <q-btn
+                v-if="nft"
+                flat
+                round
                 :icon="watching ? 'visibility' : 'o_visibility'"
                 :color="watching ? 'primary' : undefined"
                 @click="toggleWatch()"
@@ -18,7 +42,18 @@
             size="md"
         >
             <div
-                v-if="!nft"
+                v-if="!nft && hint"
+                class="q-pa-md"
+            >
+                <img
+                    :src="hint"
+                    alt=""
+                    class="hero-image hero-hint"
+                    :style="{ viewTransitionName: heroName }"
+                >
+            </div>
+            <div
+                v-else-if="!nft"
                 class="row justify-center q-py-xl"
             >
                 <q-spinner-dots
@@ -52,6 +87,7 @@
                 <q-img
                     :src="nft.image"
                     :ratio="1"
+                    :style="hint ? { viewTransitionName: heroName } : undefined"
                     class="hero-image cursor-pointer"
                     spinner-color="primary"
                     @click="openViewer()"
@@ -252,6 +288,8 @@ import { isKnownRecipient, rememberRecipient } from 'src/utils/recipient'
 import { acceptOfferClauses, cancelListingClauses, canTrade, listClauses, listingCurrencies, repriceClauses, signMarketTx, type Clause } from 'src/utils/market'
 import { toWei } from 'src/utils/format'
 import { emptyWatchlist, type Watchlist } from 'src/utils/alerts'
+import { heroHint, HERO_NAME } from 'src/utils/hero'
+import { isHidden, loadHidden, nftKey, saveHidden } from 'src/utils/hidden-nfts'
 import type { BVM } from 'boot/services/bvm'
 
 const erc721TransferFrom = new abi.Function({
@@ -296,6 +334,8 @@ export default defineComponent({
     data: () => ({
         error: false,
         watching: false,
+        hidden: false,
+        heroName: HERO_NAME,
         // async computed (see src/shims-async-computed.d.ts)
         wallet: null as M.Wallet | null,
         nft: null as BVM.NFT | null
@@ -310,6 +350,8 @@ export default defineComponent({
                 const nft = await this.$svc.bvm.nft(this.contract, this.tokenId)
                 const list = await this.$svc.config.getJSON<Watchlist>('watchlist', emptyWatchlist())
                 this.watching = list.collections.includes(nft.collectionSlug)
+                const [h, cols] = await Promise.all([loadHidden(this.$svc), this.$svc.bvm.collections().catch(() => null)])
+                this.hidden = isHidden(h, cols ? new Set(Object.values(cols).map(c => c.slug)) : null, nft)
                 return nft
             } catch (err) {
                 console.warn('BlackVeMarket nft:', err)
@@ -319,6 +361,10 @@ export default defineComponent({
         }
     },
     computed: {
+        /** the picture the NFT card handed over, shown until the data arrives */
+        hint(): string {
+            return heroHint(`${this.contract.toLowerCase()}:${this.tokenId}`)
+        },
         address(): string {
             return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex)] || '' : ''
         },
@@ -361,6 +407,24 @@ export default defineComponent({
     },
     methods: {
         openURL,
+        async toggleHidden() {
+            const nft = this.nft
+            if (!nft) {
+                return
+            }
+            const key = nftKey(nft.contract, nft.tokenId)
+            const h = await loadHidden(this.$svc)
+            if (this.hidden) {
+                h.hidden = h.hidden.filter(k => k !== key)
+                h.shown = [...h.shown.filter(k => k !== key), key]
+            } else {
+                h.shown = h.shown.filter(k => k !== key)
+                h.hidden = [...h.hidden.filter(k => k !== key), key]
+            }
+            await saveHidden(this.$svc, h)
+            this.hidden = !this.hidden
+            this.$q.notify(this.hidden ? this.$t('nft.msg_hidden') : this.$t('nft.msg_unhidden'))
+        },
         async openViewer() {
             const nft = this.nft
             if (!nft) {
@@ -520,6 +584,12 @@ export default defineComponent({
 <style lang="sass" scoped>
 .offer-amount
   font-size: 16px
+
+.hero-hint
+  display: block
+  width: 100%
+  aspect-ratio: 1
+  object-fit: cover
 
 .hero-zoom
   width: 34px

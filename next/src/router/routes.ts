@@ -21,6 +21,8 @@ import Swap from 'pages/Swap'
 import Nfts from 'pages/Nfts'
 import More from 'pages/More'
 import Search from 'pages/Search'
+import TxDetail from 'pages/TxDetail'
+import Security, { Dapps } from 'pages/Security'
 
 const routes: RouteRecordRaw[] = [
     {
@@ -66,6 +68,18 @@ const routes: RouteRecordRaw[] = [
             path: 'more',
             name: 'more',
             component: More
+        }, {
+            path: 'tx/:gid/:txId',
+            name: 'tx',
+            component: TxDetail
+        }, {
+            path: 'security',
+            name: 'security',
+            component: Security
+        }, {
+            path: 'dapps',
+            name: 'dapps',
+            component: Dapps
         }, {
             path: 'search',
             name: 'search',

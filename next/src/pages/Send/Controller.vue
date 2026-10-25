@@ -25,8 +25,23 @@
                 v-model:symbol="sym"
                 :address="address"
             />
-            <q-item-label header>{{$t('send.label_amount')}}</q-item-label>
+            <div class="row items-center no-wrap q-pr-md">
+                <q-item-label header>{{$t('send.label_amount')}}</q-item-label>
+                <q-space />
+                <q-btn-toggle
+                    v-if="unitPrice"
+                    v-model="fiatMode"
+                    dense
+                    no-caps
+                    unelevated
+                    size="sm"
+                    toggle-color="primary"
+                    color="dark"
+                    :options="[{ label: sym, value: false }, { label: prefs.currency === 'EUR' ? '€' : '$', value: true }]"
+                />
+            </div>
             <q-input
+                v-if="!fiatMode"
                 no-error-icon
                 autocomplete="off"
                 class="q-mx-md"
@@ -41,6 +56,56 @@
                 outlined
                 spellcheck="false"
             />
+            <q-input
+                v-else
+                no-error-icon
+                autocomplete="off"
+                class="q-mx-md"
+                v-model="fiatText"
+                :error-message="errors.amount"
+                :error="!!errors.amount"
+                @update:model-value="onFiat"
+                input-class="send-amount bvm-display"
+                type="text"
+                inputmode="decimal"
+                placeholder="0.00"
+                outlined
+                spellcheck="false"
+                :prefix="prefs.currency === 'EUR' ? '€' : '$'"
+            />
+            <div class="row items-center no-wrap q-px-md q-mt-xs">
+                <div class="text-muted conversion ellipsis">{{conversion}}</div>
+                <q-space />
+                <div
+                    v-if="balance"
+                    class="row no-wrap q-gutter-x-xs"
+                >
+                    <q-btn
+                        v-for="p in [25, 50, 75, 100]"
+                        :key="p"
+                        outline
+                        dense
+                        no-caps
+                        size="sm"
+                        class="pct"
+                        :label="p === 100 ? $t('swap.action_max') : `${p}%`"
+                        @click="setPart(p)"
+                    />
+                </div>
+            </div>
+            <q-item-label header>{{$t('send.label_note')}}</q-item-label>
+            <q-input
+                v-model="note"
+                class="q-mx-md"
+                outlined
+                dense
+                maxlength="140"
+                :placeholder="$t('send.placeholder_note')"
+            >
+                <template #prepend>
+                    <q-icon name="o_edit_note" />
+                </template>
+            </q-input>
         </page-content>
         <page-action>
             <q-btn
@@ -69,6 +134,9 @@ import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
 import { toWei } from 'src/utils/format'
 import { genesises } from 'src/consts'
+import { BigNumber } from 'bignumber.js'
+import { money, prefs } from 'src/utils/prefs'
+import { setTxNote } from 'src/utils/tx-notes'
 import type { Contact } from 'src/utils/names'
 import type { PaymentRequest } from 'src/utils/payment-request'
 import SuccessDialog from 'components/SuccessDialog.vue'
@@ -96,6 +164,13 @@ export default defineComponent({
         return {
             recipient: (this.to || null) as null | string,
             amountText: this.amount || '',
+            fiatText: '',
+            fiatMode: false,
+            note: '',
+            prefs,
+            unitPrice: 0,
+            fx: 1,
+            balance: '' as string,
             sym: this.symbol || 'VET',
             errors: {
                 to: '',
@@ -153,7 +228,25 @@ export default defineComponent({
             default: []
         }
     },
+    watch: {
+        currentToken() { void this.loadTokenInfo() },
+        from() { void this.loadTokenInfo() },
+        fiatMode(on: boolean) {
+            // keep the amount when switching
+            if (on && this.amountText && this.unitPrice) {
+                this.fiatText = new BigNumber(this.amountText).times(this.unitPrice).toFixed(2)
+            }
+        }
+    },
     computed: {
+        /** the other unit of what is typed */
+        conversion(): string {
+            const amount = parseFloat(this.amountText)
+            if (!this.unitPrice || !isFinite(amount) || amount <= 0) {
+                return ''
+            }
+            return this.fiatMode ? `≈ ${new BigNumber(this.amountText).decimalPlaces(4, BigNumber.ROUND_FLOOR).toFormat()} ${this.sym}` : `≈ ${money(amount * this.unitPrice)}`
+        },
         toWallets(): AddressGroup[] {
             let list = [...this.wallets.map<AddressGroup>(w => { return { name: w.meta.name, list: w.meta.addresses } })]
             if (this.contacts.length) {
@@ -188,6 +281,52 @@ export default defineComponent({
     },
     methods: {
         isAddress: address.test,
+        /** price and balance of the token being sent */
+        async loadTokenInfo() {
+            const w = this.wallet
+            const t = this.currentToken
+            this.balance = ''
+            this.unitPrice = 0
+            if (!w || !t || !this.from) {
+                return
+            }
+            this.$svc.bc(w.gid).balanceOf(this.from, t).then(b => { this.balance = b }).catch(() => { })
+            if (this.$svc.bvm.supports(w.gid)) {
+                const [stats, fx] = await Promise.all([this.$svc.prices.stats([t.address]).catch(() => ({})), this.$svc.prices.fx(prefs.currency)])
+                const s = (stats as Record<string, { price: number }>)[(t.address || '0x0000000000000000000000000000000000000000').toLowerCase()]
+                this.fx = fx
+                this.unitPrice = s ? s.price * fx : 0
+            }
+            if (!this.unitPrice) {
+                this.fiatMode = false
+            }
+        },
+        onFiat(v: string | number | null) {
+            this.errors.amount = ''
+            const fiat = parseFloat(String(v || '').replace(',', '.'))
+            if (!this.unitPrice || !isFinite(fiat) || fiat <= 0) {
+                this.amountText = ''
+                return
+            }
+            const decimals = Math.min(this.currentToken?.decimals ?? 18, 6)
+            this.amountText = new BigNumber(fiat).div(this.unitPrice).toFixed(decimals, BigNumber.ROUND_FLOOR).replace(/\.?0+$/, '')
+        },
+        setPart(percent: number) {
+            const t = this.currentToken
+            if (!t || !this.balance) {
+                return
+            }
+            let wei = new BigNumber(this.balance)
+            if (percent === 100 && t.symbol === 'VTHO') {
+                // the fee is paid in VTHO: keep some
+                wei = BigNumber.max(wei.minus(new BigNumber(20).times(1e18)), 0)
+            } else {
+                wei = wei.times(percent).div(100).integerValue(BigNumber.ROUND_FLOOR)
+            }
+            this.amountText = wei.div(new BigNumber(10).pow(t.decimals)).toFixed()
+            this.fiatText = this.unitPrice ? new BigNumber(this.amountText).times(this.unitPrice).toFixed(2) : ''
+            this.errors.amount = ''
+        },
         onRequest(req: PaymentRequest) {
             if (req.amount) {
                 this.amountText = req.amount
@@ -255,7 +394,10 @@ export default defineComponent({
                     signer: this.from,
                     comment: comment
                 }
-            }).then(() => {
+            }).then((resp) => {
+                if (this.note.trim()) {
+                    setTxNote(resp.txid, this.note)
+                }
                 // eslint-disable-next-line @typescript-eslint/camelcase
                 gtagEvent('token-send', { event_label: this.sym })
                 const temp = [this.recipient, ...this.recent].reduce((result: string[], cv: string | null) => {
@@ -284,4 +426,13 @@ export default defineComponent({
 .send-amount
   font-size: 34px !important
   height: 56px
+
+.conversion
+  font-size: 13px
+  font-variant-numeric: tabular-nums
+
+.pct
+  min-width: 44px
+  border-radius: 8px
+  font-weight: 800
 </style>

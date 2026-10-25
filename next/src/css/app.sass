@@ -271,6 +271,29 @@ body
   scrollbar-width: thin
   scrollbar-color: rgba(255, 255, 255, 0.14) transparent
 
+// the picture travelling from a list to its page (src/utils/hero.ts)
+::view-transition-group(bv-hero)
+  animation-duration: 0.35s
+  animation-timing-function: cubic-bezier(0.2, 0, 0, 1)
+
+// ---- accessibility (Settings › Appearance)
+// the whole app scales with the chosen text size (dialogs too: they live outside #q-app)
+body
+  zoom: var(--bv-text-scale, 1)
+
+// high contrast: the quiet greys and hairlines speak up
+body.bv-contrast
+  .text-muted, .text-soft, .q-item__label--caption
+    color: #d7dcd9 !important
+  .bvm-tile, .q-separator, .q-field--outlined .q-field__control:before
+    border-color: rgba(255, 255, 255, 0.45) !important
+  .q-btn--outline:before
+    border-width: 2px
+
+// blurred in the app switcher while auto-lock is on (components/AppLock.vue)
+body.bv-privacy-blur #q-app
+  filter: blur(18px)
+
 @media (prefers-reduced-motion: reduce)
   *, *::before, *::after
     transition-duration: 0.01ms !important

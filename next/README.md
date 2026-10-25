@@ -144,3 +144,21 @@ Production needs CORS on the BlackVeMarket API for the wallet's origin on: `/api
 - **Preferences** (`utils/prefs.ts`, Settings › Appearance): accent color, currency, hidden balances, haptics.
   Colors go through `--q-primary`, so the accent applies everywhere.
 - **Onboarding**: three visible steps, a password strength meter, and following a first collection.
+
+## Speed, activity and safety
+
+- **Instant screens**: the last balances, portfolio and first NFT page are kept (`utils/snapshot.ts`) and shown
+  at once while fresh data loads; skeletons where nothing is known yet. An offline bar (`components/OfflineBar.vue`)
+  says when the device is offline; signing then waits for a connection, and sending a signed transaction waits
+  for the network instead of using up its retries.
+- **NFT card → page**: the picture morphs into the NFT page with the View Transitions API (`utils/hero.ts`).
+- **Tokens**: price chart (1D/1W/1M, BetterSwap history) with your transfers as dots; pin and hide tokens
+  (hidden ones come back in Settings › Tokens).
+- **Spam**: NFTs from collections BlackVeMarket doesn't verify, and incoming tokens outside the token registry, stay
+  out of sight (`utils/hidden-nfts.ts`); any NFT can be hidden or shown by hand.
+- **Activity**: grouped by day, with what others sent you (`utils/incoming.ts`), and a page per transaction
+  (`pages/TxDetail`): what changed for you, fee, block, your note, send again, save as contact.
+- **Send**: type the amount in € or $, 25/50/75%/Max, and a note kept on this device (`utils/tx-notes.ts`).
+- **Security**: a check-up with a score (`pages/Security`), the sites you signed for (forget one to remove its
+  records), and auto-lock after time in the background with a blurred app-switcher snapshot (`components/AppLock.vue`).
+- **Accessibility**: text size (scales the whole app) and high contrast, also following the system's contrast setting.

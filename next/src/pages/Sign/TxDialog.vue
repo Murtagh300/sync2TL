@@ -100,6 +100,7 @@ import ErrorTip from './ErrorTip.vue'
 import WarningListDialog from './WarningListDialog.vue'
 import InspectClauseDialog from './InspectClauseDialog.vue'
 import { haptic } from 'src/utils/prefs'
+import { network } from 'src/utils/network'
 import SimulationCard from './SimulationCard.vue'
 import { balanceChanges, type BalanceChanges } from 'src/utils/simulate'
 import type { BVM } from 'boot/services/bvm'
@@ -115,6 +116,7 @@ export default defineComponent({
     data() {
         return {
             gasPriceCoef: 0,
+            network,
             // async computed (see src/shims-async-computed.d.ts)
             delayedEstimation: null as EstimateGasResult | null,
             tokens: [] as M.TokenSpec[],
@@ -136,6 +138,9 @@ export default defineComponent({
             return this.calcFee ? this.calcFee(this.gasPriceCoef) : null
         },
         criticalError(): Error | null {
+            if (!this.network.online) {
+                return { name: this.$t('offline.title').toString(), message: this.$t('offline.msg_sign').toString() }
+            }
             if (!this.wallet) {
                 return { name: this.$t('sign.label_critical_error').toString(), message: this.signerGroups.length > 0 ? this.$t('sign.msg_address_not_owned').toString() : this.$t('common.no_wallet').toString() }
             }

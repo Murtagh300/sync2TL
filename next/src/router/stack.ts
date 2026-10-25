@@ -19,6 +19,20 @@ export interface ScopedEntry extends StackEntry {
     component: Component
 }
 
+/** set to skip the slide of the next push (another animation is running) */
+let skipTransition = false
+
+export function skipNextTransition() {
+    skipTransition = true
+}
+
+/** whether the next push slides; resets the skip */
+export function takeSkipTransition() {
+    const skip = skipTransition
+    skipTransition = false
+    return skip
+}
+
 const state = shallowReactive({
     entries: [] as StackEntry[],
     /** false when the last navigation came from the browser (back button, typed url) */

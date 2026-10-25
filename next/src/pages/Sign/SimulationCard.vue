@@ -1,6 +1,6 @@
 <template>
     <div class="bvm-tile simulation q-pa-md">
-        <div class="bvm-label q-mb-sm">{{$t('sign.label_simulation')}}</div>
+        <div class="bvm-label q-mb-sm">{{label || $t('sign.label_simulation')}}</div>
         <div
             v-if="rows.length === 0"
             class="text-muted"
@@ -65,6 +65,7 @@ export default defineComponent({
     components: { NftChip },
     props: {
         changes: { type: Object as () => BalanceChanges, required: true },
+        label: String,
         gid: { type: String, required: true },
         tokens: { type: Array as () => M.TokenSpec[], default: () => [] },
         collections: { type: Object as () => Record<string, { name: string }>, default: () => ({}) }

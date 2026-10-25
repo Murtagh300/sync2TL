@@ -77,7 +77,33 @@
                 v-show="tab === 'tokens'"
                 class="col"
             >
-                <q-list>
+                <q-list v-if="!tokenList.length">
+                    <q-item
+                        v-for="i in 4"
+                        :key="i"
+                    >
+                        <q-item-section avatar>
+                            <q-skeleton type="QAvatar" />
+                        </q-item-section>
+                        <q-item-section>
+                            <q-skeleton
+                                type="text"
+                                width="40%"
+                            />
+                            <q-skeleton
+                                type="text"
+                                width="60%"
+                            />
+                        </q-item-section>
+                        <q-item-section side>
+                            <q-skeleton
+                                type="text"
+                                width="70px"
+                            />
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+                <q-list v-else>
                     <async-resolve
                         v-for="(token, index) in tokenList"
                         tag="div"
@@ -91,9 +117,12 @@
                         />
                         <token-item
                             :token="token"
-                            :balance="data"
+                            :balance="data ?? $svc.bc(token.gid).cachedBalance(address, token)"
                             :stat="stats[(token.address || zero).toLowerCase()]"
                             :fx="fx"
+                            :pinned="tokenPrefs.pinned.includes(token.symbol)"
+                            @pin="pin(token, $event)"
+                            @hide="hide(token)"
                         >
                             <q-btn
                                 outline
@@ -150,7 +179,7 @@ import AsyncResolve from 'components/AsyncResolve'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import NftGrid from './NftGrid.vue'
-import { visibleTokens } from 'src/utils/tokens'
+import { visibleTokens, type TokenPrefs } from 'src/utils/tokens'
 import ReceiveDialog from './ReceiveDialog.vue'
 import type { Prices } from 'boot/services/prices'
 import { prefs } from 'src/utils/prefs'
@@ -177,6 +206,7 @@ export default defineComponent({
         stats: {} as Record<string, Prices.Stat>,
         fx: 1,
         zero: '0x0000000000000000000000000000000000000000',
+        tokenPrefs: { pinned: [], hidden: [] } as TokenPrefs,
         prefs
     }),
     asyncComputed: {
@@ -216,7 +246,33 @@ export default defineComponent({
             immediate: true
         }
     },
+    async created() {
+        this.tokenPrefs = await this.$svc.config.getJSON<TokenPrefs>('token-prefs', { pinned: [], hidden: [] })
+    },
     methods: {
+        async saveTokenPrefs(p: TokenPrefs) {
+            this.tokenPrefs = p
+            await this.$svc.config.setJSON('token-prefs', p)
+            void this.$asyncComputed.tokenList.update()
+        },
+        pin(token: M.TokenSpec, on: boolean) {
+            const pinned = this.tokenPrefs.pinned.filter(s => s !== token.symbol)
+            void this.saveTokenPrefs({ ...this.tokenPrefs, pinned: on ? [...pinned, token.symbol] : pinned })
+        },
+        hide(token: M.TokenSpec) {
+            void this.saveTokenPrefs({
+                pinned: this.tokenPrefs.pinned.filter(s => s !== token.symbol),
+                hidden: [...this.tokenPrefs.hidden.filter(s => s !== token.symbol), token.symbol]
+            })
+            this.$q.notify({
+                message: this.$t('tokens.msg_hidden', { symbol: token.symbol }),
+                actions: [{
+                    label: this.$t('tokens.action_undo'),
+                    color: 'primary',
+                    handler: () => void this.saveTokenPrefs({ ...this.tokenPrefs, hidden: this.tokenPrefs.hidden.filter(s => s !== token.symbol) })
+                }]
+            })
+        },
         receive() {
             this.$dialog({
                 component: ReceiveDialog,

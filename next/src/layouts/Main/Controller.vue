@@ -9,6 +9,7 @@
                 v-if="initialized"
                 class="column no-wrap fit"
             >
+                <offline-bar />
                 <div class="col relative-position">
                     <stacked-router-view class="fit" />
                     <tx-status-bar />
@@ -30,6 +31,7 @@
             />
         </template>
         <disclaimer />
+        <app-lock v-if="initialized" />
     </div>
 </template>
 <script lang="ts">
@@ -42,11 +44,13 @@ import { unique } from 'src/utils/array'
 import Disclaimer from './Disclaimer'
 import TabBar, { TAB_ROUTES } from 'components/TabBar.vue'
 import TxStatusBar from 'components/TxStatusBar.vue'
-import { applyAccent } from 'src/utils/prefs'
+import OfflineBar from 'components/OfflineBar.vue'
+import AppLock from 'components/AppLock.vue'
+import { applyAccent, applyDisplay } from 'src/utils/prefs'
 
 export default defineComponent({
     name: 'Main',
-    components: { Wizard, StackedRouterView, ActivityStatusUpdater, TransferNotifier, Disclaimer, TabBar, TxStatusBar },
+    components: { Wizard, StackedRouterView, ActivityStatusUpdater, TransferNotifier, Disclaimer, TabBar, TxStatusBar, OfflineBar, AppLock },
     data() {
         return {
             initialized: false,
@@ -68,6 +72,7 @@ export default defineComponent({
     },
     created() {
         applyAccent()
+        applyDisplay()
     },
     async mounted() {
         this.initialized = await this.$svc.config.getUserMasterKeyGlob().then(r => !!r)

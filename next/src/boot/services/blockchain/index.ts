@@ -1,10 +1,22 @@
 import { abis } from 'src/consts'
 import { createPool } from './pool'
 import { commitTx } from './tx-commiter'
+import { balanceKey, readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 function serve(gid: string, pool: ReturnType<typeof createPool>) {
     return {
         get thor() { return pool.get(gid).thor },
-        balanceOf(addr: string, spec: M.TokenSpec) {
+        /** the balance; the last one seen is kept for cachedBalance */
+        balanceOf(addr: string, spec: M.TokenSpec): Promise<string> {
+            return this.fetchBalance(addr, spec).then(v => {
+                writeSnapshot(balanceKey(gid, addr, spec.symbol), v)
+                return v
+            })
+        },
+        /** the last balance seen, to show while the current one loads (or offline) */
+        cachedBalance(addr: string, spec: M.TokenSpec): string | undefined {
+            return readSnapshot<string>(balanceKey(gid, addr, spec.symbol))?.value
+        },
+        fetchBalance(addr: string, spec: M.TokenSpec): Promise<string> {
             if (spec.symbol === 'VET') {
                 return this.thor.account(addr).get().then(a => a.balance)
             } else if (spec.symbol === 'VTHO') {

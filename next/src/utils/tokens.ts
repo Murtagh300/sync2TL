@@ -51,7 +51,18 @@ export async function detectHeldTokens(thor: Connex.Thor, address: string, specs
  * the tokens to show for an address: VET and VTHO, the ones switched on in the
  * token settings, and the ones it holds (found automatically)
  */
-export async function visibleTokens(svc: Service, gid: string, address: string): Promise<M.TokenSpec[]> {
+export type TokenPrefs = { pinned: string[], hidden: string[] }
+
+export async function visibleTokens(svc: Service, gid: string, address: string, opts: { withHidden?: boolean } = {}): Promise<M.TokenSpec[]> {
+    const prefs = await svc.config.getJSON<TokenPrefs>('token-prefs', { pinned: [], hidden: [] })
+    const list = await allVisibleTokens(svc, gid, address)
+    const shown = opts.withHidden ? list : list.filter(t => t.permanent || !prefs.hidden.includes(t.symbol))
+    // pinned first, in pin order; the rest as they were
+    const pinned = prefs.pinned.map(s => shown.find(t => t.symbol === s)).filter((t): t is M.TokenSpec => !!t)
+    return [...pinned, ...shown.filter(t => !prefs.pinned.includes(t.symbol))]
+}
+
+async function allVisibleTokens(svc: Service, gid: string, address: string): Promise<M.TokenSpec[]> {
     const [all, active] = await Promise.all([svc.config.token.all(), svc.config.token.activeSymbols()])
     const tokens = all.filter(t => t.gid === gid)
     let held: string[] = []

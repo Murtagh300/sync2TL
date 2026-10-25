@@ -54,6 +54,7 @@ export default defineComponent({
     components: {
         LogItem
     },
+    emits: ['logs'],
     props: {
         pageSize: { type: Number, required: true },
         address: { type: String, required: true },
@@ -96,6 +97,9 @@ export default defineComponent({
         this.splitBlock = this.$svc.bc(this.gid).thor.status.head.number
     },
     watch: {
+        logs(list: TransferLogItem[]) {
+            this.$emit('logs', list)
+        },
         recentList(data: TransferLogItem[]) {
             if (data.length) {
                 this.logs = [...data, ...this.logs]

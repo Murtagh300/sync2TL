@@ -29,7 +29,7 @@
 import { defineComponent, markRaw, unref, type ComputedRef, type Ref } from 'vue'
 import { matchedRouteKey, viewDepthKey, type RouteRecordNormalized } from 'vue-router'
 import { newVelometer, newPipeline, transitionEnd } from 'src/utils/transit'
-import { scopedEntries, stack, type ScopedEntry } from 'src/router/stack'
+import { scopedEntries, stack, takeSkipTransition, type ScopedEntry } from 'src/router/stack'
 
 export default defineComponent({
     // the record of the route component this view lives in, and its depth
@@ -199,7 +199,7 @@ export default defineComponent({
                     this.stack = newVal
                     const v1 = newVal[newVal.length - 1]!
 
-                    if (!v1.query['no-transition-in'] && !v1.meta.noTransitionIn) {
+                    if (!takeSkipTransition() && !v1.query['no-transition-in'] && !v1.meta.noTransitionIn) {
                         await this.transit({ r1: 1, r2: 0 })
                     }
                 } else if (newVal.length < oldVal.length && newVal.length > 0) {
