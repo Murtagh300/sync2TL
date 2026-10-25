@@ -19,51 +19,75 @@
         >
             <q-input
                 bottom-slots
-                filled
+                outlined
                 :label="$t('newWallet.label_wallet_name')"
                 v-model="name"
                 :error="!!error"
                 :error-message="error"
                 no-error-icon
             />
-            <div class="col column no-wrap flex-center">
-                <img
-                    src="~assets/vechain-logo-tint.svg"
-                    style="min-height:0px;max-height:300px;max-width:100%"
+            <div class="column q-gutter-y-sm q-mt-sm">
+                <button
+                    type="button"
+                    class="bvm-tile choice choice--primary row no-wrap items-center"
+                    @click="newWallet('generate')"
                 >
-            </div>
-            <div
-                v-if="isSupport"
-                class="row flex-center"
-            >
-                <svg-ledger />
-                {{$t('newWallet.label_ledger_user')}}
-                <q-btn
-                    color="primary"
-                    flat
+                    <q-icon
+                        name="o_auto_awesome"
+                        size="24px"
+                        color="primary"
+                    />
+                    <div class="col q-ml-md">
+                        <div class="choice-title">{{$t('newWallet.action_generate')}}</div>
+                        <div class="choice-body">{{$t('newWallet.msg_generate')}}</div>
+                    </div>
+                    <q-icon
+                        name="o_chevron_right"
+                        class="text-muted"
+                    />
+                    <!-- long press: word count options -->
+                    <pop-sheets
+                        :sheets="generationOptionSheets"
+                        context-menu
+                    />
+                </button>
+                <button
+                    type="button"
+                    class="bvm-tile choice row no-wrap items-center"
+                    @click="newWallet('import')"
+                >
+                    <q-icon
+                        name="o_key"
+                        size="24px"
+                        color="primary"
+                    />
+                    <div class="col q-ml-md">
+                        <div class="choice-title">{{$t('newWallet.action_import')}}</div>
+                        <div class="choice-body">{{$t('newWallet.msg_import')}}</div>
+                    </div>
+                    <q-icon
+                        name="o_chevron_right"
+                        class="text-muted"
+                    />
+                </button>
+                <button
+                    v-if="isSupport"
+                    type="button"
+                    class="bvm-tile choice row no-wrap items-center"
                     @click="newWallet('linkLedger')"
-                >{{$t('newWallet.action_ledger_link')}}</q-btn>
+                >
+                    <svg-ledger class="choice-ledger" />
+                    <div class="col q-ml-md">
+                        <div class="choice-title">{{$t('newWallet.action_ledger_link')}}</div>
+                        <div class="choice-body">{{$t('newWallet.msg_ledger')}}</div>
+                    </div>
+                    <q-icon
+                        name="o_chevron_right"
+                        class="text-muted"
+                    />
+                </button>
             </div>
         </page-content>
-        <page-action>
-            <q-btn
-                color="primary"
-                outline
-                :label="$t('newWallet.action_import')"
-                @click="newWallet('import')"
-            />
-            <q-btn
-                color="primary"
-                unelevated
-                :label="$t('newWallet.action_generate')"
-                @click="newWallet('generate')"
-            >
-                <pop-sheets
-                    :sheets="generationOptionSheets"
-                    context-menu
-                />
-            </q-btn>
-        </page-action>
     </div>
 </template>
 <script lang="ts">
@@ -76,7 +100,6 @@ import MnemonicInputDialog from './MnemonicInputDialog.vue'
 import LedgerLinkDialog from 'pages/Ledger/LinkDialog.vue'
 import PopSheets, { Sheet } from 'components/PopSheets.vue'
 import PageContent from 'components/PageContent.vue'
-import PageAction from 'components/PageAction.vue'
 import { Account } from '@vechain/hw-app-vet'
 import * as Ledger from 'src/utils/ledger'
 import SvgLedger from 'components/SvgLedger.vue'
@@ -85,7 +108,7 @@ import { BackupDialog } from '../Backup'
 const defaultGid = genesises.main.id
 
 export default defineComponent({
-    components: { PageToolbar, PopSheets, PageContent, PageAction, SvgLedger },
+    components: { PageToolbar, PopSheets, PageContent, SvgLedger },
     props: {
         defaultGid: String
     },
@@ -262,3 +285,37 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+// the three ways to add a wallet, as tiles
+.choice
+  width: 100%
+  padding: 16px
+  color: inherit
+  font: inherit
+  text-align: left
+  cursor: pointer
+  transition: border-color 0.15s
+  &:hover
+    border-color: rgba(255, 255, 255, 0.22)
+
+.choice--primary
+  border-color: rgba(110, 231, 183, 0.4)
+  background: rgba(110, 231, 183, 0.06)
+
+.choice-title
+  font-size: 16px
+  font-weight: 900
+  letter-spacing: -0.01em
+
+.choice-body
+  margin-top: 2px
+  font-size: 13px
+  line-height: 1.4
+  color: $text-muted
+
+.choice-ledger
+  width: 24px
+  height: 24px
+  :deep(path)
+    fill: $primary
+</style>

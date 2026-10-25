@@ -1,24 +1,23 @@
 <template>
-    <div class="q-pa-xs">
-        <q-banner
-            dark
-            dense
-            rounded
-            inline-actions
-            class="bg-positive"
-        >
-            <template v-slot:avatar>
-                <q-icon name="upgrade" />
-            </template>
-            {{$t('index.msg_upgrade')}}
-            <template v-slot:action>
-                <q-btn
-                    @click="reloadApp"
-                    flat
-                    :label="$t('index.action_upgrade')"
-                />
-            </template>
-        </q-banner>
+    <div class="q-px-md q-pt-md">
+        <div class="bvm-tile upgrade-tip row no-wrap items-center q-pa-md">
+            <q-icon
+                name="o_upgrade"
+                size="22px"
+                color="primary"
+                class="q-mr-md"
+            />
+            <div class="col text-weight-bold">{{$t('index.msg_upgrade')}}</div>
+            <q-btn
+                unelevated
+                dense
+                no-caps
+                color="primary"
+                class="q-px-md q-ml-sm"
+                :label="$t('index.action_upgrade')"
+                @click="reloadApp"
+            />
+        </div>
     </div>
 </template>
 <script lang="ts">
@@ -32,3 +31,7 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.upgrade-tip
+  border-color: rgba(110, 231, 183, 0.35)
+</style>

@@ -1,5 +1,5 @@
 <template>
-    <div>
+    <div class="token-field">
         <async-resolve
             v-if="token"
             :promise="$svc.bc(token.gid).balanceOf(address, token)"
@@ -65,3 +65,12 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+// looks like the other fields: you tap it to pick an asset
+.token-field
+  margin: 0 16px
+  background: $field
+  border: 1px solid $hairline-2
+  border-radius: $radius
+  overflow: hidden
+</style>

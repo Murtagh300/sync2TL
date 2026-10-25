@@ -33,7 +33,7 @@
                 :error-message="errors.amount"
                 :error="!!errors.amount"
                 @update:model-value="errors.amount = ''"
-                dense
+                input-class="send-amount bvm-display"
                 type="text"
                 inputmode="decimal"
                 placeholder="0.00"
@@ -45,7 +45,9 @@
             <q-btn
                 type="submit"
                 unelevated
-                class="col-6 col-sm-auto"
+                no-caps
+                size="lg"
+                icon="o_north_east"
                 color="primary"
                 :label="$t('send.action_send')"
             />
@@ -230,3 +232,9 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass">
+// the amount being sent is the biggest thing on the page
+.send-amount
+  font-size: 34px !important
+  height: 56px
+</style>

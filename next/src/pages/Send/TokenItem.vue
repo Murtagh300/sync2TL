@@ -9,11 +9,13 @@
             />
         </q-item-section>
         <q-item-section>
-            <q-item-label>{{token.symbol}}</q-item-label>
+            <q-item-label class="text-weight-bolder">{{token.symbol}}</q-item-label>
+            <q-item-label caption class="text-muted ellipsis">{{token.name}}</q-item-label>
         </q-item-section>
         <q-item-section side>
             <q-item-label>
                 <amount-label
+                    class="bvm-amount"
                     :value="balance"
                     :decimals="token.decimals"
                 >--.--</amount-label>
@@ -23,7 +25,7 @@
             v-if="selectIcon"
             side
         >
-            <q-icon name="unfold_more" />
+            <q-icon name="o_unfold_more" class="text-muted" />
         </q-item-section>
     </q-item>
 </template>

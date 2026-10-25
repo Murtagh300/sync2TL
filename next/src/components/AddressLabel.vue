@@ -1,5 +1,5 @@
 <template>
-    <div class="inline-block monospace address">
+    <div class="inline-block address">
         <template v-if="test(addr)">
             {{displayString}}
         </template>
@@ -30,10 +30,11 @@ export default defineComponent({
 })
 </script>
 <style scoped>
+/* Geist with even-width digits, as the rest of the app (no condensed mono) */
 .address {
-    letter-spacing: 0.08em;
-    transform: scale(1, 0.8);
-    /* transform-origin: bottom; */
+    font-variant-numeric: tabular-nums;
+    letter-spacing: 0.02em;
+    font-weight: 500;
     max-width: 100%;
     text-overflow: inherit;
     white-space: inherit;

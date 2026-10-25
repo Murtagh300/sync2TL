@@ -91,7 +91,7 @@ export default defineComponent({
             return { width: `${this.cellWidth}px` }
         },
         cardStyles(): Record<string, string> {
-            return { borderRadius: `${this.cellWidth * 0.06}px` }
+            return { borderRadius: '12px' }
         }
     },
     methods: {

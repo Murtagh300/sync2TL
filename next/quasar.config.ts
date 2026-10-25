@@ -20,7 +20,7 @@ export default defineConfig(() => {
 
         css: ['app.sass'],
 
-        extras: ['roboto-font', 'material-icons'],
+        extras: ['material-icons', 'material-icons-outlined'],
 
         build: {
             target: {

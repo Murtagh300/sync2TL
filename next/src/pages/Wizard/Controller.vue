@@ -13,33 +13,41 @@
             <page-content
                 class="col"
                 padding
-                innerClass="fit column"
+                innerClass="fit column no-wrap"
             >
-                <div class="row">
-                    <h4 class="q-ma-none">{{$t('wizard.title_welcome')}}</h4>
+                <div class="row items-center no-wrap">
+                    <img
+                        src="~assets/bvm-logo.png"
+                        alt="BVM"
+                        class="wizard-logo"
+                    >
                     <language-list-popup
                         class="q-ml-auto"
                         v-slot="{displayName}"
                     >
                         <q-btn
                             flat
-                            icon="language"
-                            size="sm"
-                            color="primary"
+                            dense
+                            no-caps
+                            icon="o_language"
+                            class="text-muted q-px-sm"
                             :label="displayName"
                         />
                     </language-list-popup>
                 </div>
-                <feature-slides class="col q-mt-md" />
+                <feature-slides class="q-my-auto q-py-lg" />
             </page-content>
-            <page-action>
+            <div class="wizard-action narrow-page q-mx-auto">
                 <q-btn
                     unelevated
+                    no-caps
                     color="primary"
+                    size="lg"
+                    class="full-width"
                     :label="$t('wizard.action_get_started')"
                     @click="onClickStart()"
                 />
-            </page-action>
+            </div>
         </q-carousel-slide>
         <q-carousel-slide
             name="progress"
@@ -50,25 +58,28 @@
                 padding
                 innerClass="fit column q-gutter-y-md no-wrap"
             >
-                <h4 class="q-mb-none">{{$t('wizard.title_init')}}</h4>
+                <h4 class="q-mb-none bvm-display">{{$t('wizard.title_init')}}</h4>
                 <Progress
                     :current="progressStr"
                     class="col overflow-auto"
                 />
-                <h5
-                    class="q-mb-none text-center"
+                <div
+                    class="text-h5 text-primary"
                     v-if="finished"
-                >{{$t('wizard.msg_init_complete')}}</h5>
+                >{{$t('wizard.msg_init_complete')}}</div>
             </page-content>
-            <page-action>
+            <div class="wizard-action narrow-page q-mx-auto">
                 <q-btn
                     v-if="finished"
                     unelevated
+                    no-caps
                     color="primary"
+                    size="lg"
+                    class="full-width"
                     :label="$t('common.finish')"
                     @click="$emit('done')"
                 />
-            </page-action>
+            </div>
         </q-carousel-slide>
     </q-carousel>
 </template>
@@ -80,7 +91,6 @@ import NewPasswordDialog from 'pages/NewPasswordDialog'
 import { genesises } from 'src/consts'
 import LanguageListPopup from 'pages/LanguageListPopup.vue'
 import PageContent from 'src/components/PageContent.vue'
-import PageAction from 'src/components/PageAction.vue'
 import { secureRNG, kdfEncrypt, Vault } from 'src/core/vault'
 import { BackupDialog } from '../Backup'
 
@@ -98,8 +108,7 @@ export default defineComponent({
         Progress,
         FeatureSlides,
         LanguageListPopup,
-        PageContent,
-        PageAction
+        PageContent
     },
     data: () => {
         return {
@@ -173,3 +182,10 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.wizard-logo
+  height: 22px
+
+.wizard-action
+  padding: 12px 16px 20px
+</style>

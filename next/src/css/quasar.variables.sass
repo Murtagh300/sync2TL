@@ -1,23 +1,40 @@
 // Quasar Sass (& SCSS) Variables
 // --------------------------------------------------
-// BlackVault theme, matching blackvemarket.com:
-// near-black surfaces with the BVM mint accent.
+// BlackVault theme: the design language of blackvemarket.com
+// (near-black page, faint white surfaces with hairline borders,
+// mint for actions and status, Geist set heavy).
 
 $primary   : #6ee7b7
-$secondary : #8a938f
+$secondary : #a1a1aa
 $accent    : #6ee7b7
 
-$dark      : #121514
+$dark      : #101211
 $dark-page : #080a09
 
-$positive  : #34d399
+$positive  : #6ee7b7
 $negative  : #f87171
-$info      : #60a5fa
+$info      : #93c5fd
 $warning   : #fbbf24
 
 // text on top of the mint accent (white is unreadable on it)
-$on-primary : #080a09
-$surface    : #121514
-$surface-2  : #1a1e1c
+$on-primary : #09090b
 
-$body-font-size   : 16px
+// surfaces as on blackvemarket.com: white at low opacity over the page
+$surface    : #101211        // ≈ rgba(255,255,255,.035) on the page, as a solid
+$surface-2  : #161917        // raised: dialogs, menus, selected rows
+$hairline   : rgba(255, 255, 255, 0.10)
+$hairline-2 : rgba(255, 255, 255, 0.16)
+$field      : #121714
+
+$text       : #fafafa
+$text-muted : #a1a1aa
+$text-soft  : #d4d4d8
+
+$radius     : 6px            // buttons, fields
+$radius-lg  : 10px           // cards
+
+$typography-font-family : 'Geist Variable', 'Geist', system-ui, -apple-system, 'Segoe UI', sans-serif
+$body-font-size   : 15px
+$button-font-weight : 800
+$button-border-radius : $radius
+$generic-border-radius : $radius

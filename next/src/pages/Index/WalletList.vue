@@ -1,13 +1,14 @@
 <template>
     <div class="column fit no-wrap">
         <q-item>
-            <q-item-section>{{$t('index.label_wallets')}}</q-item-section>
+            <q-item-section class="bvm-label">{{$t('index.label_wallets')}}</q-item-section>
             <q-item-section side>
                 <q-btn
                     flat
                     round
                     dense
-                    icon="add_circle_outline"
+                    icon="o_add"
+                    color="primary"
                     :to="{name:'new-wallet'}"
                 />
             </q-item-section>
@@ -27,7 +28,7 @@
                 :ref="wallet.id.toString()"
                 clickable
                 :active="wallet.id === current"
-                active-class="bg-surface-2"
+                active-class="wallet-active"
                 @click="$emit('select', wallet.id)"
             >
                 <q-item-section>
@@ -82,3 +83,10 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.wallet-active
+  background: rgba(110, 231, 183, 0.08)
+  color: $text
+  box-shadow: inset 3px 0 0 $primary
+  font-weight: 700
+</style>

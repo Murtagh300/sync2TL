@@ -29,8 +29,8 @@ export default defineComponent({
     computed: {
         icon() {
             switch (this.type) {
-                case 'warning': return 'warning'
-                default: return 'error'
+                case 'warning': return 'o_warning_amber'
+                default: return 'o_error_outline'
             }
         },
         classes() {
@@ -41,11 +41,28 @@ export default defineComponent({
                 }
             } else {
                 switch (this.type) {
-                    case 'warning': return 'bg-warning'
-                    default: return 'bg-negative'
+                    case 'warning': return 'tip tip--warning'
+                    default: return 'tip tip--error'
                 }
             }
         }
     }
 })
 </script>
+<style lang="sass" scoped>
+.tip
+  margin: 0 12px 8px
+  border-radius: $radius-lg
+  border: 1px solid
+  font-weight: 700
+
+.tip--warning
+  color: $warning
+  border-color: rgba(251, 191, 36, 0.4)
+  background: rgba(251, 191, 36, 0.06)
+
+.tip--error
+  color: $negative
+  border-color: rgba(248, 113, 113, 0.4)
+  background: rgba(248, 113, 113, 0.06)
+</style>

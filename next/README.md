@@ -67,6 +67,20 @@ Platform hooks left for later phases: `utils/external-url.ts`, `utils/bio-pass.t
 - **Dark theme**: no light-theme classes (`bg-*-1`, `text-dark`); use `bg-surface`,
   `bg-surface-2`, `text-white`.
 
+## Design (blackvemarket.com)
+
+Tokens live in `src/css/quasar.variables.sass`, the shared layer at the end of
+`src/css/app.sass`. Geist is bundled (`@fontsource-variable/geist`), icons are the
+outlined Material set (`o_…`).
+
+- `bvm-tile`: the site's surface (white 3.5%, 1px white 10% border, 10px radius)
+- `bvm-display`: heavy headline type (900, tight) for titles and big amounts
+- `bvm-amount`: heavy, even-width digits for amounts in lists
+- `bvm-label` (also every `q-item-label header`): small mint section label
+- Primary action: `color="primary" unelevated` (mint, dark text). Secondary:
+  `outline color="primary"` renders dark with a white hairline, as the site's "View all".
+- One loud thing per screen: the balance or amount. Mint only for actions and status.
+
 ## Core tests
 
 `test/core` pins the stored-data formats with values generated independently of the

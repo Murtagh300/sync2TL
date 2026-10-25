@@ -4,21 +4,20 @@
         style="width: 300px !important;max-width:80vw"
     >
         <!-- drawer content header -->
-        <q-toolbar>
-            <q-avatar square>
-                <img src="~assets/bvm-icon.png">
-            </q-avatar>
-            <q-toolbar-title>
-                BlackVault
-                <q-badge
-                    v-if="distTag"
-                    outline
-                    color="warning"
-                    align="top"
-                    class="text-capitalize"
-                >{{distTag}} </q-badge>
-            </q-toolbar-title>
-        </q-toolbar>
+        <div class="drawer-head row items-center no-wrap">
+            <img
+                src="~assets/bvm-logo.png"
+                alt="BVM"
+                class="drawer-logo"
+            >
+            <span class="drawer-product">BlackVault</span>
+            <q-badge
+                v-if="distTag"
+                outline
+                color="warning"
+                class="text-capitalize q-ml-sm"
+            >{{distTag}}</q-badge>
+        </div>
         <!-- content slot -->
         <div class="col">
             <slot />
@@ -29,7 +28,7 @@
                 <q-item-section avatar>
                     <q-icon
                         size="sm"
-                        name="settings"
+                        name="o_settings"
                     />
                 </q-item-section>
                 <q-item-section>
@@ -40,7 +39,7 @@
                 <q-item-section avatar>
                     <q-icon
                         size="sm"
-                        name="history"
+                        name="o_history"
                     />
                 </q-item-section>
                 <q-item-section>
@@ -51,8 +50,9 @@
                     side
                 >
                     <q-badge
-                        color="red"
-                        class="q-mr-md"
+                        color="primary"
+                        text-color="dark"
+                        class="q-mr-sm"
                     >{{ongoingActivitiesCount}}</q-badge>
                 </q-item-section>
             </q-item>
@@ -98,3 +98,24 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.drawer-panel
+  background: $surface
+  border-right: 1px solid $hairline
+
+.drawer-head
+  height: 64px
+  padding: 0 20px
+  border-bottom: 1px solid $hairline
+
+.drawer-logo
+  height: 24px
+
+.drawer-product
+  margin-left: 12px
+  padding-left: 12px
+  border-left: 1px solid $hairline-2
+  font-weight: 800
+  font-size: 15px
+  letter-spacing: -0.01em
+</style>

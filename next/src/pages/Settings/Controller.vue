@@ -10,7 +10,7 @@
                     :offset="[-16, 0]"
                 >
                     <item
-                        icon="language"
+                        icon="o_language"
                         :title="$t('settings.action_language')"
                         :value="displayName"
                         clickable
@@ -18,7 +18,7 @@
                 </language-list-popup>
                 <q-separator inset="item" />
                 <item
-                    icon="lock"
+                    icon="o_lock"
                     :title="$t('settings.action_change_password')"
                     clickable
                     @click="onClickChangePassword()"
@@ -26,7 +26,7 @@
                 <q-separator inset="item" />
                 <template v-if="bioPass">
                     <item
-                        icon="fingerprint"
+                        icon="o_fingerprint"
                         :title="$t('bioAuth.title')"
                     >
                         <q-toggle
@@ -39,19 +39,19 @@
                     <q-separator inset="item" />
                 </template>
                 <item
-                    icon="control_point_duplicate"
+                    icon="o_toll"
                     :title="$t('settings.action_token_list')"
                     :to="{name: 'tokens-setting'}"
                 />
                 <q-separator inset="item" />
                 <item
-                    icon="perm_data_setting"
+                    icon="o_dns"
                     :title="$t('settings.action_nodes')"
                     :to="{name: 'nodes-setting'}"
                 />
                 <q-separator inset="item" />
                 <item
-                    icon="menu_book"
+                    icon="o_menu_book"
                     :title="$t('settings.action_user_guide')"
                     clickable
                     @click="openGuide()"

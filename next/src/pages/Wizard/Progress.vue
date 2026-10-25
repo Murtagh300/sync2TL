@@ -2,20 +2,35 @@
     <transition-group
         tag="div"
         name="q-transition--jump-down"
-        class="column q-gutter-y-md no-wrap"
+        class="column q-gutter-y-sm no-wrap"
     >
         <div
             v-for="(_, i) in history"
-            class="text-h5 text-center"
-            :class="getClass(i)"
+            class="step row no-wrap items-center"
+            :class="{ 'step--current': isCurrent(i) }"
             :key="i+''"
         >
+            <q-spinner
+                v-if="isCurrent(i)"
+                size="18px"
+                color="primary"
+                class="q-mr-md"
+            />
+            <q-icon
+                v-else
+                name="o_check_circle"
+                size="18px"
+                color="primary"
+                class="q-mr-md"
+            />
             {{history[i]}}
         </div>
     </transition-group>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+
+// the setup steps as a checklist: done ones checked, the running one spinning
 export default defineComponent({
     props: {
         current: String
@@ -31,9 +46,18 @@ export default defineComponent({
         }
     },
     methods: {
-        getClass(i: number) {
-            return i + 1 === this.history.length ? 'text-white' : 'text-grey'
+        isCurrent(i: number) {
+            return i + 1 === this.history.length
         }
     }
 })
 </script>
+<style lang="sass" scoped>
+.step
+  font-size: 16px
+  font-weight: 600
+  color: $text-muted
+
+.step--current
+  color: $text
+</style>

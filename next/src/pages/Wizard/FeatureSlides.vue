@@ -1,62 +1,87 @@
 <template>
-    <q-carousel
-        v-model="slide"
-        swipeable
-        animated
-        navigation
-        transition-prev="slide-right"
-        transition-next="slide-left"
-        control-color="primary"
-        padding
-    >
-        <q-carousel-slide
-            v-for="item in slides"
-            :key="item.name"
-            :name="item.name"
-            class="column no-wrap q-gutter-y-md text-center"
-        >
-            <img
-                class="q-my-auto"
-                style="max-height:200px;min-height:32px;max-width:100%"
-                draggable="false"
-                :src="item.img"
-            />
-            <div class="text-h6">{{item.title}}</div>
-            <div class="text-body2">{{item.content}}</div>
-        </q-carousel-slide>
-    </q-carousel>
+    <div class="column no-wrap">
+        <h1 class="hero-title bvm-display">{{$t('wizard.title_welcome')}}</h1>
+        <p class="hero-body">{{$t('wizard.msg_feature_1')}}</p>
+
+        <div class="features q-mt-lg">
+            <div
+                v-for="f in features"
+                :key="f.icon"
+                class="bvm-tile feature row no-wrap items-start"
+            >
+                <q-icon
+                    :name="f.icon"
+                    size="20px"
+                    color="primary"
+                    class="q-mr-sm q-mt-xs"
+                />
+                <div>
+                    <div class="feature-title">{{f.title}}</div>
+                    <div
+                        v-if="f.content"
+                        class="feature-body"
+                    >{{f.content}}</div>
+                </div>
+            </div>
+        </div>
+    </div>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
-import bvmLogo from 'assets/bvm-logo.png'
-import feature2 from 'assets/feature-2.svg'
-import feature3 from 'assets/feature-3.svg'
 
+// the welcome screen: what BlackVault is, before the first wallet is made
 export default defineComponent({
-    data: () => {
-        return {
-            slide: 's1'
-        }
-    },
     computed: {
-        slides() {
+        features() {
             return [{
-                img: bvmLogo,
-                title: this.$t('wizard.title_feature_1'),
-                name: 's1',
-                content: this.$t('wizard.msg_feature_1').toString()
+                icon: 'o_lock',
+                title: this.$t('wizard.title_feature_1').toString(),
+                content: ''
             }, {
-                img: feature2,
-                title: this.$t('wizard.title_feature_2'),
-                name: 's2',
+                icon: 'o_swap_horiz',
+                title: this.$t('wizard.title_feature_2').toString(),
                 content: this.$t('wizard.msg_feature_2').toString()
             }, {
-                img: feature3,
-                title: this.$t('wizard.title_feature_3'),
-                name: 's3',
+                icon: 'o_draw',
+                title: this.$t('wizard.title_feature_3').toString(),
                 content: this.$t('wizard.msg_feature_3').toString()
             }]
         }
     }
 })
 </script>
+<style lang="sass" scoped>
+.hero-title
+  margin: 0
+  font-size: clamp(44px, 13vw, 64px)
+
+.hero-body
+  margin: 16px 0 0
+  max-width: 34ch
+  font-size: 16px
+  line-height: 1.5
+  color: $text-soft
+
+.features
+  display: grid
+  grid-template-columns: 1fr 1fr
+  gap: 10px
+
+.feature
+  padding: 14px
+
+// the first one has the most to say and spans the row
+.feature:first-child
+  grid-column: 1 / -1
+
+.feature-title
+  font-weight: 800
+  font-size: 14px
+  line-height: 1.3
+
+.feature-body
+  margin-top: 4px
+  font-size: 13px
+  line-height: 1.4
+  color: $text-muted
+</style>

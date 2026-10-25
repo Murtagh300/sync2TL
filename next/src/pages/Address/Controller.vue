@@ -10,21 +10,18 @@
                     :address="address"
                     :name="wallet.meta.name"
                 />
-                <q-item dense>
-                    <q-item-section>
-                        <q-item-label header>
-                            {{$t('address.label_assets')}}
-                        </q-item-label>
-                    </q-item-section>
-                    <q-item-section side>
-                        <q-btn
-                            :to="{name: 'tokens-setting'}"
-                            flat
-                            round
-                            icon="control_point_duplicate"
-                        />
-                    </q-item-section>
-                </q-item>
+                <div class="row items-center q-px-md q-pt-md">
+                    <div class="bvm-label">{{$t('address.label_assets')}}</div>
+                    <q-btn
+                        class="q-ml-auto"
+                        :to="{name: 'tokens-setting'}"
+                        flat
+                        round
+                        dense
+                        color="primary"
+                        icon="o_tune"
+                    />
+                </div>
             </page-content>
             <page-content class="col">
                 <q-list>
@@ -44,9 +41,11 @@
                             :balance="data"
                         >
                             <q-btn
-                                icon="preview"
-                                dense
-                                flat
+                                outline
+                                no-caps
+                                color="primary"
+                                icon="o_history"
+                                :label="$t('asset.label_history')"
                                 :to="{
                                     name: 'asset',
                                     params: {
@@ -57,9 +56,11 @@
                                 }"
                             />
                             <q-btn
-                                icon="send"
-                                dense
-                                flat
+                                unelevated
+                                no-caps
+                                color="primary"
+                                icon="o_north_east"
+                                :label="$t('send.action_send')"
                                 :to="{
                                     name: 'send',
                                     query: { wid: walletId, i: addressIndex, symbol: token.symbol }

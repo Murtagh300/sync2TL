@@ -4,6 +4,8 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue'
+// Geist, the typeface of blackvemarket.com, bundled (no font CDN for a wallet)
+import '@fontsource-variable/geist'
 import { listen } from 'src/utils/external-url'
 import dayjs from 'dayjs'
 // import more locales here

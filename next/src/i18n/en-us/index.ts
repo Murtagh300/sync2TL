@@ -24,7 +24,7 @@ export default {
         // error_message
         required_field: 'This field is required',
         something_wrong: 'Something is wrong',
-        no_wallet: 'No wallet created yet',
+        no_wallet: 'No wallet yet',
         invalid_input: 'Invalid input',
 
         // notify
@@ -50,43 +50,46 @@ export default {
         label_disclaimer_terms_accept: 'I understand and accept all responsibilities'
     },
     wizard: {
-        title_welcome: 'Welcome',
-        title_init: 'One Moment',
-        title_feature_1: 'BlackVault',
-        title_feature_2: 'Asset Management',
-        title_feature_3: 'DApps Interaction',
-        msg_feature_1: 'The VeChain wallet by BlackVeMarket (BVM). Manage your wallets and connect to dApps.',
-        msg_feature_2: 'Send and receive assets in one place.',
-        msg_feature_3: 'Sign transactions and certificates anytime, anywhere.',
+        title_welcome: 'Your VeChain vault.',
+        title_init: 'Setting up your vault',
+        title_feature_1: 'Your keys stay on this device, encrypted with your password',
+        title_feature_2: 'Send and receive',
+        title_feature_3: 'Sign in to dApps',
+        msg_feature_1: 'The wallet by BlackVeMarket for VET, VTHO, tokens and every VeChain dApp.',
+        msg_feature_2: 'VET, VTHO and tokens in one place.',
+        msg_feature_3: 'Approve transactions and logins.',
         msg_init_animation_s1: 'Preparing your master key',
         msg_init_animation_s2: 'Initializing & encrypting',
         msg_init_animation_s3: 'Generating mnemonic words of wallet',
         msg_init_animation_s4: 'Encrypting wallet using the master key',
         msg_init_animation_s5: 'Saving encrypted wallet to local vault',
-        msg_init_complete: 'Your wallet is ready!',
-        action_get_started: 'Get Started'
+        msg_init_complete: 'Your wallet is ready.',
+        action_get_started: 'Create my wallet'
     },
     index: {
         action_new_address: 'New Address',
         action_backup: 'Backup',
         action_rename: 'Rename Wallet',
-        action_upgrade: 'Upgrade Now',
-        action_backup_now: 'Backup Now',
+        action_upgrade: 'Restart to update',
+        action_backup_now: 'Back up now',
         action_settings: 'Settings',
         action_activities: 'Activities',
         action_create: 'Create Now',
-        msg_upgrade: 'New version is ready :)',
+        msg_upgrade: 'A new version of BlackVault is ready.',
         // request user to enter "ok" to confirm
         msg_delete: 'Please enter "ok" to delete wallet. This cannot be undone. Unless you have backed up your wallet beforehand.',
-        msg_backup: 'Wallet not backed up! Backup your wallet keep your assets safe.',
+        msg_backup: 'Back up this wallet. Without its recovery words you cannot restore it.',
         label_wallets: 'Wallets'
     },
     newWallet: {
         title: 'New Wallet',
         msg_mnemonic_error: 'Invalid mnemonic words',
         mnemonic_words_count: 'Mnemonic words count',
-        action_generate: 'Generate',
-        action_import: 'Import',
+        action_generate: 'Create a new wallet',
+        action_import: 'Import recovery words',
+        msg_generate: 'Get new recovery words and a fresh address.',
+        msg_import: 'Restore a wallet from its 12 or 24 words.',
+        msg_ledger: 'Use the keys on your Ledger device.',
         label_wallet_name: 'Wallet Name',
         label_mnemonic: 'Please enter your mnemonic words',
         label_advance: 'Advance',
@@ -97,7 +100,7 @@ export default {
         msg_example: 'Example',
         msg_invalid_path: 'Invalid Path',
         label_ledger_user: 'Ledger user?',
-        action_ledger_link: 'Link Now'
+        action_ledger_link: 'Connect a Ledger'
     },
     authenticationDialog: {
         title: 'Authenticate',
@@ -129,8 +132,8 @@ export default {
     asset: {
         title: 'Asset',
         label_history: 'History',
-        msg_no_history: 'No transfer history',
-        msg_no_more: '- The End - '
+        msg_no_history: 'No transfers yet. What you send and receive shows up here.',
+        msg_no_more: 'That is all'
     },
     send: {
         title: 'Send',

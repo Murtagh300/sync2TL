@@ -18,7 +18,17 @@
             v-if="noMore"
             class="text-center q-my-md text-grey"
         >
-            <span v-if="logs.length === 0">{{$t('asset.msg_no_history')}}</span>
+            <div
+                v-if="logs.length === 0"
+                class="column items-center q-py-xl q-px-lg"
+            >
+                <q-icon
+                    name="o_receipt_long"
+                    size="32px"
+                    class="text-muted"
+                />
+                <div class="q-mt-sm text-muted" style="max-width: 28ch">{{$t('asset.msg_no_history')}}</div>
+            </div>
             <span
                 class="text-caption"
                 v-else

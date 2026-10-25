@@ -12,29 +12,23 @@
                 />
             </q-item-section>
             <q-item-section>
-                <q-item-label>{{token.symbol}}</q-item-label>
+                <q-item-label class="token-symbol">{{token.symbol}}</q-item-label>
+                <q-item-label
+                    caption
+                    class="text-muted ellipsis"
+                >{{token.name}}</q-item-label>
             </q-item-section>
-            <q-item-section
-                side
-                class="text-white"
-            >
+            <q-item-section side>
                 <amount-label
+                    class="bvm-amount token-amount"
                     :value="balance"
                     :decimals="token.decimals"
                 > --.-- </amount-label>
             </q-item-section>
         </template>
-        <q-item>
-            <q-item-section/>
-            <q-item-section/>
-            <q-item-section
-                side
-            >
-                <div class="q-gutter-md">
-                    <slot />
-                </div>
-            </q-item-section>
-        </q-item>
+        <div class="row justify-end q-gutter-sm q-px-md q-pb-md">
+            <slot />
+        </div>
     </q-expansion-item>
 </template>
 <script lang="ts">
@@ -53,3 +47,11 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.token-symbol
+  font-weight: 800
+
+.token-amount
+  font-size: 16px
+  color: $text
+</style>

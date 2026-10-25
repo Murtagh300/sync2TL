@@ -17,35 +17,33 @@
                     :token="token"
                     :balance="data"
                 >
-                    <q-item-label class="row">
-                        {{token.symbol}}
-                        <amount-label class="q-ml-auto" :value="data" :decimals="token.decimals" > --.-- </amount-label>
-                    </q-item-label>
-                    <q-item-label
-                        caption
-                        lines="1"
-                        v-if="wallet"
-                    >{{wallet.meta.name}}</q-item-label>
-                    <q-item-label caption>
-                        ┗ <address-label :addr="address" />
-                    </q-item-label>
+                    <div class="text-weight-bold">{{token.name}}</div>
+                    <div class="text-muted ellipsis" style="font-size: 12px">
+                        {{wallet.meta.name}} · <address-label :addr="address" />
+                    </div>
+                    <template #balance>
+                        <div class="asset-balance bvm-display ellipsis">
+                            <amount-label
+                                :value="data"
+                                :decimals="token.decimals"
+                            >--.--</amount-label>
+                        </div>
+                        <div class="asset-symbol">{{token.symbol}}</div>
+                    </template>
+                    <template #action>
+                        <q-btn
+                            unelevated
+                            no-caps
+                            color="primary"
+                            icon="o_north_east"
+                            class="full-width q-mt-md"
+                            :label="$t('send.action_send')"
+                            :to="{name: 'send', query: { wid: walletId, i: addressIndex, symbol: symbol }}"
+                        />
+                    </template>
                 </head-item>
             </async-resolve>
-            <q-item dense>
-                <q-item-section>
-                    <q-item-label header>
-                        {{$t('asset.label_history')}}
-                    </q-item-label>
-                </q-item-section>
-                <q-item-section side>
-                    <q-btn
-                        flat
-                        round
-                        icon="send"
-                        :to="{name: 'send', query: { wid: walletId, i: addressIndex, symbol: symbol }}"
-                    />
-                </q-item-section>
-            </q-item>
+            <div class="bvm-label q-px-md q-pt-lg q-pb-sm">{{$t('asset.label_history')}}</div>
         </page-content>
         <page-content class="col">
             <Logs
@@ -118,3 +116,13 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.asset-balance
+  font-size: clamp(40px, 12vw, 56px)
+
+.asset-symbol
+  margin-top: 4px
+  font-size: 13px
+  font-weight: 800
+  color: $text-soft
+</style>

@@ -32,6 +32,10 @@ body
   overflow: hidden
   position: fixed!important
   height: 100%
+
+// the app fills the window (Sync2 set this on #q-app in App.vue)
+#q-app
+  height: 100%
   -webkit-user-select: none !important
   -moz-user-select: none !important
   -ms-user-select: none !important
@@ -52,7 +56,52 @@ body
 img
   pointer-events: none
 
-// ---- BlackVault theme ----
+// ================================================================
+// BlackVault — the blackvemarket.com design language
+// ================================================================
+
+body
+  background: $dark-page
+  color: $text
+  -webkit-font-smoothing: antialiased
+  -moz-osx-font-smoothing: grayscale
+  font-feature-settings: "ss01"
+
+// ---- type -------------------------------------------------------
+.text-h3, .text-h4, .text-h5
+  font-weight: 900
+  letter-spacing: -0.02em
+  line-height: 1.05
+
+.text-h6
+  font-weight: 800
+  letter-spacing: -0.01em
+
+// heavy display type, as the site's headlines
+.bvm-display
+  font-weight: 900
+  letter-spacing: -0.03em
+  line-height: 0.95
+
+// amounts: heavy, even-width digits so columns of numbers line up
+.bvm-amount
+  font-weight: 800
+  font-variant-numeric: tabular-nums
+  letter-spacing: -0.01em
+
+// the site's section labels ("For sale now", "Launchpad"): small, mint, tracked
+.bvm-label,
+.q-item__label--header
+  color: $primary !important
+  font-size: 12px
+  font-weight: 800
+  letter-spacing: 0.08em
+  text-transform: uppercase
+
+.text-muted
+  color: $text-muted !important
+
+// ---- surfaces ---------------------------------------------------
 .bg-page
   background: $dark-page
 
@@ -62,14 +111,13 @@ img
 .bg-surface-2
   background: $surface-2
 
-// buttons/chips/badges filled with the mint accent need dark text
-.bg-primary.text-white,
-.bg-accent.text-white,
-.q-btn.bg-primary,
-.q-btn.bg-accent
-  color: $on-primary !important
+// the site's tiles: faint white surface with a hairline border
+.bvm-tile
+  background: rgba(255, 255, 255, 0.035)
+  border: 1px solid $hairline
+  border-radius: $radius-lg
 
-.q-drawer, .q-dialog .q-card, .q-menu
+.q-drawer, .q-menu
   background: $surface
 
 .q-header, .q-footer
@@ -79,8 +127,116 @@ img
 .q-carousel.q-dark
   background: transparent
 
+.q-separator--dark
+  background: $hairline
+
+// ---- toolbars ---------------------------------------------------
+.q-toolbar
+  min-height: 56px
+  border-bottom: 1px solid $hairline
+  background: rgba(8, 10, 9, 0.94)
+
+.q-toolbar__title
+  font-size: 17px
+  font-weight: 800
+  letter-spacing: -0.01em
+
+// ---- buttons ----------------------------------------------------
+.q-btn
+  letter-spacing: 0
+
+// filled with the mint accent: dark text, as on the site
+.bg-primary.text-white,
+.bg-accent.text-white,
+.q-btn.bg-primary,
+.q-btn.bg-accent
+  color: $on-primary !important
+
+// secondary buttons are dark with a white hairline ("View all" on the site)
+.q-btn--outline.text-primary
+  color: $text !important
+  background: rgba(255, 255, 255, 0.02)
+  &:before
+    border-color: $hairline-2
+
+.q-btn--outline.text-negative:before
+  border-color: rgba(248, 113, 113, 0.45)
+
+// ---- fields -----------------------------------------------------
+.q-field--outlined .q-field__control
+  background: $field
+  border-radius: $radius
+  &:before
+    border-color: $hairline-2
+  &:hover:before
+    border-color: rgba(255, 255, 255, 0.28)
+
+.q-field--outlined.q-field--highlighted .q-field__control:after
+  border-width: 1px
+  border-color: $primary
+
+.q-field--standout .q-field__control
+  background: $field
+  border: 1px solid $hairline
+  border-radius: $radius
+
+// ---- lists ------------------------------------------------------
+.q-item
+  border-radius: 0
+.q-item.q-router-link--active, .q-item--active
+  color: $primary
+
+// ---- dialogs ----------------------------------------------------
+// the dialog shell only (cards inside dialogs keep their own look)
+.q-dialog__inner > .q-card
+  background: $surface-2
+  border: 1px solid $hairline
+  border-radius: $radius-lg
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.6)
+
+.q-dialog__inner--bottom > .q-card
+  border-bottom: 0
+  border-bottom-left-radius: 0
+  border-bottom-right-radius: 0
+
+.q-dialog__inner--maximized > .q-card
+  border: 0
+  border-radius: 0
+  background: $dark-page
+
+.q-dialog__backdrop
+  background: rgba(0, 0, 0, 0.7)
+  backdrop-filter: blur(2px)
+
+// ---- small things -----------------------------------------------
+.q-badge
+  border-radius: 4px
+  font-weight: 800
+  letter-spacing: 0.02em
+
+.q-notification
+  background: $surface-2 !important
+  color: $text !important
+  border: 1px solid $hairline
+  border-radius: $radius
+  font-weight: 600
+
 // dark text on the light status colors
 .bg-warning, .bg-positive
   color: $on-primary !important
   .q-btn
     color: $on-primary !important
+
+:focus-visible
+  outline: 2px solid $primary
+  outline-offset: 2px
+
+// thin, quiet scrollbars
+*
+  scrollbar-width: thin
+  scrollbar-color: rgba(255, 255, 255, 0.14) transparent
+
+@media (prefers-reduced-motion: reduce)
+  *, *::before, *::after
+    transition-duration: 0.01ms !important
+    animation-duration: 0.01ms !important

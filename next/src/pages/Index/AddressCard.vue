@@ -1,57 +1,61 @@
 <template>
     <div
-        class="text-white column no-wrap q-py-xs"
-        :style="{...background}"
+        class="address-card bvm-tile column no-wrap cursor-pointer"
+        :style="glow"
     >
-        <q-item>
-            <q-item-section avatar>
-                <address-avatar
-                    size="3.6rem"
+        <!-- identity: avatar, number, address -->
+        <div class="row no-wrap items-center">
+            <address-avatar
+                size="36px"
+                :addr="address"
+            />
+            <div class="q-ml-sm col">
+                <div class="card-index bvm-display">#{{index + 1}}</div>
+                <address-label
+                    class="text-muted"
                     :addr="address"
+                    style="font-size: 12px"
                 />
-            </q-item-section>
-            <q-item-section
-                class="text-right no-wrap"
-                no-wrap
+            </div>
+            <img
+                src="~assets/vechain-logo.svg"
+                class="card-chain"
+                alt=""
             >
-                <!-- balances -->
-                <q-item-label
-                    v-for="(bal, i) in balances"
-                    :key="i"
-                >
-                    <amount-label
-                        class="amount"
-                        :value="bal.value"
-                        :decimals="bal.decimals"
-                    >--.--</amount-label>
-                    <span
-                        class="monospace text-caption q-ml-sm"
-                        v-html="bal.symbol"
-                    />
-                </q-item-label>
-            </q-item-section>
-        </q-item>
-        <q-item class="q-mt-auto">
-            <q-item-section no-wrap>
-                <q-item-label>
-                    <!-- index -->
-                    <span class="index">{{index+1}}</span>
-                    <!-- address -->
-                    <address-label
-                        :addr="address"
-                        style="font-size: 0.85rem"
-                    />
-                </q-item-label>
-            </q-item-section>
-            <q-item-section />
-            <q-item-section avatar>
-                <!-- logo -->
+        </div>
+
+        <!-- VET: the number this card is about -->
+        <div class="q-mt-auto">
+            <div class="card-vet bvm-display ellipsis">
+                <amount-label
+                    :value="vet"
+                    :decimals="18"
+                >--.--</amount-label>
+            </div>
+            <div class="row items-center q-mt-xs card-symbol">
                 <img
-                    src="~assets/vechain-logo.svg"
-                    class="logo"
+                    src="~assets/vet.svg"
+                    class="card-coin"
+                    alt=""
                 >
-            </q-item-section>
-        </q-item>
+                VET
+            </div>
+        </div>
+
+        <!-- VTHO, quieter -->
+        <div class="card-vtho row items-center no-wrap q-mt-sm">
+            <img
+                src="~assets/vtho.svg"
+                class="card-coin"
+                alt=""
+            >
+            <amount-label
+                class="bvm-amount q-ml-xs"
+                :value="vtho"
+                :decimals="18"
+            >--.--</amount-label>
+            <span class="q-ml-xs">VTHO</span>
+        </div>
     </div>
 </template>
 <script lang="ts">
@@ -70,58 +74,57 @@ export default defineComponent({
         account: Object as () => (Connex.Thor.Account | null)
     },
     computed: {
-        svg(): string {
-            return picasso(this.address)
-        },
-        background(): object {
-            let str = this.svg
-            let color!: ReturnType<typeof Color>
-            for (let i = 0; i < 2; i++) {
-                const m = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(str)
-                if (m) {
-                    color = color ? color.mix(Color(m[0]), 0.15) : Color(m[0])
-                    str = str.slice(m.index + m[0].length)
-                } else {
-                    break
-                }
-            }
-            const c1 = color.saturationl(20).lightness(20)
-            const c2 = color.saturationl(30).lightness(30)
+        // a faint glow in the address' own avatar color tells the cards apart
+        glow(): Record<string, string> {
+            const m = /rgb\((\d+),\s*(\d+),\s*(\d+)\)/.exec(picasso(this.address))
+            const c = Color(m ? m[0] : '#6ee7b7').saturationl(70).lightness(55)
             return {
-                background: `linear-gradient(to bottom, ${c1.rgb().string()}, ${c2.rgb().string()})`
+                backgroundImage: `radial-gradient(120% 90% at 100% 0%, ${c.alpha(0.22).rgb().string()}, transparent 60%)`
             }
         },
-        balances() {
-            return [{
-                value: this.account && this.account.balance,
-                symbol: 'VET&nbsp;',
-                decimals: 18
-            },
-            {
-                value: this.account && this.account.energy,
-                symbol: 'VTHO',
-                decimals: 18
-            }]
+        vet(): string | null {
+            return this.account ? this.account.balance : null
+        },
+        vtho(): string | null {
+            return this.account ? this.account.energy : null
         }
     }
 })
 </script>
-<style scoped>
-.logo {
-    opacity: 0.4;
-    background: url(~assets/vechain-logo.svg);
-    height: 2.4rem;
-    width: 2.4rem;
-}
-.index {
-    display: inline-block;
-    font-size: 4rem;
-    font-weight: 100;
-    line-height: 100%;
-    min-width: 2.5rem;
-}
-.amount {
-    font-size: 1.25rem;
-    line-height: 1.6rem;
-}
+<style lang="sass" scoped>
+.address-card
+  height: 100%
+  padding: 16px 18px
+  text-align: left
+  transition: border-color 0.15s
+  &:hover
+    border-color: rgba(255, 255, 255, 0.22)
+
+.card-index
+  font-size: 18px
+
+.card-chain
+  width: 22px
+  height: 22px
+  opacity: 0.25
+  align-self: flex-start
+
+.card-vet
+  font-size: clamp(34px, 11vw, 46px)
+
+.card-symbol
+  font-size: 13px
+  font-weight: 800
+  color: $text-soft
+
+.card-coin
+  width: 16px
+  height: 16px
+  margin-right: 6px
+
+.card-vtho
+  padding-top: 10px
+  border-top: 1px solid $hairline
+  font-size: 13px
+  color: $text-muted
 </style>

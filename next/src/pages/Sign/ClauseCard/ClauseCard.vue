@@ -1,7 +1,7 @@
 <template>
     <q-card
         flat
-        class="q-py-sm"
+        class="bvm-tile clause q-py-xs"
     >
         <div
             v-for="(op, i) in ops"

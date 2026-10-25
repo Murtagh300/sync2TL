@@ -2,27 +2,37 @@
     <div>
         <q-slide-transition>
             <div v-show="!dismissed">
-                <div class="q-pa-xs">
-                    <q-banner
-                        dark
-                        dense
-                        rounded
-                        class="bg-warning"
-                    >
-                        {{$t('index.msg_backup')}}
-                        <template v-slot:action>
-                            <q-btn
-                                flat
-                                :label="$t('common.dismiss')"
-                                @click="dismissed=true"
-                            />
-                            <q-btn
-                                flat
-                                :label="$t('index.action_backup_now')"
-                                @click="$emit('backup')"
-                            />
-                        </template>
-                    </q-banner>
+                <div class="q-px-md q-pt-md">
+                    <div class="bvm-tile backup-tip row no-wrap items-start q-pa-md">
+                        <q-icon
+                            name="o_shield"
+                            size="22px"
+                            color="warning"
+                            class="q-mr-md q-mt-xs"
+                        />
+                        <div class="col">
+                            <div class="tip-text">{{$t('index.msg_backup')}}</div>
+                            <div class="row q-gutter-sm q-mt-sm">
+                                <q-btn
+                                    unelevated
+                                    dense
+                                    no-caps
+                                    color="primary"
+                                    class="q-px-md"
+                                    :label="$t('index.action_backup_now')"
+                                    @click="$emit('backup')"
+                                />
+                                <q-btn
+                                    flat
+                                    dense
+                                    no-caps
+                                    class="q-px-sm text-muted"
+                                    :label="$t('common.dismiss')"
+                                    @click="dismissed=true"
+                                />
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
         </q-slide-transition>
@@ -39,3 +49,13 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.backup-tip
+  border-color: rgba(251, 191, 36, 0.35)
+
+.tip-text
+  font-size: 14px
+  font-weight: 600
+  line-height: 1.4
+  color: $text-soft
+</style>

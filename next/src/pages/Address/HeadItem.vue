@@ -1,33 +1,30 @@
 <template>
-    <q-item
+    <div
         v-bind="$attrs"
+        class="bvm-tile head row no-wrap items-center"
     >
-        <q-item-section avatar>
-            <address-avatar
+        <address-avatar
+            :addr="address"
+            size="48px"
+        />
+        <div class="col q-ml-md" style="min-width: 0">
+            <div class="head-name ellipsis">{{name}}</div>
+            <address-label
+                class="text-muted"
                 :addr="address"
-                size="xl"
             />
-        </q-item-section>
-        <q-item-section>
-            <q-item-label>
-                <address-label :addr="address" />
-            </q-item-label>
-            <q-item-label
-                caption
-                class="ellipsis"
-            >
-                {{name}}
-            </q-item-label>
-        </q-item-section>
-        <q-item-section side>
-            <q-btn
-                flat
-                round
-                @click="showQR"
-                icon="qr_code_2"
-            />
-        </q-item-section>
-    </q-item>
+        </div>
+        <q-btn
+            outline
+            no-caps
+            dense
+            color="primary"
+            icon="o_qr_code_2"
+            class="q-px-sm q-ml-sm"
+            :label="$t('address.action_receive')"
+            @click="showQR"
+        />
+    </div>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
@@ -57,3 +54,13 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass" scoped>
+.head
+  margin: 16px 16px 8px
+  padding: 16px
+
+.head-name
+  font-size: 18px
+  font-weight: 900
+  letter-spacing: -0.01em
+</style>
