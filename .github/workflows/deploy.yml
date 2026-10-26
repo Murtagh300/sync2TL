@@ -81,6 +81,8 @@ jobs:
             [ -d wallet ] && mv wallet wallet.old
             mv wallet.new wallet
             docker compose up -d --build
+            # Caddy holds the old wallet folder and Caddyfile open (mounts follow the inode): start it afresh
+            docker compose up -d --no-deps --force-recreate caddy
             docker compose ps"
 
       - name: Health

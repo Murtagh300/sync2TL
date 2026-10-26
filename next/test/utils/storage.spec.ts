@@ -61,7 +61,7 @@ describe('settings backup', () => {
     it('encrypts and decrypts with the password', async () => {
         const file = await encryptSettings(settings, 'correct horse', 100000)
         expect(file.data).not.toContain('rent')
-        expect(await decryptSettings(JSON.stringify(file), 'correct horse')).toEqual(settings)
+        expect(await decryptSettings(JSON.stringify(file), 'correct horse')).toEqual(pickSettings(settings))
     })
 
     it('refuses a wrong password and files that are not backups', async () => {
@@ -73,16 +73,22 @@ describe('settings backup', () => {
         await expect(decryptSettings(JSON.stringify({ ...file, kdf: { ...file.kdf, iterations: 1 } }), 'correct horse')).rejects.toEqual(new BackupError('format'))
     })
 
-    it('only takes the listed keys, never keys or wallets', () => {
+    it('only takes the listed keys, never keys, wallets or nodes', () => {
         const picked = pickSettings({
             local: { 'bv-prefs': '{}', selectedWalletId: '2', 'bv-wc-start': 'x' },
-            config: { contacts: '[]', userMasterKeyGlob: 'secret', 'bio-pass-on': 't' }
+            config: { contacts: '[]', userMasterKeyGlob: 'secret', 'bio-pass-on': 't', nodes: '[{"url":"https://evil.example"}]' }
         })
-        expect(picked).toEqual({ local: { 'bv-prefs': '{}' }, config: { contacts: '[]' } })
+        expect(picked).toEqual({ local: { 'bv-prefs': '{"errorReports":false}' }, config: { contacts: '[]' } })
+    })
+
+    it('never turns error reports on from a file', () => {
+        const picked = pickSettings({ local: { 'bv-prefs': '{"currency":"USD","errorReports":true}' }, config: {} })
+        expect(JSON.parse(picked.local['bv-prefs']!)).toEqual({ currency: 'USD', errorReports: false })
+        expect(pickSettings({ local: { 'bv-prefs': 'nonsense' }, config: {} }).local).toEqual({})
     })
 
     it('summarizes what a backup holds', () => {
-        expect(summarize(settings)).toEqual({ contacts: 2, notes: 2, settings: 4 })
+        expect(summarize(settings)).toEqual({ contacts: 2, notes: 2, settings: 4, names: 'A, B' })
     })
 })
 

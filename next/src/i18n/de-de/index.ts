@@ -744,7 +744,8 @@ export default {
         msg_exported: 'Einstellungen in einer Datei gespeichert.',
         msg_wrong_password: 'Mit diesem Passwort lässt sich die Datei nicht öffnen.',
         msg_not_a_backup: 'Das ist keine Einstellungsdatei von BlackVault.',
-        msg_confirm: 'Diese Datei enthält {contacts} Kontakte, {notes} Notizen und {settings} Arten von Einstellungen. Sie ersetzen die auf diesem Gerät, danach startet BlackVault neu.'
+        msg_confirm: 'Diese Datei enthält {contacts} Kontakte, {notes} Notizen und {settings} Arten von Einstellungen. Sie ersetzen die auf diesem Gerät, danach startet BlackVault neu.',
+        label_contacts: 'Kontakte'
     },
     service: {
         action_update: 'Aktualisieren',

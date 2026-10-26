@@ -744,7 +744,8 @@ export default {
         msg_exported: 'Réglages enregistrés dans un fichier.',
         msg_wrong_password: 'Ce mot de passe n’ouvre pas ce fichier.',
         msg_not_a_backup: 'Ce n’est pas un fichier de réglages BlackVault.',
-        msg_confirm: 'Ce fichier contient {contacts} contacts, {notes} notes et {settings} types de réglages. Ils remplacent ceux de cet appareil, puis BlackVault redémarre.'
+        msg_confirm: 'Ce fichier contient {contacts} contacts, {notes} notes et {settings} types de réglages. Ils remplacent ceux de cet appareil, puis BlackVault redémarre.',
+        label_contacts: 'Contacts'
     },
     service: {
         action_update: 'Mettre à jour',

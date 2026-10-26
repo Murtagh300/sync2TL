@@ -744,7 +744,8 @@ export default {
         msg_exported: 'Instellingen opgeslagen in een bestand.',
         msg_wrong_password: 'Met dat wachtwoord gaat dit bestand niet open.',
         msg_not_a_backup: 'Dit is geen instellingenbestand van BlackVault.',
-        msg_confirm: 'Dit bestand heeft {contacts} contacten, {notes} notities en {settings} soorten instellingen. Ze vervangen die op dit apparaat, daarna start BlackVault opnieuw.'
+        msg_confirm: 'Dit bestand heeft {contacts} contacten, {notes} notities en {settings} soorten instellingen. Ze vervangen die op dit apparaat, daarna start BlackVault opnieuw.',
+        label_contacts: 'Contacten'
     },
     service: {
         action_update: 'Bijwerken',

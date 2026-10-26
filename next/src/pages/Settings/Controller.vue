@@ -392,7 +392,8 @@ export default defineComponent({
             const ok = await new Promise<boolean>(resolve => {
                 this.$q.dialog({
                     title: this.$t('settingsBackup.action_import'),
-                    message: this.$t('settingsBackup.msg_confirm', sum),
+                    message: this.$t('settingsBackup.msg_confirm', sum) + (sum.names ? `\n\n${this.$t('settingsBackup.label_contacts')}: ${sum.names}` : ''),
+                    style: 'white-space: pre-line',
                     cancel: true,
                     ok: { label: this.$t('settingsBackup.action_restore'), color: 'primary', unelevated: true, noCaps: true }
                 }).onOk(() => resolve(true)).onCancel(() => resolve(false)).onDismiss(() => resolve(false))

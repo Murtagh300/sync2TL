@@ -1,7 +1,8 @@
 /**
  * A backup of the wallet's settings, for a new device or a fresh install: contacts, notes, the
- * watchlist, price alerts, hidden NFTs, scheduled payments, the emergency plan, preferences and
- * custom nodes. Never keys, recovery words or wallets: those are restored with the recovery words.
+ * watchlist, price alerts, hidden NFTs, scheduled payments, the emergency plan and preferences.
+ * Never keys, recovery words or wallets: those are restored with the recovery words. Never the
+ * nodes either: a file from someone else could otherwise point the wallet at their node.
  *
  * The file is encrypted with a password (PBKDF2-SHA256, 600,000 rounds → AES-256-GCM), because
  * contacts and notes say a lot about a person. Only the keys listed here are written back.
@@ -15,7 +16,7 @@ export const LOCAL_KEYS = [
 
 /** settings in the config store (boot/services/config) */
 export const CONFIG_KEYS = [
-    'contacts', 'watchlist', 'alerts', 'token-prefs', 'hidden-nfts', 'nft-notes', 'activeTokenSymbols', 'nodes', 'language'
+    'contacts', 'watchlist', 'alerts', 'token-prefs', 'hidden-nfts', 'nft-notes', 'activeTokenSymbols', 'language'
 ] as const
 
 export type ConfigKey = typeof CONFIG_KEYS[number]
@@ -52,7 +53,22 @@ export function pickSettings(raw: unknown): Settings {
         }
         return out
     }
-    return { local: pick(r.local, LOCAL_KEYS), config: pick(r.config, CONFIG_KEYS) }
+    const out = { local: pick(r.local, LOCAL_KEYS), config: pick(r.config, CONFIG_KEYS) }
+    // sending error reports is a choice made on this device, never one a file makes
+    if (out.local['bv-prefs']) {
+        try {
+            const prefs = JSON.parse(out.local['bv-prefs']) as Record<string, unknown>
+            if (prefs && typeof prefs === 'object' && !Array.isArray(prefs)) {
+                prefs.errorReports = false
+                out.local['bv-prefs'] = JSON.stringify(prefs)
+            } else {
+                delete out.local['bv-prefs']
+            }
+        } catch {
+            delete out.local['bv-prefs']
+        }
+    }
+    return out
 }
 
 export async function encryptSettings(settings: Settings, password: string, iterations = ITERATIONS): Promise<BackupFile> {
@@ -105,7 +121,7 @@ export async function decryptSettings(text: string, password: string): Promise<S
 }
 
 /** how many things a backup holds, to show before restoring */
-export function summarize(s: Settings): { contacts: number, notes: number, settings: number } {
+export function summarize(s: Settings): { contacts: number, notes: number, settings: number, names: string } {
     const count = (raw: string | undefined) => {
         try {
             const v = JSON.parse(raw || '[]') as unknown
@@ -114,7 +130,17 @@ export function summarize(s: Settings): { contacts: number, notes: number, setti
             return 0
         }
     }
+    // the contacts by name, so a file that renames addresses is noticed before it is restored
+    let names = ''
+    try {
+        const list = JSON.parse(s.config.contacts || '[]') as { name?: unknown }[]
+        if (Array.isArray(list)) {
+            const all = list.map(c => (typeof c?.name === 'string' ? c.name.slice(0, 40) : '')).filter(Boolean)
+            names = all.slice(0, 8).join(', ') + (all.length > 8 ? `, +${all.length - 8}` : '')
+        }
+    } catch { }
     return {
+        names,
         contacts: count(s.config.contacts),
         notes: count(s.local['bv-tx-notes']) + count(s.config['nft-notes']),
         settings: Object.keys(s.local).length + Object.keys(s.config).length

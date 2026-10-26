@@ -1,4 +1,5 @@
 import { createServer } from 'node:http'
+import { createHash, timingSafeEqual } from 'node:crypto'
 import webpush from 'web-push'
 import { loadConfig } from './config.ts'
 import { clientIp, cors, createRouter, HttpError, json, readJson, securityHeaders } from './http.ts'
@@ -8,7 +9,7 @@ import { createHealth, statusPage } from './health.ts'
 import { createFlags } from './flags.ts'
 import { cleanReport } from './scrub.ts'
 import { openDb } from './db.ts'
-import { createStore, validateSubscribe, type Subscription } from './push/store.ts'
+import { createStore, MAX_WATCHED, validateSubscribe, type Subscription } from './push/store.ts'
 import { createWatcher, tokenRegistry } from './push/watcher.ts'
 
 /**
@@ -59,6 +60,12 @@ const insertReport = db.prepare('INSERT INTO reports (at, message, stack, route,
 const trimReports = db.prepare('DELETE FROM reports WHERE id <= (SELECT id FROM reports ORDER BY id DESC LIMIT 1 OFFSET 10000)')
 const latestReports = db.prepare('SELECT * FROM reports ORDER BY id DESC LIMIT ?')
 
+/** compares in constant time (hashes first, so the length doesn't show either) */
+function sameSecret(given: string, expected: string): boolean {
+    const h = (v: string) => createHash('sha256').update(v).digest()
+    return timingSafeEqual(h(given), h(expected))
+}
+
 const router = createRouter()
 
 router.get('/api/betterswap/*', ctx => proxy(ctx, 'betterswap'))
@@ -92,6 +99,8 @@ router.post('/push/subscribe', async ctx => {
         throw err instanceof HttpError ? err : new HttpError(400, (err as Error).message)
     }
     if (store.count() >= 200000) throw new HttpError(503, 'too many subscriptions')
+    // the watcher reads every watched address every 10 seconds: keep that bounded
+    if (store.watchedCount() + valid.addresses.length > MAX_WATCHED) throw new HttpError(503, 'push is full for now')
     store.subscribe(valid.sub, valid.addresses)
     json(ctx.res, 200, { ok: true, addresses: valid.addresses.length })
 })
@@ -112,8 +121,7 @@ router.post('/errors', async ctx => {
     json(ctx.res, 202, { ok: true })
 })
 router.get('/errors', ctx => {
-    const auth = String(ctx.req.headers.authorization || '')
-    if (!config.adminToken || auth !== `Bearer ${config.adminToken}`) throw new HttpError(401, 'not allowed')
+    if (!config.adminToken || !sameSecret(String(ctx.req.headers.authorization || ''), `Bearer ${config.adminToken}`)) throw new HttpError(401, 'not allowed')
     const n = Math.min(500, Math.max(1, parseInt(ctx.url.searchParams.get('limit') || '100', 10) || 100))
     json(ctx.res, 200, latestReports.all(n), { 'Cache-Control': 'no-store' })
 })

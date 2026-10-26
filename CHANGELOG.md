@@ -3,6 +3,17 @@
 What changed in BlackVault, newest first. The version is `next/package.json`; what users see after
 an update comes from `next/src/changelog.ts` (keep the two in step).
 
+## 2.1.1 — 2026-10-26
+
+Security review fixes:
+- Signing with @noble/curves instead of elliptic (GHSA-848j-6mx2-7j84); the key is wiped after use, and a
+  signer outside the wallet is refused.
+- Push: only browser push services as endpoints; at most 50,000 watched addresses.
+- Gateway: only the query parameters the wallet sends; the cache stays under 64 MB; .vet names pass again.
+- Settings back-up: no nodes, error reports never switched on by a file, contacts shown before restoring.
+- No localhost in the production CSP; the admin token is compared in constant time.
+- Deploy: Caddy is recreated, so it serves the new wallet and Caddyfile.
+
 ## 2.1.0 — 2026-10-25
 
 **Wallet**

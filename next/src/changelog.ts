@@ -12,6 +12,16 @@ export type Release = {
 }
 
 export const releases: Release[] = [{
+    version: '2.1.1',
+    date: '2026-10-26',
+    items: {
+        en: ['Signing uses a newer, audited cryptography library.', 'Safer restoring of a settings back-up: you see its contacts first, and it can no longer change your nodes.', '.vet names show again everywhere.'],
+        nl: ['Ondertekenen gebruikt een nieuwere, geaudite cryptografie-bibliotheek.', 'Veiliger terugzetten van een back-up: je ziet eerst de contacten, en hij kan je nodes niet meer wijzigen.', '.vet-namen worden weer overal getoond.'],
+        de: ['Signieren nutzt eine neuere, geprüfte Kryptografie-Bibliothek.', 'Sichereres Wiederherstellen eines Backups: Du siehst zuerst die Kontakte, und es kann deine Nodes nicht mehr ändern.', '.vet-Namen werden wieder überall angezeigt.'],
+        fr: ['La signature utilise une bibliothèque cryptographique plus récente et auditée.', 'Restauration plus sûre : vous voyez d’abord les contacts, et elle ne peut plus changer vos nœuds.', 'Les noms .vet s’affichent de nouveau partout.'],
+        zh: ['签名改用更新且经过审计的加密库。', '恢复设置备份更安全：先显示其中的联系人，且不再能更改你的节点。', '.vet 名称重新正常显示。']
+    }
+}, {
     version: '2.1.0',
     date: '2026-10-25',
     items: {

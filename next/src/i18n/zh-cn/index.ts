@@ -743,7 +743,8 @@ export default {
         msg_exported: '设置已保存到文件。',
         msg_wrong_password: '该密码无法打开此文件。',
         msg_not_a_backup: '这不是 BlackVault 设置文件。',
-        msg_confirm: '此文件包含 {contacts} 个联系人、{notes} 条备注和 {settings} 类设置。它们将替换此设备上的设置，随后 BlackVault 会重新启动。'
+        msg_confirm: '此文件包含 {contacts} 个联系人、{notes} 条备注和 {settings} 类设置。它们将替换此设备上的设置，随后 BlackVault 会重新启动。',
+        label_contacts: '联系人'
     },
     service: {
         action_update: '更新',

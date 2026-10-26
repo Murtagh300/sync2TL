@@ -15,7 +15,7 @@ import { formatAmount, messagesFor, type Arrival } from '../src/push/watcher.ts'
 const A = '0x' + 'a'.repeat(40)
 const B = '0x' + 'b'.repeat(40)
 const TOKEN = '0x5ef79995fe8a89e0812330e4378eb2660cede699'
-const sub = { subscription: { endpoint: 'https://push.example.com/abc123', keys: { p256dh: 'BOrAb0dEAbCdEfGh', auth: 'aBcDeFgHiJk' } }, addresses: [A], lang: 'nl' }
+const sub = { subscription: { endpoint: 'https://fcm.googleapis.com/fcm/send/abc123', keys: { p256dh: 'BOrAb0dEAbCdEfGh', auth: 'aBcDeFgHiJk' } }, addresses: [A], lang: 'nl' }
 
 test('the cache serves fresh, then stale while refreshing, and merges requests in flight', async () => {
     let t = 0
@@ -62,6 +62,7 @@ test('the gateway passes listed read-only paths only', () => {
     assert.equal(ruleFor('bvm', 'delegate/sign'), null)
     assert.equal(ruleFor('bvm', 'collection/../auth/session'), null)
     assert.equal(ruleFor('betterswap', 'admin'), null)
+    assert.ok(ruleFor('bvm', `wallet/${A}/vet-name`))
 })
 
 test('the gateway caches upstream answers and keeps the query', async () => {
@@ -74,21 +75,38 @@ test('the gateway caches upstream answers and keeps the query', async () => {
     await new Promise<void>(r => upstream.listen(0, r))
     const base = `http://127.0.0.1:${(upstream.address() as AddressInfo).port}`
     const proxy = createProxy({ betterswap: base, bvm: base })
-    const call = async (query: string) => {
+    const call = async (query: string, rest = 'token-prices/history') => {
         let body = ''
         const headers: Record<string, string> = {}
         const res = { statusCode: 0, setHeader: (k: string, v: string) => { headers[k] = v }, end: (b: string) => { body = b } }
-        const url = new URL(`http://x/api/betterswap/tokens${query}`)
-        await proxy({ req: {} as never, res: res as never, url, params: { rest: 'tokens' }, ip: '1' }, 'betterswap')
+        const url = new URL(`http://x/api/betterswap/${rest}${query}`)
+        await proxy({ req: {} as never, res: res as never, url, params: { rest }, ip: '1' }, 'betterswap')
         return { status: res.statusCode, body: JSON.parse(body), cache: headers['X-Cache'] }
     }
-    const first = await call('?b=2&a=1')
-    const second = await call('?a=1&b=2')
+    const first = await call('?hours=24&addresses=0x1')
+    const second = await call('?addresses=0x1&hours=24')
+    // a parameter the wallet never sends, or one twice, makes no new cache entry: it is refused
+    await assert.rejects(call('?addresses=0x1&hours=24&bust=1'), /query not allowed/)
+    await assert.rejects(call('?addresses=0x1&addresses=0x2'), /query not allowed/)
+    await assert.rejects(call('?x=1', 'tokens'), /query not allowed/)
     upstream.close()
     assert.equal(first.status, 200)
-    assert.equal(first.body.url, '/tokens?a=1&b=2')
+    assert.equal(first.body.url, '/token-prices/history?addresses=0x1&hours=24')
     assert.equal(second.cache, 'hit')
     assert.equal(hits, 1)
+})
+
+test('the cache keeps to its byte budget', () => {
+    const cache = new TtlCache<string>(100, Date.now, { maxBytes: 10, sizeOf: v => v.length })
+    cache.set('a', '1234', 1000)
+    cache.set('b', '5678', 1000)
+    cache.set('c', '90ab', 1000)
+    assert.equal(cache.peek('a'), undefined)
+    assert.ok(cache.totalBytes <= 10)
+    cache.set('huge', 'x'.repeat(11), 1000)
+    assert.equal(cache.peek('huge'), undefined)
+    cache.set('b', '1', 1000)
+    assert.equal(cache.totalBytes, 5)
 })
 
 test('remote config can only switch features and show a notice', () => {
@@ -127,6 +145,13 @@ test('the router matches parameters and wildcards', () => {
 test('subscriptions are checked, stored and replaced', () => {
     assert.throws(() => validateSubscribe({ ...sub, subscription: { ...sub.subscription, endpoint: 'http://insecure' } }))
     assert.throws(() => validateSubscribe({ ...sub, addresses: ['nope'] }))
+    // only browser push services: no posting to any other address
+    for (const endpoint of ['https://evil.example/x', 'https://169.254.169.254/latest', 'https://fcm.googleapis.com:8443/x', 'https://user:pw@fcm.googleapis.com/x', 'https://fcm.googleapis.com.evil.example/x']) {
+        assert.throws(() => validateSubscribe({ ...sub, subscription: { ...sub.subscription, endpoint } }), /push service/)
+    }
+    for (const endpoint of ['https://updates.push.services.mozilla.com/wpush/v2/x', 'https://web.push.apple.com/abc', 'https://wns2-par02p.notify.windows.com/w/?token=x']) {
+        assert.doesNotThrow(() => validateSubscribe({ ...sub, subscription: { ...sub.subscription, endpoint } }))
+    }
     assert.throws(() => validateSubscribe({ ...sub, addresses: Array.from({ length: 21 }, (_, i) => '0x' + String(i).padStart(40, '0')) }))
     const db = openDb(':memory:')
     const store = createStore(db)

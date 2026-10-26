@@ -8,7 +8,29 @@ import type { DatabaseSync } from 'node:sqlite'
 export type Subscription = { endpoint: string, keys: { p256dh: string, auth: string }, lang: string }
 
 export const MAX_ADDRESSES = 20
+/** all subscriptions together: the watcher reads these every 10 seconds */
+export const MAX_WATCHED = 50000
 export const LANGS = ['en', 'nl', 'de', 'fr', 'zh']
+
+/**
+ * The push services browsers use. The server only ever posts to these: a subscription can't make
+ * it call some other address (inside the host's network, or anyone's server).
+ */
+const PUSH_HOSTS = [
+    /^fcm\.googleapis\.com$/, // Chrome, Edge on Android, Opera, Samsung
+    /^updates\.push\.services\.mozilla\.com$/, // Firefox
+    /^web\.push\.apple\.com$/, // Safari
+    /^[a-z0-9-]+\.notify\.windows\.com$/ // Edge on Windows
+]
+
+export function isPushService(endpoint: string): boolean {
+    try {
+        const u = new URL(endpoint)
+        return u.protocol === 'https:' && !u.port && !u.username && !u.password && PUSH_HOSTS.some(h => h.test(u.hostname))
+    } catch {
+        return false
+    }
+}
 
 /** a subscription from a client, checked; throws with a reason when it isn't valid */
 export function validateSubscribe(raw: unknown): { sub: Subscription, addresses: string[] } {
@@ -17,6 +39,7 @@ export function validateSubscribe(raw: unknown): { sub: Subscription, addresses:
     const keys = (s.keys && typeof s.keys === 'object' ? s.keys : {}) as Record<string, unknown>
     const endpoint = typeof s.endpoint === 'string' ? s.endpoint : ''
     if (!/^https:\/\/[^\s]{8,1000}$/.test(endpoint)) throw new Error('subscription endpoint must be https')
+    if (!isPushService(endpoint)) throw new Error('not a browser push service')
     const b64 = /^[A-Za-z0-9_-]{8,200}={0,2}$/
     if (typeof keys.p256dh !== 'string' || !b64.test(keys.p256dh) || typeof keys.auth !== 'string' || !b64.test(keys.auth)) {
         throw new Error('subscription keys missing')
@@ -40,6 +63,7 @@ export function createStore(db: DatabaseSync) {
         JOIN subscriptions s ON s.endpoint = w.endpoint WHERE w.address = ?`)
     const allAddresses = db.prepare('SELECT DISTINCT address FROM watched')
     const count = db.prepare('SELECT COUNT(*) AS n FROM subscriptions')
+    const watchedCount = db.prepare('SELECT COUNT(DISTINCT address) AS n FROM watched')
     const getState = db.prepare('SELECT value FROM state WHERE key = ?')
     const setState = db.prepare('INSERT INTO state (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
 
@@ -70,6 +94,10 @@ export function createStore(db: DatabaseSync) {
         },
         count(): number {
             return (count.get() as { n: number }).n
+        },
+        /** distinct addresses watched by all subscriptions together */
+        watchedCount(): number {
+            return (watchedCount.get() as { n: number }).n
         },
         lastBlock(): number | null {
             const r = getState.get('push:lastBlock') as { value: string } | undefined

@@ -4,17 +4,35 @@
  * Past its lifetime an entry may still be served (stale) while a fresh one is fetched.
  */
 
-type Entry<T> = { value: T, freshUntil: number, staleUntil: number }
+type Entry<T> = { value: T, freshUntil: number, staleUntil: number, bytes: number }
 
 export class TtlCache<T> {
     private entries = new Map<string, Entry<T>>()
     private inflight = new Map<string, Promise<T>>()
     private max: number
     private now: () => number
+    private maxBytes: number
+    private sizeOf: (v: T) => number
+    private bytes = 0
 
-    constructor(max = 500, now: () => number = Date.now) {
+    /** `max` entries, and optionally `maxBytes` in all as measured by `sizeOf` */
+    constructor(max = 500, now: () => number = Date.now, limits: { maxBytes?: number, sizeOf?: (v: T) => number } = {}) {
         this.max = max
         this.now = now
+        this.maxBytes = limits.maxBytes ?? Infinity
+        this.sizeOf = limits.sizeOf ?? (() => 0)
+    }
+
+    get totalBytes() {
+        return this.bytes
+    }
+
+    private drop(key: string) {
+        const e = this.entries.get(key)
+        if (e) {
+            this.bytes -= e.bytes
+            this.entries.delete(key)
+        }
     }
 
     get size() {
@@ -27,13 +45,18 @@ export class TtlCache<T> {
 
     set(key: string, value: T, ttlMs: number, staleMs = 0) {
         // least recently set goes first
-        this.entries.delete(key)
-        if (this.entries.size >= this.max) {
+        this.drop(key)
+        const bytes = this.sizeOf(value)
+        // one answer bigger than the whole budget is not kept at all
+        if (bytes > this.maxBytes) return
+        while (this.entries.size >= this.max || (this.entries.size && this.bytes + bytes > this.maxBytes)) {
             const oldest = this.entries.keys().next().value
-            if (oldest !== undefined) this.entries.delete(oldest)
+            if (oldest === undefined) break
+            this.drop(oldest)
         }
         const t = this.now()
-        this.entries.set(key, { value, freshUntil: t + ttlMs, staleUntil: t + ttlMs + staleMs })
+        this.entries.set(key, { value, freshUntil: t + ttlMs, staleUntil: t + ttlMs + staleMs, bytes })
+        this.bytes += bytes
     }
 
     /**

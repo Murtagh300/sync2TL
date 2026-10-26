@@ -1,10 +1,18 @@
 import { defineComponent } from 'vue'
 import { SignerGroup } from './models'
-import { Transaction, secp256k1, Certificate, blake2b256 } from 'thor-devkit'
+import { Transaction, Certificate, blake2b256 } from 'thor-devkit'
+import { signHash } from 'src/core/sign'
 import { Vault } from 'src/core/vault'
 import { canSign } from 'src/utils/watch'
 
 // base of TxDialog and CertDialog (`extends: Common`)
+/** the signer's place in the wallet; a signer the wallet doesn't hold is refused, never derived */
+function signerIndex(wallet: M.Wallet, signer: string): number {
+    const i = wallet.meta.addresses.findIndex(a => a.toLowerCase() === signer.toLowerCase())
+    if (i < 0) throw new Error('the signer is not an address of this wallet')
+    return i
+}
+
 export default defineComponent({
     props: {
         gid: { type: String, required: true },
@@ -66,10 +74,12 @@ export default defineComponent({
                 const umk = await this.$authenticate()
 
                 const tx = await buildTx()
-                const vault = Vault.decode(wallet.vault)
-                const node = vault.derive(wallet.meta.addresses.indexOf(signer))
-                const sk = node.unlock(umk)
-                return secp256k1.sign(tx.signingHash(), sk)
+                const sk = Vault.decode(wallet.vault).derive(signerIndex(wallet, signer)).unlock(umk)
+                try {
+                    return signHash(tx.signingHash(), sk)
+                } finally {
+                    sk.fill(0)
+                }
             } else {
                 throw new Error(`unsupported wallet type '${wallet.meta.type}'`)
             }
@@ -79,10 +89,12 @@ export default defineComponent({
                 // acquire user master key
                 const umk = await this.$authenticate()
 
-                const vault = Vault.decode(wallet.vault)
-                const node = vault.derive(wallet.meta.addresses.indexOf(cert.signer))
-                const sk = node.unlock(umk)
-                return secp256k1.sign(blake2b256(Certificate.encode(cert)), sk)
+                const sk = Vault.decode(wallet.vault).derive(signerIndex(wallet, cert.signer)).unlock(umk)
+                try {
+                    return signHash(blake2b256(Certificate.encode(cert)), sk)
+                } finally {
+                    sk.fill(0)
+                }
             } else {
                 throw new Error(`unsupported wallet type '${wallet.meta.type}'`)
             }

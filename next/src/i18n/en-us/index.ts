@@ -744,7 +744,8 @@ export default {
         msg_exported: 'Settings saved to a file.',
         msg_wrong_password: 'That password does not open this file.',
         msg_not_a_backup: 'This is not a BlackVault settings file.',
-        msg_confirm: 'This file has {contacts} contacts, {notes} notes and {settings} kinds of settings. They replace the ones on this device, then BlackVault starts again.'
+        msg_confirm: 'This file has {contacts} contacts, {notes} notes and {settings} kinds of settings. They replace the ones on this device, then BlackVault starts again.',
+        label_contacts: 'Contacts'
     },
     service: {
         action_update: 'Update',
