@@ -14,6 +14,8 @@ services:
       - "443:443/udp"
     environment:
       WALLET_DOMAIN: ${WALLET_DOMAIN}
+      # all domains the wallet is served on; the main one when not set
+      WALLET_SITES: ${WALLET_SITES:-${WALLET_DOMAIN}}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./wallet:/srv/wallet:ro
@@ -30,7 +32,8 @@ services:
     environment:
       # Caddy is the only client; it passes the visitor's address on
       TRUST_PROXY: "1"
-      ALLOWED_ORIGINS: https://${WALLET_DOMAIN}
+      # the origins that may call the server: every wallet domain (WALLET_ORIGINS, comma-separated)
+      ALLOWED_ORIGINS: ${WALLET_ORIGINS:-https://${WALLET_DOMAIN}}
     volumes:
       - server_data:/data
       - ./flags.json:/config/flags.json:ro

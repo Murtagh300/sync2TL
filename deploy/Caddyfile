@@ -6,7 +6,9 @@ www.{$WALLET_DOMAIN} {
 	redir https://{$WALLET_DOMAIN}{uri} permanent
 }
 
-{$WALLET_DOMAIN} {
+# every domain the wallet is served on (WALLET_SITES, comma-separated; the main one by default).
+# Each is its own origin: wallets saved on one don't show on another.
+{$WALLET_SITES} {
 	encode zstd gzip
 
 	header {

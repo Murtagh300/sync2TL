@@ -26,6 +26,9 @@ Fill in `/opt/blackvault/deploy/.env`:
 - `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY`: make them once with `cd server && npm run vapid`. Keep the private
   key secret and never change it: every push subscription is tied to it.
 - `ADMIN_TOKEN`: a long random string (`openssl rand -hex 32`), to read error reports.
+- Optional, more than one domain: `WALLET_SITES=bvwallet.xyz, wallet.blackvemarket.com` and
+  `WALLET_ORIGINS=https://bvwallet.xyz,https://wallet.blackvemarket.com`. Every domain needs an A record to the
+  host. Each domain is its own origin for the browser: wallets saved on one are not on the other.
 
 `deploy/flags.json` is the remote config; edit it on the host (see below).
 
