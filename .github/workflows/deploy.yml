@@ -2,12 +2,15 @@
 # Builds the wallet for the same origin as the server, copies it and the deploy files to the host
 # over SSH, and restarts with Docker Compose. See docs/DEPLOY.md.
 #
-# Secrets (Settings › Secrets and variables › Actions, environment "production"):
-#   DEPLOY_HOST      the server's host name
+# Secrets (Settings › Environments › production):
+#   DEPLOY_HOST      the server to SSH into (its IP address or host name)
 #   DEPLOY_USER      the SSH user (in the docker group)
 #   DEPLOY_SSH_KEY   its private key (only for this)
-#   DEPLOY_KNOWN_HOSTS  the line from `ssh-keyscan <host>`, so the host is checked
+#   DEPLOY_KNOWN_HOSTS  the lines from `ssh-keyscan <host>`, so the host is checked
 #   DEPLOY_PATH      the folder on the host, for example /opt/blackvault
+# Variables (same place, "Environment variables"):
+#   WALLET_DOMAIN    where the wallet is served, for the check afterwards (for example bvwallet.xyz)
+#   WALLETCONNECT_PROJECT_ID  optional: the Reown project for WalletConnect
 name: Deploy
 
 on:
@@ -48,6 +51,7 @@ jobs:
         env:
           NODE_OPTIONS: --openssl-legacy-provider
           SERVER_URL: /
+          WALLETCONNECT_PROJECT_ID: ${{ vars.WALLETCONNECT_PROJECT_ID }}
 
       - name: SSH
         # secrets through the environment, never pasted into the script
@@ -81,9 +85,10 @@ jobs:
 
       - name: Health
         env:
-          HOST: ${{ secrets.DEPLOY_HOST }}
+          HOST: ${{ vars.WALLET_DOMAIN || secrets.DEPLOY_HOST }}
         run: |
-          for i in 1 2 3 4 5 6; do
+          # the first deploy builds the image and gets the certificate: give it three minutes
+          for i in $(seq 1 18); do
             if curl -fsS "https://$HOST/config" > /dev/null; then echo up; exit 0; fi
             sleep 10
           done

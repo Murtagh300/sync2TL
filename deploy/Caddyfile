@@ -1,6 +1,11 @@
 # BlackVault behind Caddy: HTTPS (automatic certificates), the security headers a page can't set
 # itself, the wallet as static files, and the server on the same origin (no CORS needed).
 
+# www. goes to the domain itself, so the wallet has one origin (its storage and keys live per origin)
+www.{$WALLET_DOMAIN} {
+	redir https://{$WALLET_DOMAIN}{uri} permanent
+}
+
 {$WALLET_DOMAIN} {
 	encode zstd gzip
 
