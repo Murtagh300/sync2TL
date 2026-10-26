@@ -1,0 +1,16 @@
+{
+  "version": 1,
+  "features": {
+    "walletconnect": true,
+    "swap": true,
+    "payout": true,
+    "dust": true,
+    "consolidate": true,
+    "stargate": true,
+    "vebetter": true,
+    "launchpad": true,
+    "push": true
+  },
+  "notice": null,
+  "minVersion": "0.0.0"
+}

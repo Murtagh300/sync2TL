@@ -729,6 +729,34 @@ export default {
         label_known: 'Die Adresse, die du kennst (Unterschiede in Rot)',
         action_continue_anyway: 'Trotzdem senden'
     },
+    whatsNew: {
+        title: 'Was ist neu'
+    },
+    settingsBackup: {
+        label: 'Backup der Einstellungen',
+        action_export: 'Einstellungen sichern',
+        action_import: 'Einstellungen wiederherstellen',
+        action_restore: 'Wiederherstellen',
+        msg_hint: 'Kontakte, Notizen, Alarme, die Beobachtungsliste, geplante Zahlungen und Vorlieben, in einer passwortgeschützten Datei. Nie deine Schlüssel: die kommen mit deinen Wiederherstellungswörtern zurück.',
+        msg_password: 'Ein Passwort für diese Datei (mindestens 8 Zeichen).',
+        msg_password_again: 'Noch einmal dasselbe Passwort.',
+        msg_mismatch: 'Die Passwörter stimmen nicht überein.',
+        msg_exported: 'Einstellungen in einer Datei gespeichert.',
+        msg_wrong_password: 'Mit diesem Passwort lässt sich die Datei nicht öffnen.',
+        msg_not_a_backup: 'Das ist keine Einstellungsdatei von BlackVault.',
+        msg_confirm: 'Diese Datei enthält {contacts} Kontakte, {notes} Notizen und {settings} Arten von Einstellungen. Sie ersetzen die auf diesem Gerät, danach startet BlackVault neu.'
+    },
+    service: {
+        action_update: 'Aktualisieren',
+        msg_update: 'Diese Version ist veraltet. Aktualisiere, um BlackVault weiter sicher zu nutzen.',
+        msg_degraded: 'Einige Dienste sind langsam oder nicht erreichbar: {services}. Dein Guthaben ist sicher; manche Zahlen können fehlen.',
+        msg_paused: 'Dieser Teil von BlackVault ist kurz pausiert. Versuche es später erneut.',
+        label_push_incoming: 'Eingehende Überweisungen',
+        msg_push_incoming: 'Eine Mitteilung, wenn VET, VTHO oder ein Token auf deinen Adressen ({n}) eingeht, auch wenn BlackVault geschlossen ist. Keine Anmeldung nötig.',
+        msg_push_other: 'Dieses Gerät kann nur eine Art von Push-Mitteilungen gleichzeitig empfangen. Schalte zuerst die andere aus.',
+        label_error_reports: 'Fehlerberichte senden',
+        msg_error_reports: 'Anonym: keine Adressen, Beträge oder Schlüssel. Hilft, Probleme schneller zu beheben.'
+    },
     offline: {
         title: 'Offline',
         msg: 'Offline · die zuletzt bekannten Guthaben werden angezeigt',

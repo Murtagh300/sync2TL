@@ -14,7 +14,7 @@
                 :to="{ name: 'portfolio' }"
             />
         </div>
-        <q-list class="bvm-list">
+        <q-list role="group" class="bvm-list">
             <q-item
                 v-for="h in topTokens"
                 :key="h.spec.symbol"
@@ -65,6 +65,7 @@
             />
         </div>
         <q-list
+            role="group"
             v-if="feed.length"
             class="bvm-list"
         >

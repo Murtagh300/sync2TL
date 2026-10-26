@@ -30,10 +30,10 @@ export default defineComponent({
         pulses: [] as (BalancePulse & { key: number })[]
     }),
     created() {
-        window.addEventListener('bv:balance', this.onPulse as EventListener)
+        window.addEventListener('bv:balance', this.onPulse as (e: Event) => void)
     },
     beforeUnmount() {
-        window.removeEventListener('bv:balance', this.onPulse as EventListener)
+        window.removeEventListener('bv:balance', this.onPulse as (e: Event) => void)
     },
     methods: {
         onPulse(ev: CustomEvent<BalancePulse>) {

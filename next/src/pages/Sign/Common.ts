@@ -49,8 +49,9 @@ export default defineComponent({
     watch: {
         // select the first address if not selected
         signerGroups(groups: SignerGroup[]) {
-            if (groups.length > 0 && !groups.find(g => g.addresses.includes(this.signer))) {
-                this.signer = groups[0].addresses[0]
+            const first = groups[0]?.addresses[0]
+            if (first && !groups.find(g => g.addresses.includes(this.signer))) {
+                this.signer = first
             }
         }
     },

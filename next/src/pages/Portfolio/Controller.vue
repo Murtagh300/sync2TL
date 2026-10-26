@@ -90,7 +90,7 @@
                 :to="{ name: 'liquidity' }"
             />
             <div class="bvm-label q-mb-sm">{{$t('portfolio.label_holdings')}}</div>
-            <q-list class="bvm-list">
+            <q-list role="group" class="bvm-list">
                 <q-item
                     v-for="h in priced"
                     :key="h.spec.symbol"

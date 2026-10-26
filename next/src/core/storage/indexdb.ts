@@ -17,7 +17,7 @@ function wrapTable<T extends Storage.Entity>(table: Table<T, number>): Storage.T
         },
         update: async (cond, values) => {
             if (Object.keys(cond).length > 0) {
-                await table.where(cond as {}).modify(values as UpdateSpec<T>)
+                await table.where(cond as Record<string, unknown>).modify(values as UpdateSpec<T>)
             } else {
                 await table.toCollection().modify(values as UpdateSpec<T>)
             }
@@ -25,7 +25,7 @@ function wrapTable<T extends Storage.Entity>(table: Table<T, number>): Storage.T
         },
         delete: async cond => {
             if (Object.keys(cond).length > 0) {
-                await table.where(cond as {}).delete()
+                await table.where(cond as Record<string, unknown>).delete()
             } else {
                 await table.toCollection().delete()
             }
@@ -65,13 +65,13 @@ function wrapTable<T extends Storage.Entity>(table: Table<T, number>): Storage.T
                 query() {
                     let c: Collection<T, number> | undefined
                     if (opt.equal) {
-                        c = table.where(opt.equal as {})
+                        c = table.where(opt.equal as Record<string, unknown>)
                     }
                     if (opt.notEqual) {
                         const cond = opt.notEqual
                         const keys = Object.keys(cond)
-                        if (!c && keys.length === 1) {
-                            const key = keys[0]
+                        const key = keys[0]
+                        if (!c && keys.length === 1 && key !== undefined) {
                             // eslint-disable-next-line @typescript-eslint/no-explicit-any
                             c = table.where(key).notEqual((cond as any)[key])
                         } else {

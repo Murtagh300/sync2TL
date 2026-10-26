@@ -40,7 +40,7 @@ export function createPool(resolveNode: (gid: string) => M.Node) {
                 void (async () => {
                     const ticker = framework.thor.ticker()
 
-                    // eslint-disable-next-line no-unmodified-loop-condition
+                     
                     while (!closed) {
                         let timer
                         const head = await Promise.race([

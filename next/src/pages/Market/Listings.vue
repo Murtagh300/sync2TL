@@ -29,7 +29,7 @@
                         @update:model-value="selectAll"
                     />
                 </div>
-                <q-list class="bvm-list">
+                <q-list role="group" class="bvm-list">
                     <q-item
                         v-for="r in rows"
                         :key="r.owner + r.nft.contract + r.nft.tokenId"

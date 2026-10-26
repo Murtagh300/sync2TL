@@ -34,6 +34,7 @@
                 :text="$t('dust.msg_none')"
             />
             <q-list
+                role="group"
                 v-else
                 class="bvm-list"
             >

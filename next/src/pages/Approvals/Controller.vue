@@ -49,6 +49,7 @@
                 <div class="text-weight-bold q-mt-sm">{{$t('approvals.msg_none')}}</div>
             </div>
             <q-list
+                role="group"
                 v-else
                 class="bvm-list"
             >

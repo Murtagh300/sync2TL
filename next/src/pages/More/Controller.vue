@@ -7,10 +7,21 @@
             class="col"
             padding
         >
+            <div
+                v-if="$route.query.paused"
+                class="paused-note q-mb-md"
+                role="status"
+            >
+                <q-icon
+                    name="o_pause_circle"
+                    size="18px"
+                    class="q-mr-sm"
+                />{{$t('service.msg_paused')}}
+            </div>
             <div class="bvm-label q-mb-sm q-ml-xs">{{$t('dappsGrid.title')}}</div>
             <dapps-grid class="q-mb-lg" />
             <div class="bvm-label q-mb-sm q-ml-xs">BlackVeMarket</div>
-            <q-list class="bvm-list q-mb-lg">
+            <q-list role="group" class="bvm-list q-mb-lg">
                 <more-item
                     icon="o_visibility"
                     :title="$t('watchlist.title')"
@@ -28,7 +39,7 @@
                 />
             </q-list>
             <div class="bvm-label q-mb-sm q-ml-xs">{{$t('more.label_wallet')}}</div>
-            <q-list class="bvm-list q-mb-lg">
+            <q-list role="group" class="bvm-list q-mb-lg">
                 <more-item
                     icon="o_shield"
                     :title="$t('security.title')"
@@ -121,6 +132,11 @@
                     :to="{ name: 'search' }"
                 />
                 <more-item
+                    icon="o_new_releases"
+                    :title="$t('whatsNew.title')"
+                    @click="whatsNew()"
+                />
+                <more-item
                     icon="o_school"
                     :title="$t('tour.action_again')"
                     @click="replayTour()"
@@ -143,16 +159,27 @@ import DappsGrid from 'components/DappsGrid.vue'
 import { marketURL } from 'boot/services/bvm'
 import { openURL } from 'src/utils/open-url'
 import { selectedWallet } from 'src/utils/selection'
+import { featureOn, routeFeature } from 'src/utils/remote-config'
+import WhatsNewDialog from 'components/WhatsNewDialog.vue'
+import { releases } from 'src/changelog'
 
 // a row of the menu
 const MoreItem = defineComponent({
     props: { icon: String, title: String },
     setup(props, { attrs }) {
-        return () => h(QItem, { clickable: true, ...attrs }, () => [
+        // a feature the server paused isn't offered
+        const feature = () => routeFeature[String((attrs.to as { name?: string } | undefined)?.name || '')]
+        return () => {
+            const f = feature()
+            return f && !featureOn(f) ? null : item()
+        }
+        function item() {
+            return h(QItem, { clickable: true, ...attrs }, () => [
             h(QItemSection, { avatar: true }, () => h(QAvatar, { icon: props.icon })),
             h(QItemSection, () => props.title),
             h(QItemSection, { side: true }, () => h(QIcon, { name: 'chevron_right', class: 'text-muted' }))
-        ])
+            ])
+        }
     }
 })
 
@@ -178,6 +205,10 @@ export default defineComponent({
     },
     methods: {
         openURL,
+        whatsNew() {
+            const release = releases[0]
+            if (release) this.$dialog({ component: WhatsNewDialog, release }).catch(() => { })
+        },
         replayTour() {
             try {
                 localStorage.removeItem('bv-tour-done')
@@ -190,4 +221,14 @@ export default defineComponent({
 <style lang="sass" scoped>
 .version
   font-size: 12px
+
+.paused-note
+  display: flex
+  align-items: center
+  padding: 10px 12px
+  border-radius: 12px
+  background: rgba(252, 211, 77, 0.10)
+  color: $warning
+  font-size: 13px
+  font-weight: 700
 </style>

@@ -15,6 +15,7 @@
                 @action="$router.push({ name: 'index' })"
             />
             <q-list
+                role="group"
                 v-else
                 class="bvm-list"
             >

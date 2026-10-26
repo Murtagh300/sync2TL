@@ -34,17 +34,17 @@ export async function findApprovals(thor: Connex.Thor, owner: string): Promise<A
         for (const log of logs) {
             const contract = log.address.toLowerCase()
             if (log.topics[0] === APPROVAL_FOR_ALL && log.topics.length === 3) {
-                const key = `nft:${contract}:${addressOf(log.topics[2])}`
+                const key = `nft:${contract}:${addressOf(log.topics[2]!)}`
                 if (!seen.has(key)) {
                     seen.add(key)
-                    candidates.push({ kind: 'nft', contract, spender: addressOf(log.topics[2]) })
+                    candidates.push({ kind: 'nft', contract, spender: addressOf(log.topics[2]!) })
                 }
             } else if (log.topics[0] === APPROVAL && log.topics.length === 3) {
                 // three topics: ERC-20; ERC-721 approvals of a single token have four and end with a transfer
-                const key = `token:${contract}:${addressOf(log.topics[2])}`
+                const key = `token:${contract}:${addressOf(log.topics[2]!)}`
                 if (!seen.has(key)) {
                     seen.add(key)
-                    candidates.push({ kind: 'token', contract, spender: addressOf(log.topics[2]), allowance: 0n })
+                    candidates.push({ kind: 'token', contract, spender: addressOf(log.topics[2]!), allowance: 0n })
                 }
             }
         }

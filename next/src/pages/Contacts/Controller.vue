@@ -121,6 +121,7 @@
                 >{{g}}</q-chip>
             </div>
             <q-list
+                role="group"
                 v-if="contacts.length"
                 class="bvm-list"
             >

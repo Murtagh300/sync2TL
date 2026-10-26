@@ -49,7 +49,7 @@
                         </div>
                     </div>
                 </div>
-                <q-list class="bvm-list">
+                <q-list role="group" class="bvm-list">
                     <q-item
                         v-for="r in rows"
                         :key="r.token"

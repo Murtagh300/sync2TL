@@ -33,6 +33,7 @@
                     />
                 </div>
                 <q-list
+                    role="group"
                     v-else
                     class="bvm-list"
                 >

@@ -140,7 +140,7 @@
                         class="text-negative text-caption"
                     >{{$t('swap.msg_insufficient', { symbol })}}</div>
                 </div>
-                <q-list class="bvm-list q-mt-sm">
+                <q-list role="group" class="bvm-list q-mt-sm">
                     <q-item
                         v-for="r in review.slice(0, shownRows)"
                         :key="r.line"

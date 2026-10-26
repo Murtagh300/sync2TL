@@ -1,4 +1,5 @@
-import axios from 'axios'
+import { createClient } from './net'
+import { bvmDirectUrl, serverUrl } from './endpoints'
 
 /**
  * Push notifications through BlackVeMarket: offers on your NFTs, sales and price alerts,
@@ -7,9 +8,8 @@ import axios from 'axios'
  * subscribes this device. Works in the installed app (PWA), where the service worker runs.
  */
 
-const baseURL = import.meta.env.BVM_API_URL || (import.meta.env.QUASAR_DEV ? '/bvm-api' : 'https://blackvemarket.com/api')
-// the session is a cookie: it has to travel with these requests
-const http = axios.create({ baseURL, timeout: 20 * 1000, withCredentials: true })
+// the session is a cookie: it has to travel with these requests, to BlackVeMarket itself
+const http = createClient({ baseURL: bvmDirectUrl, withCredentials: true })
 
 export function pushSupported() {
     return typeof window !== 'undefined' && 'serviceWorker' in navigator && 'PushManager' in window && typeof Notification !== 'undefined'
@@ -67,8 +67,7 @@ async function deviceSubscription(): Promise<PushSubscription> {
         return existing
     }
     const { data } = await http.get<{ publicKey: string }>('/push/public-key')
-    const raw = atob(`${data.publicKey}${'='.repeat((4 - data.publicKey.length % 4) % 4)}`.replace(/-/g, '+').replace(/_/g, '/'))
-    return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: Uint8Array.from(raw, c => c.charCodeAt(0)) })
+    return reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: fromBase64url(data.publicKey) })
 }
 
 /** turn push on for the signed-in wallet on this device */
@@ -98,5 +97,82 @@ export async function pushEnabled(): Promise<boolean> {
         return !!(reg && await reg.pushManager.getSubscription())
     } catch {
         return false
+    }
+}
+
+function fromBase64url(text: string): Uint8Array<ArrayBuffer> {
+    const raw = atob(`${text}${'='.repeat((4 - text.length % 4) % 4)}`.replace(/-/g, '+').replace(/_/g, '/'))
+    return Uint8Array.from(raw, c => c.charCodeAt(0))
+}
+
+function sameKey(a: ArrayBuffer | null, b: Uint8Array) {
+    if (!a || a.byteLength !== b.byteLength) return false
+    const x = new Uint8Array(a)
+    return x.every((v, i) => v === b[i])
+}
+
+/*
+ * Incoming transfers through the BlackVault server (server/src/push): the device tells it which
+ * addresses to watch, nothing else. No sign-in, no keys; the server reads the chain itself.
+ * A device has one push subscription, tied to one sender's key: this and BlackVeMarket's push
+ * can't both be on at the same time on one device.
+ */
+const own = serverUrl === null ? null : createClient({ baseURL: serverUrl })
+
+/** does this build have a BlackVault server with push? */
+export async function ownPushAvailable(): Promise<boolean> {
+    if (!own || !pushSupported()) return false
+    try {
+        await own.get('/push/key')
+        return true
+    } catch {
+        return false
+    }
+}
+
+export type OwnPushState = 'off' | 'on' | 'other'
+
+/** off, on (subscribed with the server's key) or other (this device has BlackVeMarket's push) */
+export async function ownPushState(): Promise<OwnPushState> {
+    if (!own || !pushSupported()) return 'off'
+    try {
+        const reg = await navigator.serviceWorker.getRegistration()
+        const sub = reg && await reg.pushManager.getSubscription()
+        if (!sub) return 'off'
+        const { data } = await own.get<{ publicKey: string }>('/push/key')
+        return sameKey(sub.options.applicationServerKey, fromBase64url(data.publicKey)) ? 'on' : 'other'
+    } catch {
+        return 'off'
+    }
+}
+
+/** watch these addresses for incoming transfers on this device (again: replaces the list) */
+export async function enableOwnPush(addresses: string[], lang: string) {
+    if (!own) throw new Error('unavailable')
+    if ((await Notification.requestPermission()) !== 'granted') {
+        throw new Error('blocked')
+    }
+    const reg = await navigator.serviceWorker.ready
+    const { data } = await own.get<{ publicKey: string }>('/push/key')
+    const key = fromBase64url(data.publicKey)
+    let sub = await reg.pushManager.getSubscription()
+    if (sub && !sameKey(sub.options.applicationServerKey, key)) {
+        throw new Error('other')
+    }
+    sub = sub || await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: key })
+    const json = sub.toJSON()
+    await own.post('/push/subscribe', {
+        subscription: { endpoint: json.endpoint, keys: json.keys },
+        addresses: addresses.map(a => a.toLowerCase()).slice(0, 20),
+        lang: lang.slice(0, 2)
+    })
+}
+
+export async function disableOwnPush() {
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    if (sub) {
+        await own?.post('/push/unsubscribe', { endpoint: sub.endpoint }).catch(() => { })
+        await sub.unsubscribe()
     }
 }

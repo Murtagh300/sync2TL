@@ -729,6 +729,34 @@ export default {
         label_known: 'Het adres dat je kent (verschillen in rood)',
         action_continue_anyway: 'Toch verzenden'
     },
+    whatsNew: {
+        title: 'Wat is er nieuw'
+    },
+    settingsBackup: {
+        label: 'Back-up van instellingen',
+        action_export: 'Instellingen back-uppen',
+        action_import: 'Instellingen terugzetten',
+        action_restore: 'Terugzetten',
+        msg_hint: 'Contacten, notities, alerts, de volglijst, geplande betalingen en voorkeuren, in een bestand met een wachtwoord. Nooit je sleutels: die komen terug met je herstelwoorden.',
+        msg_password: 'Een wachtwoord voor dit bestand (minstens 8 tekens).',
+        msg_password_again: 'Nog een keer hetzelfde wachtwoord.',
+        msg_mismatch: 'De wachtwoorden zijn niet gelijk.',
+        msg_exported: 'Instellingen opgeslagen in een bestand.',
+        msg_wrong_password: 'Met dat wachtwoord gaat dit bestand niet open.',
+        msg_not_a_backup: 'Dit is geen instellingenbestand van BlackVault.',
+        msg_confirm: 'Dit bestand heeft {contacts} contacten, {notes} notities en {settings} soorten instellingen. Ze vervangen die op dit apparaat, daarna start BlackVault opnieuw.'
+    },
+    service: {
+        action_update: 'Bijwerken',
+        msg_update: 'Deze versie is verouderd. Werk bij om BlackVault veilig te blijven gebruiken.',
+        msg_degraded: 'Sommige diensten zijn traag of onbereikbaar: {services}. Je tegoed is veilig; sommige cijfers kunnen ontbreken.',
+        msg_paused: 'Dit onderdeel van BlackVault staat even uit. Probeer het later opnieuw.',
+        label_push_incoming: 'Inkomende overboekingen',
+        msg_push_incoming: 'Een melding als er VET, VTHO of een token binnenkomt op je adressen ({n}), ook als BlackVault dicht is. Inloggen is niet nodig.',
+        msg_push_other: 'Dit apparaat kan één soort pushmeldingen tegelijk ontvangen. Zet de andere eerst uit.',
+        label_error_reports: 'Foutrapporten versturen',
+        msg_error_reports: 'Anoniem: geen adressen, bedragen of sleutels. Helpt problemen sneller op te lossen.'
+    },
     offline: {
         title: 'Offline',
         msg: 'Offline · de laatst bekende saldi worden getoond',

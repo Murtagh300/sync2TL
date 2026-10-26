@@ -34,7 +34,7 @@
                     class="q-mb-lg"
                 >
                     <div class="bvm-label q-mb-sm">{{$t('calendar.title')}}</div>
-                    <q-list class="bvm-list">
+                    <q-list role="group" class="bvm-list">
                         <q-item
                             v-for="e in calendar"
                             :key="e.id"

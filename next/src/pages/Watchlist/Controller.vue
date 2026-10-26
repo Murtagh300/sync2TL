@@ -123,6 +123,7 @@
                     :text="list.collections.length || list.wallets.length ? $t('watchlist.msg_quiet') : $t('watchlist.msg_empty')"
                 />
                 <q-list
+                    role="group"
                     v-else
                     class="bvm-list"
                 >
@@ -176,6 +177,7 @@
                     @click="askPermission()"
                 />
                 <q-list
+                    role="group"
                     v-if="alerts.length"
                     class="bvm-list q-mb-md"
                 >

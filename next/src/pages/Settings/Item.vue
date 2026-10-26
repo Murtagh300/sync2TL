@@ -7,6 +7,10 @@
         </q-item-section>
         <q-item-section>
             <q-item-label lines="1">{{title}}</q-item-label>
+            <q-item-label
+                v-if="caption"
+                caption
+            >{{caption}}</q-item-label>
         </q-item-section>
         <q-item-section side>
             <span class="text-muted">{{value}}</span>
@@ -27,7 +31,8 @@ export default defineComponent({
     props: {
         icon: String,
         title: String,
-        value: String
+        value: String,
+        caption: String
     }
 })
 </script>

@@ -728,6 +728,34 @@ export default {
         label_known: '您认识的地址（红色为不同之处）',
         action_continue_anyway: '仍然发送'
     },
+    whatsNew: {
+        title: '新功能'
+    },
+    settingsBackup: {
+        label: '设置备份',
+        action_export: '备份设置',
+        action_import: '恢复设置',
+        action_restore: '恢复',
+        msg_hint: '联系人、备注、提醒、关注列表、定期付款和偏好设置，保存在受密码保护的文件中。绝不包含你的密钥：密钥通过助记词恢复。',
+        msg_password: '为此文件设置密码（至少 8 个字符）。',
+        msg_password_again: '再次输入相同的密码。',
+        msg_mismatch: '两次输入的密码不一致。',
+        msg_exported: '设置已保存到文件。',
+        msg_wrong_password: '该密码无法打开此文件。',
+        msg_not_a_backup: '这不是 BlackVault 设置文件。',
+        msg_confirm: '此文件包含 {contacts} 个联系人、{notes} 条备注和 {settings} 类设置。它们将替换此设备上的设置，随后 BlackVault 会重新启动。'
+    },
+    service: {
+        action_update: '更新',
+        msg_update: '此版本已过时。请更新以继续安全使用 BlackVault。',
+        msg_degraded: '部分服务较慢或不可用：{services}。你的资产是安全的，部分数字可能暂缺。',
+        msg_paused: 'BlackVault 的这一部分暂时停用，请稍后再试。',
+        label_push_incoming: '收款通知',
+        msg_push_incoming: '当 VET、VTHO 或代币到达你的地址（{n} 个）时通知你，即使 BlackVault 已关闭。无需登录。',
+        msg_push_other: '此设备一次只能接收一种推送。请先关闭另一种。',
+        label_error_reports: '发送错误报告',
+        msg_error_reports: '匿名：不含地址、金额或密钥。有助于更快修复问题。'
+    },
     offline: {
         title: '离线',
         msg: '离线 · 显示最近一次的余额',

@@ -136,7 +136,6 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { BigNumber } from 'bignumber.js'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import EmptyState from 'components/EmptyState.vue'

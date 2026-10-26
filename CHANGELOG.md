@@ -1,0 +1,45 @@
+# Changelog
+
+What changed in BlackVault, newest first. The version is `next/package.json`; what users see after
+an update comes from `next/src/changelog.ts` (keep the two in step).
+
+## 2.1.0 — 2026-10-25
+
+**Wallet**
+- Push notifications for incoming VET, VTHO and tokens through the BlackVault server, also when the
+  app is closed. No sign-in: the server only knows the addresses to watch.
+- Encrypted back-up of settings (PBKDF2 + AES-GCM): contacts, notes, alerts, watchlist, scheduled
+  payments, preferences and custom nodes. Never keys.
+- Updates wait until the user taps Update; "What's new" after an update and from Meer.
+- A banner when a service is down, when the server posts a notice, or when the version is too old.
+- Features can be paused remotely (switched off only, never changed).
+- Opt-in, scrubbed error reports.
+- One network layer for every API: time-outs, retries with back-off, a circuit breaker per host and
+  shared identical requests.
+- Versioned storage migrations: broken values are set aside instead of stopping the app.
+
+**Server and hosting** (new: `server/`, `deploy/`)
+- API gateway for BetterSwap and BlackVeMarket's public data: whitelist, cache, rate limits.
+- Push service, health checks and a status page, remote config, error reports.
+- Caddy with security headers (CSP, HSTS, frame-ancestors) and Docker Compose.
+
+**Development**
+- CI on GitHub Actions, Playwright end-to-end and accessibility tests, ESLint.
+- The legacy Sync2 app was removed from the repository root.
+- Documentation: architecture, deploy and incident runbook, contributing.
+
+## 2.0.10 and earlier
+
+Built up in rounds from VeChain Sync2:
+
+- **WalletConnect, StarGate, VeBetterDAO, market tools**, German and French.
+- **Overview, watch-only wallets**, dust clean-up, consolidation and safety tools.
+- **Look-alike address warnings**, pay many at once, Dutch.
+- **Ledger support removed**; the security review's findings fixed.
+- **Payment requests, encrypted messages, liquidity positions** and an emergency plan.
+- **The BlackVeMarket market in the wallet**, notifications, portfolio insight.
+- **Faster screens**, richer activity, safer sending, accessibility.
+- **Home dashboard**, tabs, prices, onboarding.
+- **Trading, readable signing, approvals, swap.**
+- **BlackVeMarket NFTs**, token auto-detection; the blackvemarket.com look.
+- **Vue 3 and Quasar 2**: every page and component ported from Sync2's Vue 2 code.

@@ -9,7 +9,7 @@
             innerClass="fit column"
         >
             <!-- content -->
-            <Summary
+            <TxSummary
                 v-if="request"
                 :request="request"
             />
@@ -19,7 +19,7 @@
             >
                 <!-- loading -->
                 <delay-render
-                    v-if="$asyncComputed.request.updating"
+                    v-if="$asyncComputed.request?.updating"
                     :t="200"
                 >
                     <p>
@@ -28,7 +28,7 @@
                     <p>{{$t('sign.msg_loading_content')}}</p>
                 </delay-render>
                 <!-- error -->
-                <template v-else-if="$asyncComputed.request.exception">
+                <template v-else-if="$asyncComputed.request?.exception">
                     <p>
                         <q-icon
                             name="error"
@@ -36,7 +36,7 @@
                         />
                     </p>
                     <p>{{$t('sign.msg_loading_failed')}}</p>
-                    <p class="text-negative">{{$asyncComputed.request.exception.message}}</p>
+                    <p class="text-negative">{{$asyncComputed.request?.exception.message}}</p>
                 </template>
             </div>
         </page-content>
@@ -57,7 +57,7 @@
                 />
             </template>
             <q-btn
-                v-else-if="$asyncComputed.request.exception"
+                v-else-if="$asyncComputed.request?.exception"
                 unelevated
                 :label="$t('common.close')"
                 color="primary"
@@ -81,7 +81,7 @@ const ACCEPTED_SUFFIX = '.accepted'
 const RESP_SUFFIX = '.resp'
 
 export default defineComponent({
-    components: { Summary, DelayRender, PageToolbar, PageContent, PageAction },
+    components: { TxSummary: Summary, DelayRender, PageToolbar, PageContent, PageAction },
     props: {
         src: String // the url to fetch request object
     },
@@ -141,7 +141,6 @@ export default defineComponent({
             }
             const request = RelayedRequest.validate(JSON.parse(resp.data))
             request.origin = resp.headers['x-data-origin']
-            // eslint-disable-next-line @typescript-eslint/camelcase
             gtagEvent('connex-sign', { event_label: request.origin })
             this.postStatus(ACCEPTED_SUFFIX, {})
             // TODO validate body

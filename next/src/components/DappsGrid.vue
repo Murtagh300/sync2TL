@@ -1,12 +1,35 @@
 <template>
     <div class="dapps">
-        <button
+        <div
             v-for="d in sorted"
             :key="d.url"
-            type="button"
-            class="dapp bvm-tile"
-            @click="open(d)"
+            class="dapp-cell"
         >
+            <button
+                type="button"
+                class="dapp bvm-tile"
+                @click="open(d)"
+            >
+                <img
+                    v-if="d.icon && !broken.includes(d.url)"
+                    :src="d.icon"
+                    alt=""
+                    class="dapp-icon"
+                    loading="lazy"
+                    @error="broken.push(d.url)"
+                >
+                <div
+                    v-else
+                    class="dapp-icon flex flex-center"
+                >
+                    <q-icon
+                        name="o_language"
+                        size="24px"
+                    />
+                </div>
+                <span class="dapp-name ellipsis">{{d.name}}</span>
+                <span class="dapp-what ellipsis">{{$t(`dappsGrid.${d.what}`)}}</span>
+            </button>
             <q-btn
                 flat
                 round
@@ -15,29 +38,11 @@
                 class="dapp-star"
                 :icon="favs.includes(d.url) ? 'star' : 'star_outline'"
                 :color="favs.includes(d.url) ? 'primary' : undefined"
-                :aria-label="$t('dappsGrid.action_favorite')"
-                @click.stop="toggle(d.url)"
+                :aria-label="`${$t('dappsGrid.action_favorite')}: ${d.name}`"
+                :aria-pressed="favs.includes(d.url)"
+                @click="toggle(d.url)"
             />
-            <img
-                v-if="d.icon && !broken.includes(d.url)"
-                :src="d.icon"
-                alt=""
-                class="dapp-icon"
-                loading="lazy"
-                @error="broken.push(d.url)"
-            >
-            <div
-                v-else
-                class="dapp-icon flex flex-center"
-            >
-                <q-icon
-                    name="o_language"
-                    size="24px"
-                />
-            </div>
-            <span class="dapp-name ellipsis">{{d.name}}</span>
-            <span class="dapp-what ellipsis">{{$t(`dappsGrid.${d.what}`)}}</span>
-        </button>
+        </div>
     </div>
 </template>
 <script lang="ts">
@@ -92,8 +97,12 @@ export default defineComponent({
   grid-template-columns: repeat(3, 1fr)
   gap: 8px
 
-.dapp
+.dapp-cell
   position: relative
+  display: flex
+
+.dapp
+  width: 100%
   display: flex
   flex-direction: column
   align-items: center

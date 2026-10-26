@@ -20,11 +20,6 @@ const displayNames: Record<string, string> = {
     'fr-fr': 'Français'
 }
 
-type Item = {
-    lang: string
-    displayName: string
-}
-
 export default defineComponent({
     components: { PopSheets },
     computed: {

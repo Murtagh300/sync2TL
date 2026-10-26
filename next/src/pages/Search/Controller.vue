@@ -53,7 +53,7 @@
 
                 <section v-if="contacts.length">
                     <div class="bvm-label q-mb-sm q-ml-xs">{{$t('contacts.title')}}</div>
-                    <q-list class="bvm-list q-mb-md">
+                    <q-list role="group" class="bvm-list q-mb-md">
                         <q-item
                             v-for="c in contacts"
                             :key="c.address"
@@ -82,7 +82,7 @@
 
                 <section v-if="tokens.length">
                     <div class="bvm-label q-mb-sm q-ml-xs">{{$t('search.label_tokens')}}</div>
-                    <q-list class="bvm-list q-mb-md">
+                    <q-list role="group" class="bvm-list q-mb-md">
                         <q-item
                             v-for="t in tokens"
                             :key="t.symbol"
@@ -105,7 +105,7 @@
 
                 <section v-if="collections.length">
                     <div class="bvm-label q-mb-sm q-ml-xs">{{$t('search.label_collections')}}</div>
-                    <q-list class="bvm-list q-mb-md">
+                    <q-list role="group" class="bvm-list q-mb-md">
                         <q-item
                             v-for="c in collections"
                             :key="c.slug"

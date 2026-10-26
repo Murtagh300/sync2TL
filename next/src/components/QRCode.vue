@@ -1,4 +1,6 @@
 <template>
+    <!-- the SVG is drawn here by qrcode-svg from the text alone, never from markup someone sent -->
+    <!-- eslint-disable-next-line vue/no-v-html -->
     <div v-html="svg"></div>
 </template>
 <script lang="ts">

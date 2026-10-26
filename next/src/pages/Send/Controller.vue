@@ -51,6 +51,7 @@
                 autocomplete="off"
                 class="q-mx-md"
                 v-model="amountText"
+                :aria-label="$t('send.label_amount')"
                 :error-message="errors.amount"
                 :error="!!errors.amount"
                 @update:model-value="errors.amount = ''"
@@ -67,6 +68,7 @@
                 autocomplete="off"
                 class="q-mx-md"
                 v-model="fiatText"
+                :aria-label="$t('send.label_amount')"
                 :error-message="errors.amount"
                 :error="!!errors.amount"
                 @update:model-value="onFiat"
@@ -101,6 +103,7 @@
             <q-item-label header>{{$t('send.label_message')}}</q-item-label>
             <q-input
                 v-model="message"
+                :aria-label="$t('send.label_message')"
                 class="q-mx-md"
                 outlined
                 dense
@@ -118,6 +121,7 @@
             <q-item-label header>{{$t('send.label_note')}}</q-item-label>
             <q-input
                 v-model="note"
+                :aria-label="$t('send.label_note')"
                 class="q-mx-md"
                 outlined
                 dense
@@ -304,10 +308,10 @@ export default defineComponent({
             return this.tokenList.find(item => item.symbol === this.sym)
         },
         from(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i || '0')] : ''
+            return this.wallet ? (this.wallet.meta.addresses[parseInt(this.i || '0')] ?? '') : ''
         },
         address(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.i || '0')] : ''
+            return this.wallet ? (this.wallet.meta.addresses[parseInt(this.i || '0')] ?? '') : ''
         }
     },
     methods: {
@@ -466,7 +470,6 @@ export default defineComponent({
                 if (this.note.trim()) {
                     setTxNote(resp.txid, this.note)
                 }
-                // eslint-disable-next-line @typescript-eslint/camelcase
                 gtagEvent('token-send', { event_label: this.sym })
                 const temp = [this.recipient, ...this.recent].reduce((result: string[], cv: string | null) => {
                     (cv && !result.includes(cv.toLowerCase())) && result.push(cv.toLowerCase())

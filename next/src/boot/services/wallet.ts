@@ -26,7 +26,7 @@ export function build(storage: Storage) {
             return t.all()
                 .where({ id })
                 .query()
-                .then(r => r.length > 0 ? r[0] : null)
+                .then(r => r[0] ?? null)
         },
         getByGid(gid: string) {
             return t.all()

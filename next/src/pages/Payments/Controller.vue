@@ -28,6 +28,7 @@
             <template v-if="tab === 'requests'">
                 <p class="text-soft">{{$t('payments.msg_requests')}}</p>
                 <q-list
+                    role="group"
                     v-if="payments.requests.length"
                     class="bvm-list q-mb-md"
                 >
@@ -93,6 +94,7 @@
             <template v-else>
                 <p class="text-soft">{{$t('payments.msg_scheduled')}}</p>
                 <q-list
+                    role="group"
                     v-if="payments.scheduled.length"
                     class="bvm-list q-mb-md"
                 >

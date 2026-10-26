@@ -3,14 +3,16 @@
         flat
         no-caps
         class="wallet-switcher"
-        :aria-label="$t('home.action_switch')"
     >
         <q-avatar
             v-if="profile && profile.avatar"
             size="32px"
             rounded
         >
-            <img :src="profile.avatar">
+            <img
+                :src="profile.avatar"
+                alt=""
+            >
         </q-avatar>
         <wallet-mark
             v-else-if="wallet"
@@ -21,6 +23,7 @@
             class="q-ml-sm text-left"
             style="min-width: 0"
         >
+            <span class="bv-sr-only">{{$t('home.action_switch')}}: </span>
             <div class="switcher-name ellipsis">{{all ? $t('home.label_all_wallets') : wallet ? wallet.meta.name : 'BlackVault'}}</div>
             <div
                 v-if="all"

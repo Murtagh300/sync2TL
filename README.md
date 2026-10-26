@@ -1,84 +1,45 @@
-# Sync2
+# BlackVault
 
-The next generation VeChain wallet for all platforms.
+The VeChain wallet by [BlackVeMarket](https://blackvemarket.com): VET, VTHO, tokens and NFTs, trading on
+BlackVeMarket, WalletConnect, and signing for every VeChain dApp. Keys stay on the device, encrypted with the
+user's password. It started as a fork of VeChain Sync2 and has been rebuilt since.
 
-## What's New
+| Folder | What |
+| --- | --- |
+| [`next/`](next/README.md) | the wallet: Quasar 2, Vue 3, Vite, a PWA |
+| [`server/`](server/) | the BlackVault server: API gateway, push for incoming transfers, health, remote config, error reports |
+| [`deploy/`](deploy/) | hosting: Caddy (HTTPS, security headers) and the server with Docker Compose |
+| [`docs/`](docs/) | [architecture](docs/ARCHITECTURE.md), [deploy and incidents](docs/DEPLOY.md), [contributing](docs/CONTRIBUTING.md), [manual test checklist](docs/TEST-CHECKLIST.md) |
 
-Compared to Sync v1, the most significant change is that the built-in dApp browser is abandoned. That means now dApps can freely run in your favorite web browser.
+## Quick start
 
-## Supported Platforms
+Node 24 (`.nvmrc`).
 
-| Platform | | Link |
-| --- | --- | --- |
-| Browser (nightly/unstable) | | https://lite.sync.vecha.in |
-| Desktop | | |
-| | Windows | [Releases](https://github.com/vechain/sync2/releases/latest) |
-| | macOS | [Releases](https://github.com/vechain/sync2/releases/latest) |
-| | Linux | [Releases](https://github.com/vechain/sync2/releases/latest) |
-| Mobile | | |
-| | Android | [Google Play](https://play.google.com/store/apps/details?id=org.vechain.sync2) |
-| | iOS | [App Store](https://apps.apple.com/app/6446363029) |
-
-## Port dApps to Sync2
-
-You can easily port your dApp by integrating [Connex v2](https://github.com/vechain/connex).
-
-## Build from source 
-
-### Install the dependencies
 ```bash
-npm install
+cd next && npm install && npm run dev
 ```
 
-### Start the app in development mode (hot-code reloading, error reporting, etc.)
+The wallet opens on http://localhost:8090. It works without the server; to run that too:
 
-* web mode
-    ```bash
-    quasar dev
-    ```
-* electron mode
-    ```bash
-    quasar dev -m electron
-    ```
-* ios mode
-    ```bash
-    quasar dev -m ios
-    ```
-* android mode
-    ```bash
-    quasar dev -m android
-    ```
-
-### Lint the files
 ```bash
-npm run lint
+cd server && npm install && npm run dev
 ```
 
-### Build the app for production
+## Checks
+
 ```bash
-quasar build
+cd next && npm run typecheck && npm run lint && npm test && npm run e2e
+cd server && npm run typecheck && npm test
 ```
 
-## Version release flow
+GitHub Actions runs all of them on every push and pull request (`.github/workflows/ci.yml`);
+deploying is a manual workflow (`.github/workflows/deploy.yml`, see [docs/DEPLOY.md](docs/DEPLOY.md)).
 
-<details>
-  <summary>Click to get detail</summary>
+## Security
 
-
-### Browser
-
-Browser version will be updated automatically by [Action](./.github/workflows/deploy-pwa-preview.yaml)
-
-### Desktop
-
-+ Bump `<version>` in [package.json](./package.json)
-+ `git tag v<version>`
-+ `git push origin v<version>`
-+ Check [Action](./.github/workflows/release.yaml) for more detailed info.
-</details>
+The wallet's own review: [next/SECURITY-AUDIT.md](next/SECURITY-AUDIT.md). Found something? Report it to
+BlackVeMarket privately (a GitHub security advisory on this repository) rather than in a public issue.
 
 ## License
 
-This package is licensed under the
-[GNU Lesser General Public License v3.0](https://www.gnu.org/licenses/lgpl-3.0.html), also included
-in *LICENSE* file in the repository.
+[LGPL-3.0](LICENSE), as VeChain Sync2 it is based on. What changed: [CHANGELOG.md](CHANGELOG.md).

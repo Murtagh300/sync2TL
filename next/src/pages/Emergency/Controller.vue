@@ -19,7 +19,7 @@
                 <q-space />
                 <span class="text-muted done">{{done}}/{{items.length}}</span>
             </div>
-            <q-list class="bvm-list q-mb-md">
+            <q-list role="group" class="bvm-list q-mb-md">
                 <q-item
                     v-for="item in items"
                     :key="item.key"

@@ -6,6 +6,7 @@
         v-bind="$attrs"
         dense
         :placeholder="$t('send.placeholder_to')"
+        :aria-label="$t('send.label_to')"
         clearable
         v-model.lazy="to"
         spellcheck="false"

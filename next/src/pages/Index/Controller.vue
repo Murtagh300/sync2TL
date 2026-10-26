@@ -222,7 +222,7 @@ export default defineComponent({
         wallets(newVal: M.Wallet[] | null, oldVal: M.Wallet[] | null) {
             if (newVal && newVal.length > 0 && selection.walletId !== ALL_WALLETS && !newVal.find(w => w.id === selection.walletId)) {
                 // none selected, select the first one
-                selection.walletId = newVal[0].id
+                selection.walletId = newVal[0]!.id
                 return
             }
 
@@ -252,7 +252,7 @@ export default defineComponent({
         },
         refresh(done: () => void) {
             (this.$refs.portfolio as { refresh?: () => void } | undefined)?.refresh?.()
-            void this.$asyncComputed.wallets.update()
+            void this.$asyncComputed.wallets?.update()
             setTimeout(done, 600)
         }
     }

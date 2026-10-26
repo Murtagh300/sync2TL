@@ -35,6 +35,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { haptic } from 'src/utils/prefs'
+import { featureOn } from 'src/utils/remote-config'
 
 export const TAB_ROUTES = ['index', 'nfts', 'swap', 'activities', 'more']
 
@@ -55,7 +56,7 @@ export default defineComponent({
                 { name: 'swap', icon: 'o_swap_vert', iconActive: 'swap_vert', label: this.$t('swap.title') },
                 { name: 'activities', icon: 'o_receipt_long', iconActive: 'receipt_long', label: this.$t('tabs.activity') },
                 { name: 'more', icon: 'o_menu', iconActive: 'menu', label: this.$t('tabs.more') }
-            ]
+            ].filter(t => t.name !== 'swap' || featureOn('swap'))
         }
     },
     methods: {

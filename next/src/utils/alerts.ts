@@ -129,7 +129,7 @@ export function notifySystem(text: string) {
             if (reg) {
                 return reg.showNotification('BlackVault', { body: text, icon: 'icons/favicon-128x128.png' })
             }
-            // eslint-disable-next-line no-new
+             
             new Notification('BlackVault', { body: text })
         })
     } catch {

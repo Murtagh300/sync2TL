@@ -40,7 +40,7 @@ function cells(line: string): string[] {
 export function contactsFromCsv(text: string): { contacts: Contact[], skipped: number } {
     const contacts: Contact[] = []
     let skipped = 0
-    for (const [i, raw] of text.replace(/^﻿/, '').split(/\r?\n/).entries()) {
+    for (const [i, raw] of text.replace(/^\uFEFF/, '').split(/\r?\n/).entries()) {
         if (!raw.trim()) continue
         const [name = '', addr = '', groups = ''] = cells(raw)
         if (!address.test(addr)) {

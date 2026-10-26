@@ -76,7 +76,7 @@ export default defineComponent({
             async get() {
                 let on = true
                 let list: TransferLogItem[] = []
-                const from = (this.logs.length ? this.logs[0].meta.blockNumber : this.splitBlock) + 1
+                const from = (this.logs[0] ? this.logs[0].meta.blockNumber : this.splitBlock) + 1
                 const to = 2 ** 32 - 1
                 while (on) {
                     const r = await this.query(from, to, list.length)

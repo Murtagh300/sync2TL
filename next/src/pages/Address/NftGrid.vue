@@ -1,53 +1,16 @@
 <template>
     <div class="nft-grid-page">
-        <!-- portfolio: what the NFTs are worth at their collection floors -->
-        <div
+        <nft-portfolio
             v-if="total && !collection"
-            class="bvm-tile portfolio q-mx-md q-mb-md"
-        >
-            <div class="row no-wrap items-start">
-                <div class="col">
-                    <div class="text-muted portfolio-label">{{$t('nft.label_portfolio')}}</div>
-                    <div
-                        v-if="worth.length"
-                        class="bvm-display portfolio-value"
-                    >≈ {{worth.join(' + ')}}</div>
-                    <div
-                        v-else
-                        class="text-muted"
-                    >{{$t('nft.msg_no_floor')}}</div>
-                </div>
-                <q-btn
-                    v-if="!selecting"
-                    flat
-                    dense
-                    round
-                    color="primary"
-                    icon="o_slideshow"
-                    :aria-label="$t('gallery.action_play')"
-                    @click="playGallery()"
-                />
-                <q-btn
-                    flat
-                    dense
-                    no-caps
-                    color="primary"
-                    :icon="selecting ? 'close' : 'o_checklist'"
-                    :label="selecting ? $t('common.cancel') : $t('nft.action_select')"
-                    @click="toggleSelecting()"
-                />
-            </div>
-            <div class="row q-gutter-x-md text-muted portfolio-meta q-mt-xs">
-                <span>{{$t('nft.label_count', { n: total })}}</span>
-                <span v-if="listedCount">{{$t('nft.label_listed_count', { n: listedCount })}}</span>
-                <span
-                    v-if="offerCount"
-                    class="text-primary"
-                >{{$t('nft.label_offer_count', { n: offerCount })}}</span>
-                <span v-if="unpriced">{{$t('nft.label_unpriced', { n: unpriced })}}</span>
-            </div>
-            <nft-value-chart :collections="collections" />
-        </div>
+            class="q-mx-md q-mb-md"
+            :collections="collections"
+            :total="total"
+            :listed-count="listedCount"
+            :offer-count="offerCount"
+            :selecting="selecting"
+            @play="playGallery()"
+            @select="toggleSelecting()"
+        />
 
         <!-- collections: filter; sort and listed/unlisted -->
         <div
@@ -175,56 +138,14 @@
                     :class="{ 'nft--selected': isSelected(nft), 'nft--selecting': selecting }"
                     @click="selecting ? ($event.preventDefault(), toggle(nft)) : openNft($event, nft, navigate)"
                 >
-                    <div
-                        v-if="selecting"
-                        class="nft-check flex flex-center"
-                    >
-                        <q-icon
-                            v-if="isSelected(nft)"
-                            name="check"
-                            size="16px"
-                        />
-                    </div>
-                    <q-img
-                        :src="nft.image"
-                        :ratio="1"
-                        class="nft-image"
-                        spinner-color="primary"
-                        spinner-size="24px"
-                    >
-                        <div
-                            v-if="nft.rank"
-                            class="nft-rank"
-                        >#{{nft.rank}}</div>
-                        <q-icon
-                            v-if="isFavoriteNft(nft)"
-                            name="star"
-                            class="nft-star"
-                            size="18px"
-                            :aria-label="$t('nft.label_favorite')"
-                        />
-                    </q-img>
-                    <div class="nft-body">
-                        <div class="nft-name ellipsis">{{nft.name}}</div>
-                    <div
-                        v-if="showHidden && isHiddenNft(nft)"
-                        class="nft-hidden-tag"
-                    >{{verified && !verified.has(nft.collectionSlug) ? $t('nft.label_unverified') : $t('nft.label_hidden_one')}}</div>
-                        <div class="nft-collection ellipsis">{{nft.collection}}</div>
-                        <div
-                            v-if="labelOf(nft)"
-                            class="nft-label ellipsis"
-                        >
-                            <q-icon
-                                name="o_sell"
-                                size="11px"
-                            /> {{labelOf(nft)}}
-                        </div>
-                        <div
-                            v-if="nft.listed && nft.displayPrice"
-                            class="nft-price bvm-amount"
-                        >{{nft.displayPrice}} {{nft.currency}}</div>
-                    </div>
+                    <nft-card-body
+                        :nft="nft"
+                        :selecting="selecting"
+                        :selected="isSelected(nft)"
+                        :favorite="isFavoriteNft(nft)"
+                        :hidden-tag="hiddenTag(nft)"
+                        :label="labelOf(nft)"
+                    />
                 </a>
             </router-link>
         </div>
@@ -243,7 +164,7 @@
                     square
                     class="skeleton-image"
                 />
-                <div class="nft-body">
+                <div class="skeleton-body">
                     <q-skeleton
                         type="text"
                         width="70%"
@@ -283,54 +204,10 @@
                 @click="reload()"
             />
         </div>
-        <div
+        <nft-empty
             v-else-if="!items.length"
-            class="state"
-        >
-            <q-icon
-                name="o_photo_library"
-                size="32px"
-                class="text-muted"
-            />
-            <div class="q-mt-sm">{{$t('nft.msg_empty')}}</div>
-            <q-btn
-                outline
-                no-caps
-                color="primary"
-                class="q-mt-md"
-                icon="o_storefront"
-                :label="$t('nft.action_explore')"
-                @click="openURL(marketURL)"
-            />
-            <div
-                v-if="ideas.length"
-                class="ideas q-mt-md"
-            >
-                <button
-                    v-for="c in ideas"
-                    :key="c.slug"
-                    type="button"
-                    class="idea bvm-tile"
-                    @click="openURL($svc.bvm.collectionPage(c.slug))"
-                >
-                    <img
-                        :src="c.coverImage"
-                        alt=""
-                        loading="lazy"
-                    >
-                    <span class="ellipsis">{{c.name}}</span>
-                </button>
-            </div>
-            <q-btn
-                outline
-                no-caps
-                color="primary"
-                class="q-mt-md"
-                icon-right="o_north_east"
-                :label="$t('nft.action_explore')"
-                @click="openURL(marketURL)"
-            />
-        </div>
+            :ideas="ideas"
+        />
         <div
             v-else-if="hasMore && !selecting"
             class="q-pa-md"
@@ -377,7 +254,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, markRaw } from 'vue'
-import { marketURL, type BVM } from 'boot/services/bvm'
+import type { BVM } from 'boot/services/bvm'
 import { openURL } from 'src/utils/open-url'
 import { address as addressUtil } from 'thor-devkit'
 import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
@@ -387,7 +264,9 @@ import { toWei } from 'src/utils/format'
 import { readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 import { navigateWithHero } from 'src/utils/hero'
 import { loadNotes, noteOf, type NftNotes } from 'src/utils/nft-notes'
-import NftValueChart from 'components/NftValueChart.vue'
+import NftPortfolio from './NftPortfolio.vue'
+import NftCardBody from './NftCardBody.vue'
+import NftEmpty from './NftEmpty.vue'
 import { isFavorite, isHidden, loadHidden, nftKey, saveHidden, toggleFavorite, type HiddenNfts } from 'src/utils/hidden-nfts'
 import { shareCard } from 'src/utils/share-card'
 import GalleryDialog from 'components/GalleryDialog.vue'
@@ -403,7 +282,7 @@ const PAGE = 30
 
 // the NFTs an address holds, from the BlackVeMarket index
 export default defineComponent({
-    components: { NftValueChart },
+    components: { NftPortfolio, NftCardBody, NftEmpty },
     props: {
         address: { type: String, required: true },
         walletId: { type: String, required: true },
@@ -431,8 +310,7 @@ export default defineComponent({
         showHidden: false,
         onlyFavorites: false,
         notes: {} as NftNotes,
-        selected: [] as BVM.NFT[],
-        marketURL
+        selected: [] as BVM.NFT[]
     }),
     computed: {
         visibleItems(): BVM.NFT[] {
@@ -466,22 +344,6 @@ export default defineComponent({
                 { value: 'unlisted', label: this.$t('nft.status_unlisted') }
             ]
         },
-        /** the estimated value per currency, from collection floors */
-        worth(): string[] {
-            const sums: Record<string, number> = {}
-            for (const c of this.collections) {
-                if (c.floorAmount != null && c.floorCurrency) {
-                    sums[c.floorCurrency] = (sums[c.floorCurrency] || 0) + c.floorAmount * c.count
-                }
-            }
-            return Object.entries(sums)
-                .sort((a, b) => b[1] - a[1])
-                .map(([cur, v]) => `${v.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${cur}`)
-        },
-        /** NFTs in collections without a floor */
-        unpriced(): number {
-            return this.collections.filter(c => c.floorAmount == null).reduce((n, c) => n + c.count, 0)
-        },
         sendable(): BVM.NFT[] {
             return this.selected.filter(n => !n.listed)
         },
@@ -506,7 +368,6 @@ export default defineComponent({
             .catch(() => { })
     },
     methods: {
-        openURL,
         playGallery() {
             const items = this.visibleItems.filter(n => n.image).map(n => ({
                 contract: n.contract, tokenId: n.tokenId, image: n.image, name: n.name, collection: n.collection
@@ -557,6 +418,11 @@ export default defineComponent({
         labelOf(nft: BVM.NFT): string {
             const n = noteOf(this.notes, nft)
             return n ? n.labels[0] || (n.note ? '📝' : '') : ''
+        },
+        /** why a hidden NFT is in the list, while hidden ones are shown */
+        hiddenTag(nft: BVM.NFT): string {
+            if (!this.showHidden || !this.isHiddenNft(nft)) return ''
+            return this.verified && !this.verified.has(nft.collectionSlug) ? this.$t('nft.label_unverified') : this.$t('nft.label_hidden_one')
         },
         isFavoriteNft(nft: BVM.NFT) {
             return isFavorite(this.hiddenPrefs, nft)
@@ -754,20 +620,6 @@ export default defineComponent({
   color: $text-muted
   font-variant-numeric: tabular-nums
 
-.portfolio
-  padding: 14px 16px
-
-.portfolio-label
-  font-size: 13px
-  font-weight: 700
-
-.portfolio-value
-  font-size: 26px
-  margin-top: 2px
-
-.portfolio-meta
-  font-size: 13px
-
 .count-badge
   min-width: 26px
   height: 26px
@@ -789,80 +641,20 @@ export default defineComponent({
   background: rgba(17, 20, 19, 0.96)
   backdrop-filter: blur(6px)
 
-.nft-label
-  font-size: 11px
-  font-weight: 700
-  color: var(--q-primary)
-
-.nft-star
-  position: absolute
-  top: 6px
-  right: 6px
-  color: #fcd34d
-  filter: drop-shadow(0 1px 2px rgba(0, 0, 0, 0.7))
-
-.nft-hidden-tag
-  font-size: 11px
-  font-weight: 800
-  color: $warning
-
 .skeleton-image
   width: 100%
   height: auto
   aspect-ratio: 1
 
+.skeleton-body
+  padding: 10px 12px 12px
+
 .sort-btn
   flex: none
   padding: 2px 8px
 
-.ideas
-  display: grid
-  grid-template-columns: repeat(3, 1fr)
-  gap: 8px
-  width: 100%
-  max-width: 420px
-
-.idea
-  display: flex
-  flex-direction: column
-  gap: 6px
-  padding: 0 0 8px
-  overflow: hidden
-  color: inherit
-  font: inherit
-  font-size: 12px
-  font-weight: 700
-  cursor: pointer
-  img
-    width: 100%
-    aspect-ratio: 1
-    object-fit: cover
-  span
-    padding: 0 6px
-
-.nft--selecting .nft-image
-  transition: transform 0.15s ease-out
-
-.nft--selected .nft-image
-  transform: scale(0.94)
-
-.nft-check
-  position: absolute
-  top: 8px
-  right: 8px
-  z-index: 2
-  width: 24px
-  height: 24px
-  border-radius: 50%
-  border: 2px solid rgba(255, 255, 255, 0.7)
-  background: rgba(0, 0, 0, 0.45)
-
 .nft--selected
   border-color: var(--q-primary) !important
-  .nft-check
-    border-color: var(--q-primary)
-    background: var(--q-primary)
-    color: $on-primary
 
 .grid
   display: grid
@@ -885,36 +677,6 @@ export default defineComponent({
   transition: border-color 0.15s
   &:hover
     border-color: rgba(255, 255, 255, 0.22)
-
-.nft-image
-  background: rgba(255, 255, 255, 0.04)
-
-.nft-rank
-  top: 8px
-  left: 8px
-  right: auto
-  bottom: auto
-  padding: 2px 6px
-  border-radius: 4px
-  background: rgba(8, 10, 9, 0.8)
-  font-size: 11px
-  font-weight: 800
-
-.nft-body
-  padding: 10px 12px 12px
-
-.nft-name
-  font-size: 14px
-  font-weight: 800
-
-.nft-collection
-  font-size: 12px
-  color: $text-muted
-
-.nft-price
-  margin-top: 6px
-  font-size: 13px
-  color: var(--q-primary)
 
 .state
   display: flex

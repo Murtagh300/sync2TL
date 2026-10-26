@@ -35,7 +35,7 @@ describe('paying many', () => {
         const vet = payoutBatches(many, { address: '', decimals: 18, symbol: 'VET' })
         expect(vet.map(b => b.length)).toEqual([BATCH_SIZE, 1])
         expect(vet[0]![0]).toMatchObject({ to: a1, value: '1500000000000000000', data: '0x' })
-        const [[t]] = payoutBatches(rows.slice(0, 1), { address: token, decimals: 18, symbol: 'VTHO' })
+        const t = payoutBatches(rows.slice(0, 1), { address: token, decimals: 18, symbol: 'VTHO' })[0]![0]
         expect(t).toMatchObject({ to: token, value: '0', data: fns.transfer.encode(a1, '1500000000000000000') })
     })
 })

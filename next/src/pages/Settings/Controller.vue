@@ -4,7 +4,7 @@
         <page-content class="col">
             <div class="settings q-pa-md">
                 <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_general')}}</div>
-                <q-list class="bvm-list q-mb-lg">
+                <q-list role="group" class="bvm-list q-mb-lg">
                     <language-list-popup
                         v-slot="{displayName}"
                         anchor="bottom right"
@@ -30,6 +30,7 @@
                         :title="$t('bioAuth.title')"
                     >
                         <q-toggle
+                            :aria-label="$t('bioAuth.title')"
                             color="primary"
                             :model-value="!!bioPassSaved"
                             :disable="!bioPass"
@@ -37,7 +38,7 @@
                         />
                     </item>
                 </q-list>
-                <q-list class="bvm-list q-mb-lg">
+                <q-list role="group" class="bvm-list q-mb-lg">
                     <item
                         icon="o_shield"
                         :title="$t('security.title')"
@@ -64,7 +65,7 @@
                     </q-item>
                 </q-list>
                 <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_appearance')}}</div>
-                <q-list class="bvm-list q-mb-lg">
+                <q-list role="group" class="bvm-list q-mb-lg">
                     <q-item>
                         <q-item-section avatar>
                             <q-avatar icon="o_palette" />
@@ -111,6 +112,7 @@
                         :title="$t('home.action_hide')"
                     >
                         <q-toggle
+                            :aria-label="$t('home.action_hide')"
                             v-model="prefs.hideBalances"
                             color="primary"
                         />
@@ -141,6 +143,7 @@
                         :title="$t('settings.label_shake_hide')"
                     >
                         <q-toggle
+                            :aria-label="$t('settings.label_shake_hide')"
                             :model-value="prefs.shakeToHide"
                             color="primary"
                             @update:model-value="setShake"
@@ -161,6 +164,7 @@
                                 snap
                                 color="primary"
                                 :label-value="`${Math.round(prefs.textScale * 100)}%`"
+                                :aria-label="$t('settings.label_text_size')"
                                 label
                             />
                         </q-item-section>
@@ -170,6 +174,7 @@
                         :title="$t('settings.label_contrast')"
                     >
                         <q-toggle
+                            :aria-label="$t('settings.label_contrast')"
                             v-model="prefs.highContrast"
                             color="primary"
                         />
@@ -179,6 +184,7 @@
                         :title="$t('settings.label_haptics')"
                     >
                         <q-toggle
+                            :aria-label="$t('settings.label_haptics')"
                             v-model="prefs.haptics"
                             color="primary"
                         />
@@ -188,14 +194,27 @@
                         :title="$t('settings.label_sound')"
                     >
                         <q-toggle
+                            :aria-label="$t('settings.label_sound')"
                             v-model="prefs.sound"
                             color="primary"
                             @update:model-value="v => v && playChime()"
                         />
                     </item>
+                    <item
+                        v-if="hasServer"
+                        icon="o_bug_report"
+                        :title="$t('service.label_error_reports')"
+                        :caption="$t('service.msg_error_reports')"
+                    >
+                        <q-toggle
+                            :aria-label="$t('service.label_error_reports')"
+                            v-model="prefs.errorReports"
+                            color="primary"
+                        />
+                    </item>
                 </q-list>
                 <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_network')}}</div>
-                <q-list class="bvm-list q-mb-lg">
+                <q-list role="group" class="bvm-list q-mb-lg">
                     <item
                         icon="o_contacts"
                         :title="$t('contacts.title')"
@@ -212,7 +231,32 @@
                         :to="{name: 'nodes-setting'}"
                     />
                 </q-list>
-                <q-list class="bvm-list">
+                <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settingsBackup.label')}}</div>
+                <q-list role="group" class="bvm-list q-mb-sm">
+                    <item
+                        icon="o_cloud_download"
+                        :title="$t('settingsBackup.action_export')"
+                        clickable
+                        :disable="backupBusy"
+                        @click="exportSettings()"
+                    />
+                    <item
+                        icon="o_settings_backup_restore"
+                        :title="$t('settingsBackup.action_import')"
+                        clickable
+                        :disable="backupBusy"
+                        @click="pickBackup()"
+                    />
+                </q-list>
+                <div class="text-muted backup-hint q-mx-xs q-mb-lg">{{$t('settingsBackup.msg_hint')}}</div>
+                <input
+                    ref="backupFile"
+                    type="file"
+                    accept=".json,application/json"
+                    class="hidden"
+                    @change="importSettings"
+                >
+                <q-list role="group" class="bvm-list">
                     <item
                         icon="o_storefront"
                         :title="$t('settings.action_user_guide')"
@@ -239,11 +283,16 @@ import { accents, applyAccent, haptic, prefs, type Accent } from 'src/utils/pref
 import { motionSupported, requestMotion } from 'src/utils/shake'
 import { LIMIT_OPTIONS } from 'src/utils/spend-limit'
 import { playChime } from 'src/utils/sound'
+import { serverUrl } from 'src/utils/endpoints'
+import { BackupError, CONFIG_KEYS, LOCAL_KEYS, decryptSettings, encryptSettings, summarize, type Settings } from 'src/utils/settings-backup'
+import { downloadText } from 'src/utils/export'
 import { money } from 'src/utils/prefs'
 
 export default defineComponent({
     components: { Item, LanguageListPopup, PageToolbar, PageContent },
     data: () => ({
+        hasServer: serverUrl !== null,
+        backupBusy: false,
         // async computed (see src/shims-async-computed.d.ts)
         bioPass: null as BioPass | null,
         bioPassSaved: null as boolean | null,
@@ -275,6 +324,89 @@ export default defineComponent({
     },
     methods: {
         playChime,
+        /** ask for the backup's password; twice when making one */
+        askPassword(title: string, confirm: boolean): Promise<string | null> {
+            const ask = (message: string) => new Promise<string | null>(resolve => {
+                this.$q.dialog({
+                    title,
+                    message,
+                    prompt: { model: '', type: 'password', isValid: (v: string) => v.length >= 8 },
+                    cancel: true,
+                    persistent: true
+                }).onOk((v: string) => resolve(v)).onCancel(() => resolve(null)).onDismiss(() => resolve(null))
+            })
+            return ask(this.$t('settingsBackup.msg_password')).then(async first => {
+                if (first === null || !confirm) return first
+                const again = await ask(this.$t('settingsBackup.msg_password_again'))
+                if (again === null) return null
+                if (again !== first) {
+                    this.$q.notify(this.$t('settingsBackup.msg_mismatch'))
+                    return null
+                }
+                return first
+            })
+        },
+        async exportSettings() {
+            const password = await this.askPassword(this.$t('settingsBackup.action_export'), true)
+            if (!password) return
+            this.backupBusy = true
+            try {
+                const settings: Settings = { local: {}, config: {} }
+                for (const k of LOCAL_KEYS) {
+                    const v = localStorage.getItem(k)
+                    if (v !== null) settings.local[k] = v
+                }
+                for (const k of CONFIG_KEYS) {
+                    const v = await this.$svc.config.getBackupValue(k)
+                    if (v) settings.config[k] = v
+                }
+                const file = await encryptSettings(settings, password)
+                downloadText(`blackvault-settings-${new Date().toISOString().slice(0, 10)}.json`, JSON.stringify(file, null, 1), 'application/json')
+                this.$q.notify(this.$t('settingsBackup.msg_exported'))
+            } finally {
+                this.backupBusy = false
+            }
+        },
+        pickBackup() {
+            (this.$refs.backupFile as HTMLInputElement).click()
+        },
+        async importSettings(e: Event) {
+            const input = e.target as HTMLInputElement
+            const file = input.files?.[0]
+            input.value = ''
+            if (!file || file.size > 8 * 1024 * 1024) return
+            const text = await file.text()
+            const password = await this.askPassword(this.$t('settingsBackup.action_import'), false)
+            if (!password) return
+            this.backupBusy = true
+            let settings: Settings
+            try {
+                settings = await decryptSettings(text, password)
+            } catch (err) {
+                this.$q.notify(this.$t(err instanceof BackupError && err.reason === 'password' ? 'settingsBackup.msg_wrong_password' : 'settingsBackup.msg_not_a_backup'))
+                return
+            } finally {
+                this.backupBusy = false
+            }
+            const sum = summarize(settings)
+            const ok = await new Promise<boolean>(resolve => {
+                this.$q.dialog({
+                    title: this.$t('settingsBackup.action_import'),
+                    message: this.$t('settingsBackup.msg_confirm', sum),
+                    cancel: true,
+                    ok: { label: this.$t('settingsBackup.action_restore'), color: 'primary', unelevated: true, noCaps: true }
+                }).onOk(() => resolve(true)).onCancel(() => resolve(false)).onDismiss(() => resolve(false))
+            })
+            if (!ok) return
+            for (const [k, v] of Object.entries(settings.local)) {
+                localStorage.setItem(k, v)
+            }
+            for (const [k, v] of Object.entries(settings.config)) {
+                await this.$svc.config.setBackupValue(k as typeof CONFIG_KEYS[number], v)
+            }
+            // everything reads its settings at start: start again
+            window.location.reload()
+        },
         async setShake(on: boolean) {
             const granted = on && await requestMotion()
             prefs.shakeToHide = granted
@@ -346,6 +478,9 @@ export default defineComponent({
 })
 </script>
 <style lang="sass" scoped>
+.backup-hint
+  font-size: 12px
+
 .swatch
   width: 22px
   height: 22px

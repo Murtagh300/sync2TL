@@ -137,7 +137,7 @@ export default defineComponent({
             return !!this.wallet && this.$svc.bvm.supports(this.wallet.gid)
         },
         address(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex)] : ''
+            return this.wallet ? (this.wallet.meta.addresses[parseInt(this.addressIndex)] ?? '') : ''
         }
     }
 })

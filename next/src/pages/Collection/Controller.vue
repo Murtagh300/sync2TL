@@ -77,7 +77,7 @@
                 <!-- collection offers, yours can be withdrawn -->
                 <template v-if="offers.length">
                     <div class="bvm-label q-mt-lg q-mb-sm">{{$t('collection.label_offers')}}</div>
-                    <q-list class="bvm-list">
+                    <q-list role="group" class="bvm-list">
                         <q-item
                             v-for="o in offers"
                             :key="o.offerId || o.id"

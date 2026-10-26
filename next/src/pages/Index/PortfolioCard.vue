@@ -135,7 +135,7 @@ export default defineComponent({
             } catch { }
         },
         refresh() {
-            void this.$asyncComputed.portfolio.update()
+            void this.$asyncComputed.portfolio?.update()
             void this.loadNfts()
         }
     }

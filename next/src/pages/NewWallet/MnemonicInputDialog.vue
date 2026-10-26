@@ -60,11 +60,11 @@ import { QDialog } from 'quasar'
 import { mnemonic } from 'thor-devkit'
 import PromptDialogToolbar from 'src/components/PromptDialogToolbar.vue'
 
-// eslint-disable-next-line quotes
+ 
 const VET_DERIVATION_PATH = `818'/0'/0`
-// eslint-disable-next-line quotes
+ 
 const ETH_DERIVATION_PATH = `60'/0'/0`
-// eslint-disable-next-line quotes
+ 
 const PREFIX = `m/44'/`
 
 export default defineComponent({

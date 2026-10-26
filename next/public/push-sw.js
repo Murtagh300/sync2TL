@@ -1,5 +1,6 @@
-/* Push messages from BlackVeMarket (offers, sales, price alerts), shown while BlackVault is closed.
-   Imported into the generated service worker (quasar.config.ts, importScripts). */
+/* Push messages, shown while BlackVault is closed: from BlackVeMarket (offers, sales, price alerts)
+   or from the BlackVault server (incoming transfers). Imported into the generated service worker
+   (quasar.config.ts, importScripts). */
 self.addEventListener('push', event => {
     let data = {}
     try {
@@ -12,14 +13,17 @@ self.addEventListener('push', event => {
         body: data.body || data.message || '',
         icon: 'icons/icon-192x192.png',
         badge: 'icons/favicon-96x96.png',
+        // one notification per transaction, also when it arrives twice
+        tag: typeof data.tag === 'string' ? data.tag : undefined,
         data: { url: data.url || '' }
     }))
 })
 
 self.addEventListener('notificationclick', event => {
     event.notification.close()
-    // BlackVeMarket links to its own pages: open the wallet's notification center instead
-    const target = self.registration.scope + '#/notifications'
+    // only the wallet's own pages (#/…): BlackVeMarket links to its site, which opens the notification center
+    const url = (event.notification.data && event.notification.data.url) || ''
+    const target = self.registration.scope + (/^#\/[a-z0-9/-]*$/i.test(url) ? url : '#/notifications')
     event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
         for (const c of list) {
             if ('focus' in c) {

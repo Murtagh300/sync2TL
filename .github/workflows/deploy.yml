@@ -1,0 +1,90 @@
+# Deploy by hand (Actions › Deploy › Run workflow), after CI is green.
+# Builds the wallet for the same origin as the server, copies it and the deploy files to the host
+# over SSH, and restarts with Docker Compose. See docs/DEPLOY.md.
+#
+# Secrets (Settings › Secrets and variables › Actions, environment "production"):
+#   DEPLOY_HOST      the server's host name
+#   DEPLOY_USER      the SSH user (in the docker group)
+#   DEPLOY_SSH_KEY   its private key (only for this)
+#   DEPLOY_KNOWN_HOSTS  the line from `ssh-keyscan <host>`, so the host is checked
+#   DEPLOY_PATH      the folder on the host, for example /opt/blackvault
+name: Deploy
+
+on:
+  workflow_dispatch:
+    inputs:
+      ref:
+        description: Branch, tag or commit to deploy
+        default: master
+        required: true
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    environment: production
+    steps:
+      - uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.ref }}
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 24
+          cache: npm
+          cache-dependency-path: next/package-lock.json
+
+      - name: Build the wallet
+        working-directory: next
+        run: |
+          npm ci
+          npm test
+          npm run build
+        env:
+          NODE_OPTIONS: --openssl-legacy-provider
+          SERVER_URL: /
+
+      - name: SSH
+        # secrets through the environment, never pasted into the script
+        env:
+          KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+          KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          install -m 700 -d ~/.ssh
+          printf '%s\n' "$KEY" > ~/.ssh/deploy
+          chmod 600 ~/.ssh/deploy
+          printf '%s\n' "$KNOWN_HOSTS" > ~/.ssh/known_hosts
+
+      - name: Copy and restart
+        env:
+          HOST: ${{ secrets.DEPLOY_USER }}@${{ secrets.DEPLOY_HOST }}
+          DEST: ${{ secrets.DEPLOY_PATH }}
+        run: |
+          SSH="ssh -i ~/.ssh/deploy"
+          # the wallet goes to a new folder first, then replaces the old one at once
+          rsync -az --delete -e "$SSH" next/dist/pwa/ "$HOST:$DEST/deploy/wallet.new/"
+          # deploy files and the server's source; .env and flags.json on the host are kept
+          rsync -az -e "$SSH" --exclude .env --exclude flags.json --exclude wallet deploy/ "$HOST:$DEST/deploy/"
+          rsync -az --delete -e "$SSH" --exclude node_modules --exclude data server/ "$HOST:$DEST/server/"
+          $SSH "$HOST" "set -e
+            cd '$DEST/deploy'
+            rm -rf wallet.old
+            [ -d wallet ] && mv wallet wallet.old
+            mv wallet.new wallet
+            docker compose up -d --build
+            docker compose ps"
+
+      - name: Health
+        env:
+          HOST: ${{ secrets.DEPLOY_HOST }}
+        run: |
+          for i in 1 2 3 4 5 6; do
+            if curl -fsS "https://$HOST/config" > /dev/null; then echo up; exit 0; fi
+            sleep 10
+          done
+          echo "the server does not answer /config"; exit 1

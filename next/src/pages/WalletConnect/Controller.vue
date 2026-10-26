@@ -78,6 +78,7 @@
                     :text="$t('wc.msg_no_sessions')"
                 />
                 <q-list
+                    role="group"
                     v-else
                     class="bvm-list"
                 >

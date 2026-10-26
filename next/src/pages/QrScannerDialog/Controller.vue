@@ -58,7 +58,7 @@
     </q-dialog>
 </template>
 <script lang="ts">
-/* eslint-disable @typescript-eslint/no-explicit-any */
+ 
 import { defineComponent } from 'vue'
 import Scanner from './Scanner.vue'
 import { QDialog } from 'quasar'

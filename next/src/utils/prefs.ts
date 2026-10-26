@@ -33,12 +33,14 @@ type Prefs = {
     spendLimit: number
     /** a chime when something comes in */
     sound: boolean
+    /** send scrubbed error reports to the BlackVault server (utils/error-reports.ts); off unless turned on */
+    errorReports: boolean
 }
 
 const KEY = 'bv-prefs'
 
 function load(): Prefs {
-    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true }
+    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true, errorReports: false }
     try {
         return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') as Partial<Prefs> }
     } catch {

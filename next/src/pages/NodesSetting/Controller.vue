@@ -16,8 +16,8 @@
                     v-for="(group, gi) in groups"
                     :key="gi"
                 >
-                    <div class="bvm-label q-mb-sm q-ml-xs">{{$netDisplayName(group.list[0].genesis.id)}}</div>
-                    <q-list class="bvm-list q-mb-lg">
+                    <div class="bvm-label q-mb-sm q-ml-xs">{{$netDisplayName(group.list[0]?.genesis.id || '')}}</div>
+                    <q-list role="group" class="bvm-list q-mb-lg">
                         <q-item
                             v-for="(node, i) in group.list"
                             :key="`${gi}-${i}`"

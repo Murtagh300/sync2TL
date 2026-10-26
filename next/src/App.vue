@@ -3,6 +3,8 @@
 </template>
 
 <script lang="ts">
+// first: stored settings are brought up to date before anything reads them
+import 'src/utils/migrate-on-load'
 import { defineComponent } from 'vue'
 // Geist, the typeface of blackvemarket.com, bundled (no font CDN for a wallet)
 import '@fontsource-variable/geist'
@@ -110,7 +112,7 @@ export default defineComponent({
             }
         },
         async externalSignHandlerLoop() {
-            // eslint-disable-next-line no-unmodified-loop-condition
+             
             while (!this.destroyed) {
                 const src = parseConnexURL(await listen())
                 if (src) {

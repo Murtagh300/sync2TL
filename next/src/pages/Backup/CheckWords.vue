@@ -30,7 +30,7 @@
                         <div
                             class="col-10 text-h6 bvm-amount"
                             :class="{'text-negative' :isError,' text-grey': !isError}"
-                        >{{verifyingItems && words[verifyingItems[i-1]]}}</div>
+                        >{{verifyingItems && words[verifyingItems[i-1] ?? -1]}}</div>
                     </div>
                 </div>
             </div>
@@ -81,9 +81,9 @@ export default defineComponent({
             const indexs = [...this.words.keys()]
             indexs.splice(start, GroupSize)
 
-            const randomIndex = []
+            const randomIndex: number[] = []
             for (let i = 0; i < GroupSize; i++) {
-                randomIndex.push(indexs[Math.floor(Math.random() * (this.words.length - GroupSize))])
+                randomIndex.push(indexs[Math.floor(Math.random() * (this.words.length - GroupSize))] ?? 0)
             }
 
             return [...this.words.map(

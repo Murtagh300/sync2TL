@@ -1,4 +1,5 @@
-import axios from 'axios'
+import { createClient } from './net'
+import { betterswapUrl } from './endpoints'
 import { fn } from './actions'
 
 /**
@@ -8,10 +9,7 @@ import { fn } from './actions'
  * - VeTrade V3: position NFTs, counted (VeTrade's pools aren't in BetterSwap's list).
  */
 
-const betterswap = axios.create({
-    baseURL: import.meta.env.BETTERSWAP_API_URL || (import.meta.env.QUASAR_DEV ? '/betterswap-api' : 'https://www.betterswap.io/api'),
-    timeout: 20 * 1000
-})
+const betterswap = createClient({ baseURL: betterswapUrl })
 
 const FACTORIES = '0x5970dcbebac33e75eff315c675f1d2654f7bf1f5,0xf9f1722f95d036efbd1352d84e3a3755f8027b39'
 export const BETTERSWAP_V3_MANAGER = '0xd943b2acf4b115c233d70fb1b3eaf5134eb2ca61'

@@ -20,7 +20,7 @@ function getTimeout(el: HTMLElement) {
     }
 
     return Math.max.apply(null, durations.map((d, i) => {
-        return toMs(d) + toMs(delays[i])
+        return toMs(d) + toMs(delays[i] || '0s')
     }))
 }
 

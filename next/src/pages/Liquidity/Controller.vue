@@ -44,7 +44,7 @@
                     <div class="text-muted">{{$t('liquidity.label_total')}}</div>
                     <div class="bvm-display total">{{money(totalUsd * fx)}}</div>
                 </div>
-                <q-list class="bvm-list">
+                <q-list role="group" class="bvm-list">
                     <q-item
                         v-for="p in positions"
                         :key="p.key"

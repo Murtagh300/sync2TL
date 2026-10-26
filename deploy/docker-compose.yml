@@ -1,0 +1,43 @@
+# BlackVault in production: Caddy (HTTPS, headers, the wallet's files) and the server.
+#   1. copy .env.example to .env and fill it in
+#   2. put the built wallet (next/dist/pwa) in ./wallet
+#   3. docker compose up -d --build
+name: blackvault
+
+services:
+  caddy:
+    image: caddy:2.8.4-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    environment:
+      WALLET_DOMAIN: ${WALLET_DOMAIN}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - ./wallet:/srv/wallet:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      server:
+        condition: service_healthy
+
+  server:
+    build: ../server
+    restart: unless-stopped
+    env_file: .env
+    environment:
+      # Caddy is the only client; it passes the visitor's address on
+      TRUST_PROXY: "1"
+      ALLOWED_ORIGINS: https://${WALLET_DOMAIN}
+    volumes:
+      - server_data:/data
+      - ./flags.json:/config/flags.json:ro
+    expose:
+      - "8787"
+
+volumes:
+  caddy_data:
+  caddy_config:
+  server_data:

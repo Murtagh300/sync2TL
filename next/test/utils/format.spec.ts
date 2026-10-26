@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { decimalSeparator, formatAmount, formatDate, toWei } from 'src/utils/format'
 
 // amounts are what the user sees before signing: the output must not change
-// across bignumber.js upgrades (run with --mode legacy against the old app too)
+// across bignumber.js upgrades
 
 describe('formatAmount', () => {
     it('groups thousands and keeps all decimals by default', () => {
@@ -54,7 +54,7 @@ describe('toWei', () => {
 
 describe('formatDate', () => {
     // fixed in BlackVault: Sync2 printed "in a minute" for past dates
-    it.skipIf(import.meta.env.MODE === 'legacy')('shows recent dates relative to now', () => {
+    it('shows recent dates relative to now', () => {
         expect(formatDate(Date.now() - 60 * 1000, { relative: true })).toBe('a minute ago')
     })
 
@@ -64,7 +64,7 @@ describe('formatDate', () => {
     })
 
     // changed in BlackVault: today/yesterday, the weekday, then a short date (Sync2: full date and time)
-    it.skipIf(import.meta.env.MODE === 'legacy')('reads older dates in words', () => {
+    it('reads older dates in words', () => {
         const at = (daysAgo: number, h: number) => {
             const d = new Date()
             d.setDate(d.getDate() - daysAgo)

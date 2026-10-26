@@ -109,7 +109,7 @@
                         color="primary"
                         class="q-mt-md"
                         :label="$t('nft.action_retry')"
-                        @click="$asyncComputed.nft.update()"
+                        @click="$asyncComputed.nft?.update()"
                     />
                 </div>
             </div>
@@ -240,47 +240,14 @@
                     />
                 </div>
 
-                <!-- a private note and labels -->
-                <div class="bvm-tile q-pa-md q-mt-lg nft-note">
-                    <div class="row items-center q-mb-sm">
-                        <q-icon
-                            name="o_sticky_note_2"
-                            size="18px"
-                            color="primary"
-                            class="q-mr-xs"
-                        />
-                        <span class="text-weight-bold">{{$t('nftNotes.title')}}</span>
-                        <q-space />
-                        <span class="text-caption text-muted">{{$t('nftNotes.hint')}}</span>
-                    </div>
-                    <q-input
-                        v-model="note.note"
-                        dense
-                        outlined
-                        autogrow
-                        maxlength="280"
-                        :placeholder="$t('nftNotes.placeholder')"
-                        @blur="saveNote()"
-                    />
-                    <div class="row q-gutter-xs q-mt-sm">
-                        <q-chip
-                            v-for="l in labelOptions"
-                            :key="l"
-                            clickable
-                            dense
-                            :outline="!note.labels.includes(l)"
-                            :color="note.labels.includes(l) ? 'primary' : undefined"
-                            :text-color="note.labels.includes(l) ? 'dark' : undefined"
-                            :aria-pressed="note.labels.includes(l)"
-                            class="q-ma-none q-mr-xs"
-                            @click="toggleLabel(l)"
-                        >{{l}}</q-chip>
-                    </div>
-                </div>
+                <nft-note-card
+                    class="q-mt-lg"
+                    :nft="nft"
+                />
                 <!-- offers -->
                 <template v-if="offers.length">
                     <div class="bvm-label q-mt-lg q-mb-sm">{{$t('market.label_offers')}} · {{offers.length}}</div>
-                    <q-list class="bvm-list">
+                    <q-list role="group" class="bvm-list">
                         <q-item
                             v-for="o in offers"
                             :key="o.id"
@@ -327,113 +294,26 @@
                     class="description q-mt-lg"
                 >{{nft.description}}</p>
 
-                <!-- traits -->
-                <template v-if="nft.traits && nft.traits.length">
-                    <div class="bvm-label q-mt-lg q-mb-sm">{{$t('nft.label_traits')}}</div>
-                    <!-- what makes it special, in words -->
-                    <div
-                        v-if="highlights.rarest || highlights.valuable"
-                        class="bvm-tile q-pa-md q-mb-sm rarity-why"
-                    >
-                        <div
-                            v-if="highlights.rarest"
-                            class="row no-wrap items-start"
-                        >
-                            <q-icon
-                                name="o_diamond"
-                                color="primary"
-                                size="20px"
-                                class="q-mr-sm"
-                            />
-                            <span>{{$t('rarity.rarest', { trait: highlights.rarest.trait_type, value: highlights.rarest.value, pct: highlights.rarest.percentage })}}</span>
-                        </div>
-                        <div
-                            v-if="highlights.valuable && highlights.valuable.traitFloor"
-                            class="row no-wrap items-start q-mt-sm"
-                        >
-                            <q-icon
-                                name="o_trending_up"
-                                color="primary"
-                                size="20px"
-                                class="q-mr-sm"
-                            />
-                            <span>{{$t('rarity.valuable', { trait: highlights.valuable.trait_type, value: highlights.valuable.value, floor: highlights.valuable.traitFloor })}}</span>
-                        </div>
-                    </div>
-                    <div class="traits">
-                        <div
-                            v-for="t in sortedTraits"
-                            :key="t.trait_type + t.value"
-                            class="bvm-tile trait"
-                            :class="{ 'trait--rare': t.percentage != null && t.percentage <= 5 }"
-                        >
-                            <div class="trait-type ellipsis">{{t.trait_type}}</div>
-                            <div class="trait-value ellipsis">{{t.value}}</div>
-                            <div
-                                v-if="t.percentage != null || t.traitFloor"
-                                class="trait-meta"
-                            >
-                                <span v-if="t.percentage != null">{{t.percentage}}%</span>
-                                <span v-if="t.traitFloor"> · {{t.traitFloor}}</span>
-                            </div>
-                            <div
-                                v-if="t.percentage != null"
-                                class="rarity-bar"
-                            >
-                                <span :style="{ width: rarityWidth(t.percentage) }" />
-                            </div>
-                        </div>
-                    </div>
-                </template>
+                <nft-traits
+                    v-if="nft.traits && nft.traits.length"
+                    class="q-mt-lg"
+                    :traits="nft.traits"
+                    :floor-value="nft.intelligence?.collection?.floorValue"
+                />
 
-                <!-- details -->
-                <div class="bvm-label q-mt-lg q-mb-sm">{{$t('nft.label_details')}}</div>
-                <div class="bvm-tile details">
-                    <div
-                        v-if="pnl"
-                        class="detail row no-wrap items-center"
-                    >
-                        <span class="text-muted">{{pnl.minted ? $t('nft.label_minted') : $t('nft.label_bought_for')}}</span>
-                        <q-space />
-                        <span class="bvm-amount">
-                            <template v-if="!pnl.minted">{{pnl.paid}} {{pnl.currency}}</template>
-                            <span
-                                v-if="pnl.percent !== null"
-                                class="q-ml-sm pnl"
-                                :class="pnl.percent >= 0 ? 'text-primary' : 'text-negative'"
-                            >{{pnl.percent >= 0 ? '+' : ''}}{{pnl.percent.toFixed(0)}}% {{$t('nft.label_vs_floor')}}</span>
-                        </span>
-                    </div>
-                    <div
-                        v-if="lastSale"
-                        class="detail row"
-                    >
-                        <span class="text-muted">{{$t('nft.label_last_sale')}}</span>
-                        <span class="q-ml-auto bvm-amount">{{lastSale.displayPrice}} {{lastSale.currency}}</span>
-                    </div>
-                    <div class="detail row no-wrap">
-                        <span class="text-muted">{{$t('nft.label_contract')}}</span>
-                        <address-label
-                            class="q-ml-auto"
-                            :addr="nft.contract"
-                        />
-                    </div>
-                    <div class="detail row">
-                        <span class="text-muted">{{$t('nft.label_token_id')}}</span>
-                        <span class="q-ml-auto text-weight-bold">{{nft.tokenId}}</span>
-                    </div>
-                    <div class="detail row">
-                        <span class="text-muted">{{$t('nft.label_standard')}}</span>
-                        <span class="q-ml-auto text-weight-bold text-uppercase">{{nft.tokenStandard}}</span>
-                    </div>
-                </div>
+                <nft-details
+                    class="q-mt-lg"
+                    :nft="nft"
+                    :pnl="pnl"
+                    :last-sale="lastSale"
+                />
             </div>
         </page-content>
     </div>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { abi, address as addressUtil } from 'thor-devkit'
+import { address as addressUtil } from 'thor-devkit'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import AddressLabel from 'components/AddressLabel.vue'
@@ -441,56 +321,27 @@ import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
 import { openURL } from 'src/utils/open-url'
 import ListDialog, { type ListResult } from './ListDialog.vue'
 import OfferDialog, { type OfferResult } from 'pages/Collection/OfferDialog.vue'
-import { buyClauses, offerClauses, cancelOfferClauses } from 'src/utils/market'
 import { genesises } from 'src/consts'
 import NftViewer, { type ViewerItem } from './NftViewer.vue'
 import SuccessDialog from 'components/SuccessDialog.vue'
 import RecipientCheckDialog from 'pages/Send/RecipientCheckDialog.vue'
 import { findLookalike, isKnownRecipient, rememberRecipient } from 'src/utils/recipient'
-import { acceptOfferClauses, cancelListingClauses, canTrade, listClauses, listingCurrencies, repriceClauses, signMarketTx, type Clause } from 'src/utils/market'
+import { acceptOfferClauses, buyClauses, cancelListingClauses, cancelOfferClauses, canTrade, listClauses, listingCurrencies, offerClauses, repriceClauses, sendClauses, signMarketTx, type Clause } from 'src/utils/market'
 import { toWei } from 'src/utils/format'
 import { emptyWatchlist, type Watchlist } from 'src/utils/alerts'
 import { heroHint, HERO_NAME } from 'src/utils/hero'
 import { isFavorite, isHidden, loadHidden, nftKey, saveHidden, toggleFavorite } from 'src/utils/hidden-nfts'
 import { shareCard } from 'src/utils/share-card'
-import { loadNotes, noteOf, saveNote, SUGGESTED_LABELS, type NftNote } from 'src/utils/nft-notes'
-import { listingSuggestions, traitHighlights } from 'src/utils/pricing'
+import NftNoteCard from './NftNoteCard.vue'
+import NftTraits from './NftTraits.vue'
+import NftDetails, { type NftPnl } from './NftDetails.vue'
+import { listingSuggestions } from 'src/utils/pricing'
 import { haptic, prefs } from 'src/utils/prefs'
 import type { BVM } from 'boot/services/bvm'
 
-const erc721TransferFrom = new abi.Function({
-    constant: false,
-    inputs: [
-        { name: 'from', type: 'address' },
-        { name: 'to', type: 'address' },
-        { name: 'tokenId', type: 'uint256' }
-    ],
-    name: 'transferFrom',
-    outputs: [],
-    payable: false,
-    stateMutability: 'nonpayable',
-    type: 'function'
-})
-
-const erc1155SafeTransferFrom = new abi.Function({
-    constant: false,
-    inputs: [
-        { name: 'from', type: 'address' },
-        { name: 'to', type: 'address' },
-        { name: 'id', type: 'uint256' },
-        { name: 'amount', type: 'uint256' },
-        { name: 'data', type: 'bytes' }
-    ],
-    name: 'safeTransferFrom',
-    outputs: [],
-    payable: false,
-    stateMutability: 'nonpayable',
-    type: 'function'
-})
-
 // one NFT of the address, from the BlackVeMarket index; it can be sent from here
 export default defineComponent({
-    components: { PageToolbar, PageContent, AddressLabel },
+    components: { PageToolbar, PageContent, AddressLabel, NftNoteCard, NftTraits, NftDetails },
     props: {
         walletId: { type: String, required: true },
         addressIndex: { type: String, required: true },
@@ -504,7 +355,6 @@ export default defineComponent({
         activity: [] as BVM.ActivityEntry[],
         hidden: false,
         favorite: false,
-        note: { note: '', labels: [] } as NftNote,
         heroName: HERO_NAME,
         // async computed (see src/shims-async-computed.d.ts)
         wallet: null as M.Wallet | null,
@@ -524,8 +374,6 @@ export default defineComponent({
                 const [h, cols] = await Promise.all([loadHidden(this.$svc), this.$svc.bvm.collections().catch(() => null)])
                 this.hidden = isHidden(h, cols ? new Set(Object.values(cols).map(c => c.slug)) : null, nft)
                 this.favorite = isFavorite(h, nft)
-                const n = noteOf(await loadNotes(this.$svc), nft)
-                this.note = n ? { note: n.note, labels: [...n.labels] } : { note: '', labels: [] }
                 return nft
             } catch (err) {
                 console.warn('BlackVeMarket nft:', err)
@@ -535,10 +383,6 @@ export default defineComponent({
         }
     },
     computed: {
-        /** the suggested labels and the ones this NFT has */
-        labelOptions(): string[] {
-            return [...new Set([...SUGGESTED_LABELS.map(l => this.$t(`nftNotes.label_${l}`)), ...this.note.labels])]
-        },
         /** the picture the NFT card handed over, shown until the data arrives */
         hint(): string {
             return heroHint(`${this.contract.toLowerCase()}:${this.tokenId}`)
@@ -580,7 +424,7 @@ export default defineComponent({
             return !!this.nft && !!this.wallet && !this.sendBlock
         },
         /** what this address paid (or that it minted), against the floor now */
-        pnl(): { paid: string, currency: string, minted: boolean, percent: number | null } | null {
+        pnl(): NftPnl | null {
             const me = this.address.toLowerCase()
             if (!this.isOwner || !me) {
                 return null
@@ -599,13 +443,6 @@ export default defineComponent({
                 (a as { actor?: string }).actor === '0x0000000000000000000000000000000000000000')
             return minted ? { paid: '', currency: '', minted: true, percent: null } : null
         },
-        /** traits rarest first */
-        sortedTraits(): BVM.Trait[] {
-            return [...(this.nft?.traits || [])].sort((a, b) => (a.percentage ?? 101) - (b.percentage ?? 101))
-        },
-        highlights(): ReturnType<typeof traitHighlights> {
-            return traitHighlights(this.nft?.traits || [], this.nft?.intelligence?.collection?.floorValue)
-        },
         lastSale(): { displayPrice: string, currency: string } | null {
             return this.nft?.intelligence?.lastSale || null
         }
@@ -623,13 +460,6 @@ export default defineComponent({
             try {
                 await shareCard({ title: nft.name, subtitle: nft.collection, image: nft.image }, this.$svc.bvm.nftPage(nft.contract, nft.tokenId))
             } catch { }
-        },
-        async saveNote() {
-            if (this.nft) await saveNote(this.$svc, this.nft, this.note)
-        },
-        toggleLabel(l: string) {
-            this.note.labels = this.note.labels.includes(l) ? this.note.labels.filter(x => x !== l) : [...this.note.labels, l]
-            void this.saveNote()
         },
         async toggleFavorite() {
             if (!this.nft) {
@@ -704,7 +534,7 @@ export default defineComponent({
                     link: this.nft ? { label: this.$t('nft.action_view_market'), url: this.$svc.bvm.nftPage(this.nft.contract, this.nft.tokenId) } : undefined
                 }).catch(() => { })
                 // BlackVeMarket picks it up within a minute
-                setTimeout(() => void this.$asyncComputed.nft.update(), 20 * 1000)
+                setTimeout(() => void this.$asyncComputed.nft?.update(), 20 * 1000)
             } catch {
                 // declined in the transaction dialog
             }
@@ -741,10 +571,6 @@ export default defineComponent({
             const nft = this.nft
             if (!nft) return
             await this.market(cancelOfferClauses(nft, offer), this.$t('offers.comment_withdraw'), this.$t('offers.msg_withdrawn'))
-        },
-        /** rarer is fuller: 0.5% fills the bar, 50% barely shows */
-        rarityWidth(pct: number) {
-            return `${Math.max(6, Math.min(100, 100 - Math.log10(Math.max(pct, 0.1) * 10) * 40))}%`
         },
         async askPrice(title: string, action: string): Promise<{ wei: string, token: string, text: string } | null> {
             const nft = this.nft!
@@ -832,13 +658,10 @@ export default defineComponent({
                 return
             }
 
-            const data = nft.tokenStandard === 'erc1155'
-                ? erc1155SafeTransferFrom.encode(from, to, nft.tokenId, 1, '0x')
-                : erc721TransferFrom.encode(from, to, nft.tokenId)
             const comment = `${this.$t('nft.action_send')}: ${nft.name}`
             try {
                 await this.$signTx(wallet.gid, {
-                    message: [{ to: nft.contract, value: '0', data, comment }],
+                    message: sendClauses([nft], from, to).map(c => ({ ...c, comment })),
                     options: { signer: from, comment }
                 })
                 void rememberRecipient(this.$svc, wallet.gid, to)
@@ -853,32 +676,8 @@ export default defineComponent({
 })
 </script>
 <style lang="sass" scoped>
-.nft-note :deep(.q-field__native)
-  font-size: 14px
-
 .offer-amount
   font-size: 16px
-
-.pnl
-  font-size: 13px
-
-.rarity-why
-  font-size: 14px
-  line-height: 1.45
-
-.trait--rare
-  border-color: color-mix(in srgb, var(--q-primary) 45%, transparent) !important
-
-.rarity-bar
-  height: 3px
-  margin-top: 6px
-  border-radius: 2px
-  background: rgba(255, 255, 255, 0.06)
-  span
-    display: block
-    height: 100%
-    border-radius: 2px
-    background: var(--q-primary)
 
 .coll-link
   text-decoration: none
@@ -923,33 +722,4 @@ export default defineComponent({
   line-height: 1.55
   max-width: 60ch
 
-.traits
-  display: grid
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr))
-  gap: 8px
-
-.trait
-  padding: 10px 12px
-
-.trait-type
-  font-size: 12px
-  color: $text-muted
-
-.trait-value
-  margin-top: 2px
-  font-weight: 800
-
-.trait-meta
-  margin-top: 4px
-  font-size: 12px
-  color: var(--q-primary)
-
-.details
-  padding: 4px 14px
-
-.detail
-  padding: 10px 0
-  font-size: 14px
-  & + .detail
-    border-top: 1px solid $hairline
 </style>

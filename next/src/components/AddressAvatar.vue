@@ -1,6 +1,9 @@
 <template>
     <q-avatar v-bind="$attrs">
-        <img :src="svg" />
+        <img
+            :src="svg"
+            alt=""
+        >
     </q-avatar>
 </template>
 <script lang="ts">

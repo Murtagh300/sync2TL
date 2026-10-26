@@ -7,6 +7,7 @@ import {
 } from 'vue-router'
 import routes from './routes'
 import { installStack } from './stack'
+import { featureOn, routeFeature } from 'src/utils/remote-config'
 
 export default defineRouter(function () {
     const createHistory = import.meta.env.QUASAR_SERVER
@@ -22,5 +23,10 @@ export default defineRouter(function () {
     })
 
     installStack(router)
+    // a feature the server paused (utils/remote-config.ts) can't be opened, also not from a link
+    router.beforeEach(to => {
+        const f = routeFeature[String(to.name || '')]
+        return f && !featureOn(f) ? { name: 'more', query: { paused: f }, replace: true } : true
+    })
     return router
 })

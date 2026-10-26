@@ -67,7 +67,7 @@ export namespace Vault {
      * @param words mnemonic words
      * @param key the cipher key
      */
-    // eslint-disable-next-line quotes
+     
     export function createHD(words: string[], key: Buffer, path = `m/44'/818'/0'/0`): Vault {
         const root = HDNode.fromMnemonic(words, path)
         // be aware that hd key is utf-8 encoded

@@ -21,7 +21,7 @@ describe('cipher', () => {
 
     it('rejects a wrong key or tampered data by MAC', () => {
         const wrong = Buffer.from(key)
-        wrong[31] ^= 1
+        wrong[31]! ^= 1
         expect(() => decrypt(fx.cipher.glob, wrong)).toThrow(/MAC mismatch/)
 
         const tampered = { ...fx.cipher.glob, cipherText: 'ff' + fx.cipher.glob.cipherText.slice(2) }

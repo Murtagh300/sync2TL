@@ -51,7 +51,8 @@ export function balanceChanges(outputs: Connex.VM.Output[], account: string): Ba
         }
         for (const ev of out.events) {
             const contract = ev.address.toLowerCase()
-            const [topic0, t1, t2, t3] = ev.topics
+            // the branches below check how many topics there are
+            const [topic0, t1 = '', t2 = '', t3 = ''] = ev.topics
             try {
                 if (topic0 === TRANSFER && ev.topics.length === 3) {
                     // ERC-20: the amount is in the data

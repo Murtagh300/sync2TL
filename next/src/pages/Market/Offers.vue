@@ -42,6 +42,7 @@
                     :text="$t('offerInbox.msg_none_received')"
                 />
                 <q-list
+                    role="group"
                     v-else
                     class="bvm-list"
                 >
@@ -114,6 +115,7 @@
                     :text="$t('offerInbox.msg_none_made')"
                 />
                 <q-list
+                    role="group"
                     v-else
                     class="bvm-list"
                 >

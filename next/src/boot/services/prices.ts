@@ -1,6 +1,7 @@
 // Token prices from BetterSwap (USD, with 1h/24h change and hourly history), turned into
 // euros with BlackVeMarket's rates. Mainnet only.
-import axios from 'axios'
+import { createClient } from 'src/utils/net'
+import { betterswapUrl, bvmPublicUrl } from 'src/utils/endpoints'
 import { loadPools } from 'src/utils/liquidity'
 
 export namespace Prices {
@@ -26,14 +27,8 @@ export namespace Prices {
 
 // BetterSwap sends no CORS headers: the dev server proxies it, a build needs BETTERSWAP_API_URL
 // pointing at a proxy (or falls back to BlackVeMarket's VET/VTHO/B3TR rates)
-const betterswap = axios.create({
-    baseURL: import.meta.env.BETTERSWAP_API_URL || (import.meta.env.QUASAR_DEV ? '/betterswap-api' : 'https://www.betterswap.io/api'),
-    timeout: 15 * 1000
-})
-const bvm = axios.create({
-    baseURL: import.meta.env.BVM_API_URL || (import.meta.env.QUASAR_DEV ? '/bvm-api' : 'https://blackvemarket.com/api'),
-    timeout: 15 * 1000
-})
+const betterswap = createClient({ baseURL: betterswapUrl, timeout: 15 * 1000 })
+const bvm = createClient({ baseURL: bvmPublicUrl, timeout: 15 * 1000 })
 
 const ZERO = '0x0000000000000000000000000000000000000000'
 const ENERGY = '0x0000000000000000000000000000456e65726779'
@@ -99,7 +94,7 @@ export function build() {
         async stats(addresses: Array<string | null | undefined>): Promise<Record<string, Prices.Stat>> {
             const keys = [...new Set(addresses.map(key))]
             const fresh = Date.now() - 60 * 1000
-            const missing = keys.filter(k => !(statCache.get(k)?.at! > fresh))
+            const missing = keys.filter(k => !((statCache.get(k)?.at ?? 0) > fresh))
             if (missing.length) {
                 try {
                     const resp = await betterswap.get<{ tokenAddress: string, price: number, priceChange24hPercent: number }[]>(
@@ -158,7 +153,7 @@ export function build() {
         async history(addresses: Array<string | null | undefined>, hours = 168): Promise<Record<string, Prices.Point[]>> {
             const keys = [...new Set(addresses.map(key))]
             const fresh = Date.now() - 10 * 60 * 1000
-            const missing = keys.filter(k => !(historyCache.get(`${k}:${hours}`)?.at! > fresh))
+            const missing = keys.filter(k => !((historyCache.get(`${k}:${hours}`)?.at ?? 0) > fresh))
             if (missing.length) {
                 try {
                     const resp = await betterswap.get<{ tokenAddress: string, priceHistory: { timestamp: number, price: number }[] }[]>(

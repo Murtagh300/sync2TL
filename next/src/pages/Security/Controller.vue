@@ -15,6 +15,7 @@
                     track-color="grey-9"
                     show-value
                     class="score-ring"
+                    :aria-label="$t('security.title')"
                 >
                     <span class="bvm-display score-value">{{done}}/{{checks.length}}</span>
                 </q-circular-progress>
@@ -24,7 +25,7 @@
                 </div>
             </div>
 
-            <q-list class="bvm-list">
+            <q-list role="group" class="bvm-list">
                 <q-item
                     v-for="c in checks"
                     :key="c.key"

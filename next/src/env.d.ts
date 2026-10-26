@@ -8,4 +8,5 @@ interface ImportMetaEnv {
     readonly BVM_API_URL: string
     readonly BETTERSWAP_API_URL: string
     readonly WALLETCONNECT_PROJECT_ID: string
+    readonly SERVER_URL: string
 }

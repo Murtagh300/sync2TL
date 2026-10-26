@@ -27,9 +27,33 @@
                 </div>
                 <q-toggle
                     :model-value="pushOn"
+                    :aria-label="$t('notifications.label_push')"
                     :disable="!canPush || busy"
                     color="primary"
                     @update:model-value="togglePush"
+                />
+            </div>
+
+            <!-- incoming transfers through the BlackVault server: no sign-in, it only knows the addresses -->
+            <div
+                v-if="ownAvailable"
+                class="bvm-tile q-pa-md q-mb-md row no-wrap items-center"
+            >
+                <q-icon
+                    name="o_south_west"
+                    size="24px"
+                    color="primary"
+                />
+                <div class="col q-mx-md">
+                    <div class="text-weight-bold">{{$t('service.label_push_incoming')}}</div>
+                    <div class="text-muted push-hint">{{ownState === 'other' ? $t('service.msg_push_other') : $t('service.msg_push_incoming', { n: watchAddresses.length })}}</div>
+                </div>
+                <q-toggle
+                    :model-value="ownState === 'on'"
+                    :disable="busy || ownState === 'other' || !watchAddresses.length"
+                    color="primary"
+                    :aria-label="$t('service.label_push_incoming')"
+                    @update:model-value="toggleOwnPush"
                 />
             </div>
 
@@ -45,6 +69,7 @@
                 <p class="q-mt-md">{{$t('notifications.msg_empty')}}</p>
             </div>
             <q-list
+                role="group"
                 v-else
                 class="bvm-list"
             >
@@ -83,7 +108,8 @@ import { defineComponent } from 'vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import { clearNotifications, markAllRead, notifications, type AppNotification, type NotificationKind } from 'src/utils/notifications'
-import { bvmSession, bvmSignIn, disablePush, enablePush, pushEnabled, pushSupported, signInMessage } from 'src/utils/push'
+import { bvmSession, bvmSignIn, disablePush, enablePush, pushEnabled, pushSupported, signInMessage, ownPushAvailable, ownPushState, enableOwnPush, disableOwnPush, type OwnPushState } from 'src/utils/push'
+import { featureOn } from 'src/utils/remote-config'
 import { selectedWallet } from 'src/utils/selection'
 import { formatDate } from 'src/utils/format'
 import { genesises } from 'src/consts'
@@ -94,6 +120,8 @@ export default defineComponent({
     data: () => ({
         notifications,
         pushOn: false,
+        ownAvailable: false,
+        ownState: 'off' as OwnPushState,
         busy: false,
         wallets: [] as M.Wallet[],
         icons: {
@@ -116,7 +144,13 @@ export default defineComponent({
             // push needs a signed sign-in: a wallet with keys
             return selectedWallet(this.wallets.filter(w => w.gid === genesises.main.id && w.meta.type !== 'watch'))
         },
+        /** the mainnet addresses to watch for incoming transfers, also watch-only ones (at most 20) */
+        watchAddresses(): string[] {
+            const all = this.wallets.filter(w => w.gid === genesises.main.id).flatMap(w => w.meta.addresses)
+            return [...new Set(all.map(a => a.toLowerCase()))].slice(0, 20)
+        },
         pushHint(): string {
+            if (this.ownState === 'on') return this.$t('service.msg_push_other')
             if (!pushSupported()) return this.$t('notifications.msg_push_install')
             if (!this.wallet) return this.$t('home.msg_mainnet_only')
             return this.$t('notifications.msg_push')
@@ -124,7 +158,10 @@ export default defineComponent({
     },
     async created() {
         this.wallets = await this.$svc.wallet.all()
-        this.pushOn = await pushEnabled()
+        this.ownAvailable = featureOn('push') && await ownPushAvailable()
+        this.ownState = this.ownAvailable ? await ownPushState() : 'off'
+        // one push subscription per device: when it is BlackVault's own, BlackVeMarket's is off
+        this.pushOn = this.ownState !== 'on' && await pushEnabled()
     },
     beforeUnmount() {
         // what was seen is read
@@ -148,9 +185,11 @@ export default defineComponent({
             if (!wallet) return
             this.busy = true
             try {
+                if (on && this.ownState === 'on') return
                 if (!on) {
                     await disablePush()
                     this.pushOn = false
+                    this.ownState = 'off'
                     return
                 }
                 const address = wallet.meta.addresses[0]!
@@ -167,11 +206,38 @@ export default defineComponent({
                 }
                 await enablePush()
                 this.pushOn = true
+                this.ownState = 'other'
                 this.$q.notify(this.$t('notifications.msg_push_on'))
             } catch (err) {
                 if (err instanceof Error && err.message === 'blocked') {
                     this.$q.notify(this.$t('notifications.msg_push_blocked'))
                 } else if (err) {
+                    console.warn('push:', err)
+                    this.$q.notify(this.$t('notifications.msg_push_failed'))
+                }
+            } finally {
+                this.busy = false
+            }
+        },
+        async toggleOwnPush(on: boolean) {
+            this.busy = true
+            try {
+                if (on) {
+                    await enableOwnPush(this.watchAddresses, this.$i18n.locale)
+                    this.ownState = 'on'
+                    this.$q.notify(this.$t('notifications.msg_push_on'))
+                } else {
+                    await disableOwnPush()
+                    this.ownState = 'off'
+                }
+            } catch (err) {
+                const msg = err instanceof Error ? err.message : ''
+                if (msg === 'blocked') {
+                    this.$q.notify(this.$t('notifications.msg_push_blocked'))
+                } else if (msg === 'other') {
+                    this.ownState = 'other'
+                    this.$q.notify(this.$t('service.msg_push_other'))
+                } else {
                     console.warn('push:', err)
                     this.$q.notify(this.$t('notifications.msg_push_failed'))
                 }

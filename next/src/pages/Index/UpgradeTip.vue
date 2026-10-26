@@ -22,11 +22,11 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
+import { applyUpdate } from 'src/utils/app-update'
 export default defineComponent({
     methods: {
         reloadApp() {
-            // the desktop app installs its update here instead (phase 5)
-            window.location.reload()
+            void applyUpdate()
         }
     }
 })

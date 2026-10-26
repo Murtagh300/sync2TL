@@ -14,6 +14,13 @@ const appBuild = execSync('git --no-pager log -n 1 --date=short --pretty="%ad.%h
     .replace(/-/g, '.')
     .trim()
 
+// '' (no server), '/' (same origin) or an http(s) address. Git Bash on Windows turns a bare '/' into
+// its own install folder: set MSYS_NO_PATHCONV=1 there, or the build stops here.
+const serverUrl = process.env.SERVER_URL || ''
+if (serverUrl && serverUrl !== '/' && !/^https?:\/\/[^\s]+$/.test(serverUrl)) {
+    throw new Error(`SERVER_URL must be '/', an http(s) address or empty, not "${serverUrl}"`)
+}
+
 export default defineConfig(() => {
     return {
         boot: ['i18n', 'axios', 'misc', 'directives', 'services'],
@@ -31,9 +38,11 @@ export default defineConfig(() => {
                 strict: true,
                 vueShim: true,
                 extendTsConfig(tsConfig) {
-                    // not used by the ported Sync2 code base; revisit once phase 4 is done
+                    // an index into an array or a record may be undefined: say so (and check)
+                    tsConfig.compilerOptions!.noUncheckedIndexedAccess = true
+                    tsConfig.compilerOptions!.noFallthroughCasesInSwitch = true
+                    // not used by the ported Sync2 code base
                     tsConfig.compilerOptions!.exactOptionalPropertyTypes = false
-                    tsConfig.compilerOptions!.noUncheckedIndexedAccess = false
                 }
             },
 
@@ -65,7 +74,10 @@ export default defineConfig(() => {
                 // BetterSwap prices; it sends no CORS headers, so a build points this at a proxy
                 BETTERSWAP_API_URL: process.env.BETTERSWAP_API_URL || '',
                 // WalletConnect (Reown) project id; without it the app asks for one (Meer › WalletConnect)
-                WALLETCONNECT_PROJECT_ID: process.env.WALLETCONNECT_PROJECT_ID || ''
+                WALLETCONNECT_PROJECT_ID: process.env.WALLETCONNECT_PROJECT_ID || '',
+                // the BlackVault server (server/): '/' on the same origin (deploy/), empty for none;
+                // with one, public BetterSwap/BlackVeMarket data goes through its gateway (utils/endpoints.ts)
+                SERVER_URL: serverUrl
             },
 
             extendViteConf(viteConf) {
@@ -86,6 +98,16 @@ export default defineConfig(() => {
             open: false,
             // BlackVeMarket and BetterSwap send no CORS headers; proxy them in development
             proxy: {
+                // the BlackVault server, when it runs locally (cd server && npm run dev)
+                '/srv': {
+                    target: process.env.DEV_SERVER_TARGET || 'http://localhost:8787',
+                    changeOrigin: true,
+                    rewrite: (path: string) => path.replace(/^\/srv/, ''),
+                    // same origin as far as the server knows, as behind Caddy in production
+                    configure: (proxy: { on(ev: 'proxyReq', fn: (req: { removeHeader(name: string): void }) => void): void }) => {
+                        proxy.on('proxyReq', req => req.removeHeader('origin'))
+                    }
+                },
                 '/betterswap-api': {
                     target: 'https://www.betterswap.io/api',
                     changeOrigin: true,
@@ -118,7 +140,8 @@ export default defineConfig(() => {
         pwa: {
             workboxMode: 'GenerateSW',
             extendPWAGenerateSWOptions(cfg) {
-                cfg.skipWaiting = true
+                // a new version waits until the user taps Update (src/utils/app-update.ts)
+                cfg.skipWaiting = false
                 // push messages from BlackVeMarket (public/push-sw.js)
                 cfg.importScripts = ['push-sw.js']
                 cfg.clientsClaim = true

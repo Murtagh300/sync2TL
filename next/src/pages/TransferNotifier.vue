@@ -107,8 +107,8 @@ export default defineComponent({
     },
     watch: {
         thor() {
-            this.$asyncComputed.events.update()
-            this.$asyncComputed.transfers.update()
+            this.$asyncComputed.events?.update()
+            this.$asyncComputed.transfers?.update()
         },
         transfers(newVal: Connex.Thor.Filter.Row<'transfer'>[] | null) {
             const wallets = this.wallets
@@ -137,7 +137,7 @@ export default defineComponent({
                 if (!token) {
                     return
                 }
-                const { _to, _from, _value }: Record<string, string> = new abi.Event(abis.transferEvent).decode(e.data, e.topics)
+                const { _to = '', _from = '', _value = '0' }: Record<string, string> = new abi.Event(abis.transferEvent).decode(e.data, e.topics)
                 let w = wallets.find(w => w.meta.addresses.includes(_to))
                 if (w) {
                     this.notify('in', _value, token.decimals, token.symbol, w.id, w.meta.addresses.indexOf(_to))
@@ -162,8 +162,9 @@ export default defineComponent({
             }
 
             const result = await query({ unit: 'block', from: rangeStart, to: 2 ** 32 - 1 })
-            if (result.length > 0) {
-                localStorage.setItem(key, (result[result.length - 1].meta.blockNumber + 1).toString())
+            const last = result[result.length - 1]
+            if (last) {
+                localStorage.setItem(key, (last.meta.blockNumber + 1).toString())
             } else if (!savedRange || headNum > rangeStart + 100) {
                 localStorage.setItem(key, headNum.toString())
             }

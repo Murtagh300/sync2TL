@@ -41,7 +41,7 @@ describe('wallets (auto increment)', () => {
         await db.wallets.insert({ gid: 'test', vault: 'v2', meta: '{}' })
 
         await db.wallets.update({ id }, { meta: '{"name":"x"}' })
-        expect((await db.wallets.all().where({ id }).query())[0].meta).toBe('{"name":"x"}')
+        expect((await db.wallets.all().where({ id }).query())[0]!.meta).toBe('{"name":"x"}')
 
         await db.wallets.delete({ gid: 'test' })
         expect(await db.wallets.all().query()).toHaveLength(1)

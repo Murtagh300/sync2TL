@@ -729,6 +729,34 @@ export default {
         label_known: 'L’adresse que vous connaissez (différences en rouge)',
         action_continue_anyway: 'Envoyer quand même'
     },
+    whatsNew: {
+        title: 'Quoi de neuf'
+    },
+    settingsBackup: {
+        label: 'Sauvegarde des réglages',
+        action_export: 'Sauvegarder les réglages',
+        action_import: 'Restaurer les réglages',
+        action_restore: 'Restaurer',
+        msg_hint: 'Contacts, notes, alertes, liste de suivi, paiements planifiés et préférences, dans un fichier protégé par un mot de passe. Jamais vos clés : elles reviennent avec vos mots de récupération.',
+        msg_password: 'Un mot de passe pour ce fichier (au moins 8 caractères).',
+        msg_password_again: 'Le même mot de passe une fois encore.',
+        msg_mismatch: 'Les mots de passe ne sont pas identiques.',
+        msg_exported: 'Réglages enregistrés dans un fichier.',
+        msg_wrong_password: 'Ce mot de passe n’ouvre pas ce fichier.',
+        msg_not_a_backup: 'Ce n’est pas un fichier de réglages BlackVault.',
+        msg_confirm: 'Ce fichier contient {contacts} contacts, {notes} notes et {settings} types de réglages. Ils remplacent ceux de cet appareil, puis BlackVault redémarre.'
+    },
+    service: {
+        action_update: 'Mettre à jour',
+        msg_update: 'Cette version est obsolète. Mettez à jour pour continuer à utiliser BlackVault en toute sécurité.',
+        msg_degraded: 'Certains services sont lents ou indisponibles : {services}. Vos fonds sont en sécurité ; certains chiffres peuvent manquer.',
+        msg_paused: 'Cette partie de BlackVault est momentanément en pause. Réessayez plus tard.',
+        label_push_incoming: 'Virements entrants',
+        msg_push_incoming: 'Une notification quand du VET, du VTHO ou un jeton arrive sur vos adresses ({n}), même BlackVault fermé. Aucune connexion nécessaire.',
+        msg_push_other: 'Cet appareil ne reçoit qu’un type de notifications push à la fois. Désactivez d’abord l’autre.',
+        label_error_reports: 'Envoyer des rapports d’erreur',
+        msg_error_reports: 'Anonymes : ni adresses, ni montants, ni clés. Aide à corriger les problèmes plus vite.'
+    },
     offline: {
         title: 'Hors ligne',
         msg: 'Hors ligne · derniers soldes connus affichés',

@@ -17,6 +17,7 @@
                 />
                 <div class="column no-wrap col">
                     <offline-bar />
+                    <service-bar />
                     <div class="col relative-position">
                         <stacked-router-view class="fit" />
                         <tx-status-bar />
@@ -54,14 +55,17 @@ import Disclaimer from './Disclaimer'
 import TabBar, { TAB_ROUTES } from 'components/TabBar.vue'
 import TxStatusBar from 'components/TxStatusBar.vue'
 import OfflineBar from 'components/OfflineBar.vue'
+import ServiceBar from 'components/ServiceBar.vue'
+import WhatsNewDialog from 'components/WhatsNewDialog.vue'
+import { unseenRelease } from 'src/changelog'
 import AppLock from 'components/AppLock.vue'
 import { WalletConnectHost } from 'pages/WalletConnect'
 import { applyAccent, applyDisplay } from 'src/utils/prefs'
 import { setupPrivacyClass, setupShake } from 'src/utils/shake'
 
 export default defineComponent({
-    name: 'Main',
-    components: { Wizard, StackedRouterView, ActivityStatusUpdater, TransferNotifier, Disclaimer, TabBar, TxStatusBar, OfflineBar, AppLock, WalletConnectHost },
+    name: 'MainLayout',
+    components: { Wizard, StackedRouterView, ActivityStatusUpdater, TransferNotifier, Disclaimer, TabBar, TxStatusBar, OfflineBar, ServiceBar, AppLock, WalletConnectHost },
     data() {
         return {
             initialized: false,
@@ -93,6 +97,11 @@ export default defineComponent({
     async mounted() {
         this.initialized = await this.$svc.config.getUserMasterKeyGlob().then(r => !!r)
         this.mounted = true
+        // once after an update: what changed (not after a fresh install)
+        const release = this.initialized ? unseenRelease(String(import.meta.env.APP_VERSION || '')) : null
+        if (release) {
+            this.$dialog({ component: WhatsNewDialog, release }).catch(() => { })
+        }
     }
 })
 </script>

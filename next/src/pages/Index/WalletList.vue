@@ -83,7 +83,7 @@ export default defineComponent({
     methods: {
         ensureCurrentInView() {
             const item = this.$refs[String(this.current)] as ComponentPublicInstance[]
-            if (item && item.length > 0) {
+            if (item && item[0]) {
                 item[0].$el.scrollIntoView({ behavior: 'smooth', block: 'nearest' })
             }
         }

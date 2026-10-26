@@ -729,6 +729,34 @@ export default {
         label_known: 'The address you know (differences in red)',
         action_continue_anyway: 'Send anyway'
     },
+    whatsNew: {
+        title: 'What\'s new'
+    },
+    settingsBackup: {
+        label: 'Settings back-up',
+        action_export: 'Back up settings',
+        action_import: 'Restore settings',
+        action_restore: 'Restore',
+        msg_hint: 'Contacts, notes, alerts, the watchlist, scheduled payments and preferences, in a file protected with a password. Never your keys: those come back with your recovery words.',
+        msg_password: 'A password for this file (at least 8 characters).',
+        msg_password_again: 'The same password once more.',
+        msg_mismatch: 'The passwords are not the same.',
+        msg_exported: 'Settings saved to a file.',
+        msg_wrong_password: 'That password does not open this file.',
+        msg_not_a_backup: 'This is not a BlackVault settings file.',
+        msg_confirm: 'This file has {contacts} contacts, {notes} notes and {settings} kinds of settings. They replace the ones on this device, then BlackVault starts again.'
+    },
+    service: {
+        action_update: 'Update',
+        msg_update: 'This version is out of date. Update to keep using BlackVault safely.',
+        msg_degraded: 'Some services are slow or down: {services}. Your funds are safe; some numbers may be missing.',
+        msg_paused: 'This part of BlackVault is paused for a moment. Try again later.',
+        label_push_incoming: 'Incoming transfers',
+        msg_push_incoming: 'A notification when VET, VTHO or a token arrives on your addresses ({n}), also when BlackVault is closed. No sign-in needed.',
+        msg_push_other: 'This device can receive one kind of push at a time. Turn the other one off first.',
+        label_error_reports: 'Send error reports',
+        msg_error_reports: 'Anonymous: no addresses, amounts or keys. Helps fix problems sooner.'
+    },
     offline: {
         title: 'Offline',
         msg: 'Offline · showing the last known balances',

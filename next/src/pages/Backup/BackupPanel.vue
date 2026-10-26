@@ -2,7 +2,7 @@
     <q-tab-panels
         class="col"
         animated
-        v-model="panel"
+        :model-value="panel"
         transition-next="jump-up"
     >
         <q-tab-panel

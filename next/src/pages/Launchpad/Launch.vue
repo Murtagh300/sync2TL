@@ -43,7 +43,7 @@
                 >{{launch.description}}</p>
 
                 <div class="bvm-label q-mt-lg q-mb-sm">{{$t('launchpad.label_phases')}}</div>
-                <q-list class="bvm-list">
+                <q-list role="group" class="bvm-list">
                     <q-item
                         v-for="p in launch.phases || []"
                         :key="p.index"

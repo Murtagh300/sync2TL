@@ -1,43 +1,46 @@
-# BlackVault – next
+# BlackVault – the wallet
 
-The BlackVault wallet being rebuilt on Quasar 2, Vue 3 and Vite.
-The current app in the repository root keeps working until this folder replaces it.
-
-Requires Node 24 (see `../.nvmrc`).
+The BlackVault wallet: Quasar 2, Vue 3 and Vite, built as a PWA. Requires Node 24 (see `../.nvmrc`).
+How it fits with the server and hosting: [../docs/ARCHITECTURE.md](../docs/ARCHITECTURE.md).
 
 ```bash
 npm install
-npm run dev          # http://localhost:8090
-npm run build        # PWA into dist/pwa
+npm run dev          # http://localhost:8090 (with the server: cd ../server && npm run dev)
+npm run build        # PWA into dist/pwa (SERVER_URL=/ when it is hosted next to the server)
 npm run typecheck
-npm test             # core tests against next/src
-npm run test:legacy  # the same tests against the current app in ../src
+npm run lint
+npm test             # unit tests (test/)
+npm run e2e          # Playwright: onboarding, screens, remote config, accessibility (e2e/)
 ```
 
-## Status
+Build-time settings (`quasar.config.ts`, `defineEnv`):
 
-| Phase | Scope | State |
-| --- | --- | --- |
-| 0 | Test checklist (`../docs/TEST-CHECKLIST.md`), core tests | done |
-| 1 | Quasar 2 + Vite toolchain, theme, assets, i18n, `core/` | done |
-| 2 | Boot files and global services | done |
-| 3 | Router and stack navigation | done |
-| 4 | Pages and components | done |
-| 5 | Electron | – |
-| 6 | Mobile (Capacitor) | – |
-| 7 | Lint, CI, cleanup | – |
+| Variable | What |
+| --- | --- |
+| `SERVER_URL` | the BlackVault server: `/` on the same origin (deploy/), empty for none |
+| `BVM_API_URL`, `BETTERSWAP_API_URL` | override where BlackVeMarket and BetterSwap are reached |
+| `WALLETCONNECT_PROJECT_ID` | Reown project for WalletConnect (otherwise asked in the app) |
+| `GA_ID`, `DIST_TAG` | analytics id (off when empty), pre-release tag |
 
-The web app (SPA/PWA) is feature complete. Checked in the browser against mainnet
-(see `../docs/TEST-CHECKLIST.md`): wizard, create/import (known BIP39 vector), backup and
-verification, wallets/addresses, rename/delete, password change, settings (language,
-tokens, nodes), address/asset pages, send form, transaction dialog (estimation, warnings,
-priority), certificate signing, the dApp sign flow over a (local) relay, activities.
+Before a pull request: typecheck, lint, `npm test` and `npm run e2e` (CI runs them all, see
+[../docs/CONTRIBUTING.md](../docs/CONTRIBUTING.md)).
 
-Not checked yet: broadcasting a real transaction (needs testnet funds), transfer history
-and notifications with real transfers, PWA install/update.
+## Robustness (2.1)
 
-Platform hooks left for later phases: `utils/external-url.ts`, `utils/bio-pass.ts`,
-`utils/clipboard.ts`, `utils/open-url.ts`, the update tip (phase 5 desktop, phase 6 native).
+- **Network** (`utils/net.ts`, `utils/endpoints.ts`): one client for every API, with time-outs, retries with
+  back-off for reads, a circuit breaker per host and shared identical requests. With a server, BetterSwap and
+  BlackVeMarket's public data go through its gateway; sign-in, BlackVeMarket push and fee delegation always go to
+  BlackVeMarket itself.
+- **Remote config** (`utils/remote-config.ts`, `components/ServiceBar.vue`): paused features, a notice, the lowest
+  version that is still fine, and services that are down, from the server's `/config` and `/health`.
+- **Push for incoming transfers** (`utils/push.ts`, Notifications): through the BlackVault server, no sign-in.
+  One push subscription per device: this or BlackVeMarket's.
+- **Error reports** (`utils/error-reports.ts`): only when turned on in Settings; scrubbed here and on the server.
+- **Storage migrations** (`utils/migrations.ts`): versioned, run before anything reads its settings.
+- **Settings back-up** (`utils/settings-backup.ts`): password-encrypted file, never keys.
+- **Updates** (`src-pwa/register-sw.ts`, `utils/app-update.ts`): a new version waits for "Update";
+  "What's new" (`src/changelog.ts`) after an update.
+- **Accessibility**: axe runs on the main screens in `npm run e2e`; serious problems fail the build.
 
 ## Porting notes
 
@@ -85,8 +88,8 @@ outlined Material set (`o_…`).
 
 `test/core` pins the stored-data formats with values generated independently of the
 app (ethers for HD keys, Node crypto for the cipher format, see `test/fixtures.ts`).
-Run both `npm test` and `npm run test:legacy` after touching `src/core`: if either
-fails, wallets saved by an earlier version may no longer open.
+Run `npm test` after touching `src/core`: if it fails, wallets saved by an earlier version may no
+longer open.
 
 ## BlackVeMarket integration
 

@@ -66,9 +66,12 @@ export async function tokenTransfers(thor: Connex.Thor, tokenList: M.TokenSpec[]
     const result: TransferLogItem[] = []
 
     event.forEach(item => {
+        const token = tokenMap[item.address]
+        // only the tokens asked for were filtered
+        if (!token) return
         const decode = ev.decode(item.data, item.topics)
         const temp: M.TransferLog = {
-            token: tokenMap[item.address],
+            token,
             meta: item.meta,
             sender: decode._from,
             amount: decode._value,

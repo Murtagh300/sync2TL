@@ -35,3 +35,15 @@ yarn-error.log*
 ### Terraform ###
 .terraform/
 .terraform.lock.hcl
+
+# BlackVault
+server/data/
+server/node_modules/
+*.db
+*.db-wal
+*.db-shm
+.env
+next/quasar.config.ts.temporary.compiled.*
+next/test-results/
+next/playwright-report/
+next/e2e/.auth/

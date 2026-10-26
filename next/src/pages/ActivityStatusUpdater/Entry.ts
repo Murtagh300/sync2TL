@@ -57,7 +57,7 @@ export default defineComponent({
     },
     watch: {
         thor() {
-            this.$asyncComputed.task.update()
+            this.$asyncComputed.task?.update()
         }
     },
     render() {

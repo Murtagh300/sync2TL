@@ -9,7 +9,7 @@
         </div>
         <h1 class="bvm-display backup-title q-my-none">{{$t('backup.label_backup_tips')}}<help-tip term="recovery" /></h1>
         <p class="text-soft q-mt-md q-mb-lg">{{$t('backup.msg_backup_intro')}}</p>
-        <q-list class="bvm-list">
+        <q-list role="group" class="bvm-list">
             <q-item
                 v-for="tip in tips"
                 :key="tip.icon"

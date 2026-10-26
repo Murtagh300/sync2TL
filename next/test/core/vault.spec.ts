@@ -35,7 +35,7 @@ describe('HD vault', () => {
 
     it('survives encode/decode', () => {
         const vault = Vault.decode(Vault.createHD(words, key).encode())
-        expect(vault.derive(0).address.toLowerCase()).toBe(fx.hd.nodes[0].address)
+        expect(vault.derive(0).address.toLowerCase()).toBe(fx.hd.nodes[0]!.address)
     })
 
     it('rejects a wrong key on unlock', () => {
@@ -62,7 +62,7 @@ describe('static key vault', () => {
 describe('USB (Ledger) vault', () => {
     it('derives addresses but holds no secret', () => {
         const vault = Vault.createUSB(Buffer.from(fx.hd.pub, 'hex'), Buffer.from(fx.hd.chainCode, 'hex'))
-        expect(vault.derive(1).address.toLowerCase()).toBe(fx.hd.nodes[1].address)
+        expect(vault.derive(1).address.toLowerCase()).toBe(fx.hd.nodes[1]!.address)
         expect(() => vault.decrypt(key)).toThrow(/unsupported/)
     })
 })

@@ -60,7 +60,7 @@
             >
                 <steps :current="finished ? 2 : 1" />
                 <h4 class="q-mb-none bvm-display">{{$t('wizard.title_init')}}</h4>
-                <Progress
+                <WizardProgress
                     :current="progressStr"
                     class="col overflow-auto"
                 />
@@ -157,7 +157,7 @@ async function randomDelay<T>(p: () => Promise<T>, aboutSeconds: number) {
 export default defineComponent({
     emits: ['done'],
     components: {
-        Progress,
+        WizardProgress: Progress,
         Steps,
         FeatureSlides,
         LanguageListPopup,

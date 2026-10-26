@@ -230,7 +230,7 @@ export default defineComponent({
             return !!this.wallet && this.$svc.bvm.supports(this.wallet.gid)
         },
         address(): string {
-            return this.wallet ? this.wallet.meta.addresses[parseInt(this.addressIndex)] : ''
+            return this.wallet ? (this.wallet.meta.addresses[parseInt(this.addressIndex)] ?? '') : ''
         }
     },
     watch: {
@@ -254,7 +254,7 @@ export default defineComponent({
         async saveTokenPrefs(p: TokenPrefs) {
             this.tokenPrefs = p
             await this.$svc.config.setJSON('token-prefs', p)
-            void this.$asyncComputed.tokenList.update()
+            void this.$asyncComputed.tokenList?.update()
         },
         pin(token: M.TokenSpec, on: boolean) {
             const pinned = this.tokenPrefs.pinned.filter(s => s !== token.symbol)

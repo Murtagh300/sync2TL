@@ -1,6 +1,7 @@
 // Client for the BlackVeMarket API (NFT holdings, NFT details, .vet names, rates).
 // BlackVeMarket indexes VeChain mainnet only.
-import axios from 'axios'
+import { createClient } from 'src/utils/net'
+import { bvmDirectUrl, bvmPublicUrl } from 'src/utils/endpoints'
 import { genesises } from 'src/consts'
 
 export namespace BVM {
@@ -193,10 +194,8 @@ export namespace BVM {
     }
 }
 
-// in dev the Quasar dev server proxies /bvm-api to the real API (it sends no CORS headers);
-// a build can point elsewhere with BVM_API_URL
-const baseURL = import.meta.env.BVM_API_URL || (import.meta.env.QUASAR_DEV ? '/bvm-api' : 'https://blackvemarket.com/api')
-const http = axios.create({ baseURL, timeout: 20 * 1000 })
+// public data, through the server's gateway when there is one (see utils/endpoints.ts)
+const http = createClient({ baseURL: bvmPublicUrl })
 
 export const marketURL = 'https://blackvemarket.com'
 
@@ -352,7 +351,8 @@ export function build() {
         },
         /** the fee delegation service, for options.delegator */
         delegatorURL() {
-            return new URL(baseURL.replace(/\/$/, '') + '/delegate/sign', window.location.href).href
+            // signed by BlackVeMarket itself, never through the gateway
+            return new URL(bvmDirectUrl.replace(/\/$/, '') + '/delegate/sign', window.location.href).href
         },
         /** the page of an NFT on blackvemarket.com */
         nftPage(contract: string, tokenId: string) {

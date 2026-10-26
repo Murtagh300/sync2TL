@@ -34,7 +34,7 @@
                         <q-icon name="o_search" />
                     </template>
                 </q-input>
-                <q-list class="bvm-list">
+                <q-list role="group" class="bvm-list">
                     <q-item
                         v-for="item in shown"
                         :key="item.symbol"
@@ -67,7 +67,7 @@
                 class="fit column flex-center"
             >
                 <q-spinner-dots
-                    v-if="$asyncComputed.tokens.updating"
+                    v-if="$asyncComputed.tokens?.updating"
                     class="text-h2"
                 />
                 <template v-else>
@@ -75,7 +75,7 @@
                     <q-btn
                         unelevated
                         color="primary"
-                        @click="$asyncComputed.tokens.update()"
+                        @click="$asyncComputed.tokens?.update()"
                     >{{$t('nft.action_retry')}}</q-btn>
                 </template>
             </div>

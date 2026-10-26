@@ -1,0 +1,25 @@
+{
+  "name": "blackvault-server",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BlackVault's server: an API gateway (CORS, caching, rate limits) for BetterSwap and BlackVeMarket, push notifications for incoming transfers, health, remote config and opt-in error reports. It never sees a key.",
+  "type": "module",
+  "engines": {
+    "node": ">=24"
+  },
+  "scripts": {
+    "start": "node src/main.ts",
+    "dev": "node --watch src/main.ts",
+    "test": "node --test test/*.test.ts",
+    "vapid": "node scripts/vapid.ts",
+    "typecheck": "tsc -p tsconfig.json"
+  },
+  "dependencies": {
+    "web-push": "3.6.7"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.2",
+    "@types/web-push": "3.6.4",
+    "typescript": "5.9.3"
+  }
+}

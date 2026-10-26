@@ -4,6 +4,7 @@ import { genesises } from 'src/consts'
 import { TokenRegistry } from './token-registry'
 import { unique } from 'src/utils/array'
 import { setContacts, type Contact } from 'src/utils/names'
+import type { ConfigKey } from 'src/utils/settings-backup'
 
 // the first node per network is the default; veblocks.net nodes are gone
 const presetNodes: M.Node[] = [
@@ -160,6 +161,13 @@ export function build(storage: Storage) {
         },
         setBioPassOn(on: boolean) {
             return set('bio-pass-on', on ? 't' : '')
+        },
+        /** raw values for the settings backup (utils/settings-backup.ts): only these keys, never key material */
+        getBackupValue(key: ConfigKey) {
+            return get(key)
+        },
+        setBackupValue(key: ConfigKey, value: string) {
+            return set(key, value)
         }
     }
 }

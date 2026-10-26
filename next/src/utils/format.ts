@@ -7,7 +7,7 @@ dayjs.extend(relativeTime)
 dayjs.extend(localizedFormat)
 
 export function decimalSeparator() {
-    return BigNumber.config(undefined as unknown as {}).FORMAT!.decimalSeparator!
+    return BigNumber.config(undefined as unknown as BigNumber.Config).FORMAT!.decimalSeparator!
 }
 
 export type FormatAmountOptions = {
@@ -38,7 +38,7 @@ export function formatAmount(val: BigNumber.Value, opts?: FormatAmountOptions): 
         const sep = decimalSeparator()
 
         if (opts.fullPrecision) {
-            const [int, dec] = bn.toFormat().split(sep)
+            const [int = '', dec] = bn.toFormat().split(sep)
             if (typeof opts.fixed !== 'number' || opts.fixed <= 0) {
                 return { int, dec, sep }
             }
@@ -52,7 +52,7 @@ export function formatAmount(val: BigNumber.Value, opts?: FormatAmountOptions): 
             return { int, dec: '0'.repeat(opts.fixed), sep }
         }
 
-        const [int, dec] = (typeof opts.fixed === 'number' ? bn.toFormat(opts.fixed, BigNumber.ROUND_FLOOR) : bn.toFormat()).split(sep)
+        const [int = '', dec] = (typeof opts.fixed === 'number' ? bn.toFormat(opts.fixed, BigNumber.ROUND_FLOOR) : bn.toFormat()).split(sep)
         return { int, dec, sep }
     } catch {
         return null

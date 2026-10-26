@@ -5,6 +5,8 @@ import * as Plugins from './plugins'
 import * as Modals from './modals'
 import { genesises } from 'src/consts'
 import { stack } from 'src/router/stack'
+import { installErrorReports } from 'src/utils/error-reports'
+import { startRemoteConfig } from 'src/utils/remote-config'
 
 declare module 'vue' {
     interface ComponentCustomProperties {
@@ -20,7 +22,9 @@ declare module 'vue' {
 // window listeners registered by $onWindowEvent, removed when their component unmounts
 const windowListeners = new WeakMap<ComponentPublicInstance, Array<() => void>>()
 
-export default defineBoot(({ app }) => {
+export default defineBoot(({ app, router }) => {
+    installErrorReports(app, () => String(router.currentRoute.value.name || ''))
+    startRemoteConfig()
     State.boot(app)
     Plugins.boot(app)
     Modals.boot(app)
