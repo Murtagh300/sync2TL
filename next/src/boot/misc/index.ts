@@ -7,6 +7,7 @@ import { genesises } from 'src/consts'
 import { stack } from 'src/router/stack'
 import { installErrorReports } from 'src/utils/error-reports'
 import { startRemoteConfig } from 'src/utils/remote-config'
+import { startInstallWatch } from 'src/utils/install'
 
 declare module 'vue' {
     interface ComponentCustomProperties {
@@ -25,6 +26,7 @@ const windowListeners = new WeakMap<ComponentPublicInstance, Array<() => void>>(
 export default defineBoot(({ app, router }) => {
     installErrorReports(app, () => String(router.currentRoute.value.name || ''))
     startRemoteConfig()
+    startInstallWatch()
     State.boot(app)
     Plugins.boot(app)
     Modals.boot(app)

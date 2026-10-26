@@ -61,6 +61,7 @@ export default {
         msg_init_animation_s1: '准备您的主密钥',
         msg_init_animation_s2: '初始化&加密',
         msg_init_animation_s3: '生成钱包助记词',
+        msg_init_animation_s3_import: '正在读取你的助记词',
         msg_init_animation_s4: '使用主密钥加密钱包',
         msg_init_animation_s5: '妥善地保存已加密的钱包',
         msg_init_complete: '您的钱包已经就绪！',
@@ -71,7 +72,8 @@ export default {
         msg_follow: '它们的新挂单、成交和出价会出现在你的关注列表中，随时可以修改。',
         action_follow: '关注 {n} 个并完成',
         action_skip: '跳过并完成',
-        action_get_started: '开始使用'
+        action_get_started: '开始使用',
+        action_import: '我已有钱包'
     },
     index: {
         action_new_address: '新建地址',
@@ -88,6 +90,7 @@ export default {
         label_wallets: '钱包'
     },
     newWallet: {
+        default_name: '钱包 {n}',
         title: '新建钱包',
         msg_mnemonic_error: '无效的助记词',
         mnemonic_words_count: '助记词数量',
@@ -163,6 +166,9 @@ export default {
         action_receive: '接收'
     },
     nft: {
+        label_search: '搜索你的 NFT：名称、合集或 #编号',
+        msg_no_match: '没有与“{q}”匹配的 NFT',
+        action_clear_search: '清除搜索',
         label_nfts: 'NFT',
         label_all: '全部',
         label_collection: '系列',
@@ -745,6 +751,16 @@ export default {
         msg_not_a_backup: '这不是 BlackVault 设置文件。',
         msg_confirm: '此文件包含 {contacts} 个联系人、{notes} 条备注和 {settings} 类设置。它们将替换此设备上的设置，随后 BlackVault 会重新启动。',
         label_contacts: '联系人'
+    },
+    install: {
+        title: '安装 BlackVault',
+        msg: '作为此电脑或手机上的应用：独立窗口，出现在开始菜单或程序坞中，打开更快。',
+        action: '安装',
+        msg_done: 'BlackVault 已安装',
+        help_ios: '在 Safari 中：点“分享”（带箭头的方块），然后选“添加到主屏幕”。',
+        help_safari_mac: '在 Safari 中：文件 › 添加到程序坞。',
+        help_firefox: 'Firefox 无法在电脑上安装网页应用。请在 Chrome 或 Edge 中打开 bvwallet.xyz 并选择“安装”，或在 Android 上使用 Firefox：菜单 › 安装。',
+        help_other: '在 Chrome 或 Edge 中：点地址栏右侧的安装图标，或菜单 (⋮) › “安装 BlackVault”（Edge：应用 › 将此站点作为应用安装）。'
     },
     service: {
         action_update: '更新',

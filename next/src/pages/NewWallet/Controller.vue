@@ -179,9 +179,9 @@ export default defineComponent({
         suggestedName: {
             async get(): Promise<string> {
                 const wallets = await this.$svc.wallet.all()
-                const baseName = this.$t('newWallet.title')
-                for (let i = 1; ; i++) {
-                    const name = `${baseName}${i}`
+                // the first free 'Wallet 2', 'Wallet 3' … (the first wallet is 'My Wallet')
+                for (let i = wallets.length + 1; ; i++) {
+                    const name = this.$t('newWallet.default_name', { n: i })
                     if (!wallets.find(w => w.meta.name === name)) {
                         return name
                     }

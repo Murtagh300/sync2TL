@@ -61,6 +61,7 @@ export default {
         msg_init_animation_s1: 'Création de votre clé principale',
         msg_init_animation_s2: 'Chiffrement avec votre mot de passe',
         msg_init_animation_s3: 'Génération des mots de récupération',
+        msg_init_animation_s3_import: 'Lecture de vos mots de récupération',
         msg_init_animation_s4: 'Chiffrement de votre portefeuille',
         msg_init_animation_s5: 'Enregistrement sur cet appareil',
         msg_init_complete: 'Votre portefeuille est prêt.',
@@ -71,7 +72,8 @@ export default {
         msg_follow: 'Leurs nouvelles mises en vente, ventes et offres apparaissent dans votre liste de suivi. Vous pouvez changer cela à tout moment.',
         action_follow: 'Suivre {n} et terminer',
         action_skip: 'Passer et terminer',
-        action_get_started: 'Créer mon portefeuille'
+        action_get_started: 'Créer mon portefeuille',
+        action_import: 'J’ai déjà un portefeuille'
     },
     index: {
         action_new_address: 'Ajouter une adresse',
@@ -89,6 +91,7 @@ export default {
         label_wallets: 'Portefeuilles'
     },
     newWallet: {
+        default_name: 'Portefeuille {n}',
         title: 'Ajouter un portefeuille',
         msg_mnemonic_error: 'Ces mots de récupération ne sont pas valides',
         mnemonic_words_count: 'Nombre de mots',
@@ -164,6 +167,9 @@ export default {
         action_receive: 'Recevoir'
     },
     nft: {
+        label_search: 'Chercher dans vos NFT : nom, collection ou #numéro',
+        msg_no_match: 'Aucun NFT ne correspond à « {q} »',
+        action_clear_search: 'Effacer la recherche',
         label_nfts: 'NFT',
         label_all: 'Tous',
         label_collection: 'Collection',
@@ -746,6 +752,16 @@ export default {
         msg_not_a_backup: 'Ce n’est pas un fichier de réglages BlackVault.',
         msg_confirm: 'Ce fichier contient {contacts} contacts, {notes} notes et {settings} types de réglages. Ils remplacent ceux de cet appareil, puis BlackVault redémarre.',
         label_contacts: 'Contacts'
+    },
+    install: {
+        title: 'Installer BlackVault',
+        msg: 'En app sur cet ordinateur ou ce téléphone : sa propre fenêtre, dans le menu Démarrer ou le Dock, plus rapide à ouvrir.',
+        action: 'Installer',
+        msg_done: 'BlackVault est installé',
+        help_ios: 'Dans Safari : touchez Partager (le carré avec la flèche), puis « Sur l’écran d’accueil ».',
+        help_safari_mac: 'Dans Safari : Fichier › Ajouter au Dock.',
+        help_firefox: 'Firefox ne peut pas installer d’apps web sur ordinateur. Ouvrez bvwallet.xyz dans Chrome ou Edge et choisissez Installer, ou utilisez Firefox sur Android : menu › Installer.',
+        help_other: 'Dans Chrome ou Edge : l’icône d’installation à droite de la barre d’adresse, ou menu (⋮) › « Installer BlackVault » (Edge : Applications › Installer ce site en tant qu’application).'
     },
     service: {
         action_update: 'Mettre à jour',

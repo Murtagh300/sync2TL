@@ -45,7 +45,17 @@
                     size="lg"
                     class="full-width"
                     :label="$t('wizard.action_get_started')"
-                    @click="onClickStart()"
+                    @click="onClickStart('create')"
+                />
+                <q-btn
+                    flat
+                    no-caps
+                    color="primary"
+                    size="lg"
+                    class="full-width q-mt-sm"
+                    icon="o_key"
+                    :label="$t('wizard.action_import')"
+                    @click="onClickStart('import')"
                 />
             </div>
         </q-carousel-slide>
@@ -142,6 +152,7 @@ import LanguageListPopup from 'pages/LanguageListPopup.vue'
 import PageContent from 'src/components/PageContent.vue'
 import { secureRNG, kdfEncrypt, Vault } from 'src/core/vault'
 import { BackupDialog } from '../Backup'
+import MnemonicInputDialog from 'pages/NewWallet/MnemonicInputDialog.vue'
 import Steps from './Steps.vue'
 import type { BVM } from 'boot/services/bvm'
 import { emptyWatchlist } from 'src/utils/alerts'
@@ -169,7 +180,9 @@ export default defineComponent({
             progressStr: '',
             finished: false,
             ideas: [] as BVM.Collection[],
-            followed: [] as string[]
+            followed: [] as string[],
+            // what was typed in the import dialog, kept if it is closed and opened again
+            importState: { words: '', path: '' }
         }
     },
     methods: {
@@ -182,11 +195,29 @@ export default defineComponent({
             }
             this.$emit('done')
         },
-        async onClickStart() {
+        /** a new wallet, or one restored from its recovery words (a wallet made elsewhere, VeWorld, Sync2) */
+        async onClickStart(mode: 'create' | 'import') {
+            let imported: { words: string[], path: string } | null = null
+            if (mode === 'import') {
+                try {
+                    const [words, path] = await this.$dialog<[string[], string]>({
+                        component: MnemonicInputDialog,
+                        state: this.importState
+                    })
+                    imported = { words, path }
+                } catch {
+                    return
+                }
+            }
             // collections to suggest at the end, loaded while the wallet is made
             this.$svc.bvm.collections().then(c => { this.ideas = Object.values(c).slice(0, 6) }).catch(() => { })
-            // set new password
-            const password = await this.$dialog<string>({ component: NewPasswordDialog })
+            // set new password (it protects the wallet on this device; the recovery words restore it anywhere)
+            let password: string
+            try {
+                password = await this.$dialog<string>({ component: NewPasswordDialog })
+            } catch {
+                return
+            }
 
             this.slide = 'progress'
             await this.$nextTick()
@@ -202,13 +233,13 @@ export default defineComponent({
                 await this.$svc.config.setUserMasterKeyGlob(JSON.stringify(glob))
             }, 1)
 
-            // generate mnemonics of the first wallet
-            this.progressStr = this.$t('wizard.msg_init_animation_s3').toString()
-            const words = await randomDelay(() => Vault.generateMnemonic(16), 1)
+            // the recovery words: new ones, or the ones typed in
+            this.progressStr = this.$t(imported ? 'wizard.msg_init_animation_s3_import' : 'wizard.msg_init_animation_s3').toString()
+            const words = imported ? imported.words : await randomDelay(() => Vault.generateMnemonic(16), 1)
 
             // encrypt the wallet
             this.progressStr = this.$t('wizard.msg_init_animation_s4').toString()
-            const vault = await randomDelay(() => Promise.resolve(Vault.createHD(words, umk)), 0.3)
+            const vault = await randomDelay(() => Promise.resolve(imported ? Vault.createHD(words, umk, imported.path) : Vault.createHD(words, umk)), 0.3)
 
             // save the wallet
             this.progressStr = this.$t('wizard.msg_init_animation_s5').toString()
@@ -221,7 +252,8 @@ export default defineComponent({
                     name: 'My Wallet',
                     type: 'hd',
                     addresses: [node0.address],
-                    backedUp: false
+                    // restored from its words: those are the backup
+                    backedUp: !!imported
                 }
                 walletID = await this.$svc.wallet.insert({
                     gid: genesises.main.id,
@@ -232,9 +264,10 @@ export default defineComponent({
 
             this.progressStr = ''
             this.finished = true
+            this.importState = { words: '', path: '' }
 
-            // backup in lite mode
-            if (import.meta.env.QUASAR_MODE === 'spa' || import.meta.env.QUASAR_MODE === 'pwa') {
+            // backup in lite mode (a restored wallet already has its words written down)
+            if (!imported && (import.meta.env.QUASAR_MODE === 'spa' || import.meta.env.QUASAR_MODE === 'pwa')) {
                 try {
                     await this.$dialog({
                         component: BackupDialog,

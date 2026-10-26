@@ -12,6 +12,37 @@
             @select="toggleSelecting()"
         />
 
+        <!-- search: name, collection, #token id or your own label -->
+        <div
+            v-if="total"
+            class="q-px-md q-pb-sm"
+        >
+            <q-input
+                v-model="query"
+                dense
+                outlined
+                clearable
+                debounce="200"
+                :placeholder="$t('nft.label_search')"
+                :aria-label="$t('nft.label_search')"
+                autocomplete="off"
+                spellcheck="false"
+            >
+                <template #prepend>
+                    <q-icon name="o_search" />
+                </template>
+                <template
+                    v-if="searchingAll"
+                    #append
+                >
+                    <q-spinner
+                        size="16px"
+                        color="primary"
+                    />
+                </template>
+            </q-input>
+        </div>
+
         <!-- collections: filter; sort and listed/unlisted -->
         <div
             v-if="total"
@@ -119,6 +150,26 @@
                 />
                 {{showHidden ? $t('nft.action_hide_hidden') : $t('nft.label_hidden', { n: hiddenCount })}}
             </button>
+        </div>
+        <div
+            v-if="query && !visibleItems.length && !loading && !searchingAll"
+            class="state"
+            role="status"
+        >
+            <q-icon
+                name="o_search_off"
+                size="32px"
+                class="text-muted"
+            />
+            <div class="q-mt-sm">{{$t('nft.msg_no_match', { q: query })}}</div>
+            <q-btn
+                flat
+                no-caps
+                color="primary"
+                class="q-mt-sm"
+                :label="$t('nft.action_clear_search')"
+                @click="query = ''"
+            />
         </div>
         <div
             v-if="visibleItems.length"
@@ -269,6 +320,7 @@ import NftCardBody from './NftCardBody.vue'
 import NftEmpty from './NftEmpty.vue'
 import { isFavorite, isHidden, loadHidden, nftKey, saveHidden, toggleFavorite, type HiddenNfts } from 'src/utils/hidden-nfts'
 import { shareCard } from 'src/utils/share-card'
+import { nftMatches } from 'src/utils/nft-search'
 import GalleryDialog from 'components/GalleryDialog.vue'
 import { haptic } from 'src/utils/prefs'
 import SuccessDialog from 'components/SuccessDialog.vue'
@@ -279,6 +331,8 @@ import { findLookalike, isKnownRecipient, rememberRecipient } from 'src/utils/re
 const MAX_BATCH = 30
 
 const PAGE = 30
+// a search loads at most this many NFTs
+const MAX_SEARCH = 1200
 
 // the NFTs an address holds, from the BlackVeMarket index
 export default defineComponent({
@@ -308,13 +362,17 @@ export default defineComponent({
         hiddenPrefs: { hidden: [], shown: [] } as HiddenNfts,
         verified: null as Set<string> | null,
         showHidden: false,
+        query: '' as string | null,
+        searchingAll: false,
         onlyFavorites: false,
         notes: {} as NftNotes,
         selected: [] as BVM.NFT[]
     }),
     computed: {
         visibleItems(): BVM.NFT[] {
-            const shown = this.showHidden ? this.items : this.items.filter(n => !this.isHiddenNft(n))
+            const q = this.query || ''
+            const shown = (this.showHidden ? this.items : this.items.filter(n => !this.isHiddenNft(n)))
+                .filter(n => nftMatches(n, q, this.labelOf(n)))
             if (this.onlyFavorites) {
                 return shown.filter(n => this.isFavoriteNft(n))
             }
@@ -352,6 +410,10 @@ export default defineComponent({
         }
     },
     watch: {
+        query(q: string | null) {
+            // the NFTs come in pages: a search looks through all of them
+            if (q) void this.loadAll()
+        },
         address: {
             immediate: true,
             handler() {
@@ -528,6 +590,20 @@ export default defineComponent({
             if (this.collection !== slug) {
                 this.collection = slug
                 void this.reload()
+            }
+        },
+        /** the remaining pages, for a search (up to MAX_SEARCH NFTs) */
+        async loadAll() {
+            if (this.searchingAll) return
+            this.searchingAll = true
+            try {
+                while (this.hasMore && this.query && this.items.length < MAX_SEARCH) {
+                    const before = this.items.length
+                    await this.load()
+                    if (this.error || this.items.length === before) break
+                }
+            } finally {
+                this.searchingAll = false
             }
         },
         reload() {

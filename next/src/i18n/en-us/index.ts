@@ -61,6 +61,7 @@ export default {
         msg_init_animation_s1: 'Creating your master key',
         msg_init_animation_s2: 'Encrypting it with your password',
         msg_init_animation_s3: 'Generating recovery words',
+        msg_init_animation_s3_import: 'Reading your recovery words',
         msg_init_animation_s4: 'Encrypting your wallet',
         msg_init_animation_s5: 'Saving it on this device',
         msg_init_complete: 'Your wallet is ready.',
@@ -71,7 +72,8 @@ export default {
         msg_follow: 'Their new listings, sales and offers show up in your watchlist. You can change this any time.',
         action_follow: 'Follow {n} and finish',
         action_skip: 'Skip and finish',
-        action_get_started: 'Create my wallet'
+        action_get_started: 'Create my wallet',
+        action_import: 'I already have a wallet'
     },
     index: {
         action_new_address: 'Add address',
@@ -89,6 +91,7 @@ export default {
         label_wallets: 'Wallets'
     },
     newWallet: {
+        default_name: 'Wallet {n}',
         title: 'Add a wallet',
         msg_mnemonic_error: 'These recovery words are not valid',
         mnemonic_words_count: 'Number of words',
@@ -164,6 +167,9 @@ export default {
         action_receive: 'Receive'
     },
     nft: {
+        label_search: 'Search your NFTs: name, collection or #number',
+        msg_no_match: 'No NFT matches “{q}”',
+        action_clear_search: 'Clear search',
         label_nfts: 'NFTs',
         label_all: 'All',
         label_collection: 'Collection',
@@ -746,6 +752,16 @@ export default {
         msg_not_a_backup: 'This is not a BlackVault settings file.',
         msg_confirm: 'This file has {contacts} contacts, {notes} notes and {settings} kinds of settings. They replace the ones on this device, then BlackVault starts again.',
         label_contacts: 'Contacts'
+    },
+    install: {
+        title: 'Install BlackVault',
+        msg: 'As an app on this computer or phone: its own window, in your Start menu or dock, quicker to open.',
+        action: 'Install',
+        msg_done: 'BlackVault is installed',
+        help_ios: 'In Safari: tap Share (the square with the arrow), then "Add to Home Screen".',
+        help_safari_mac: 'In Safari: File › Add to Dock.',
+        help_firefox: 'Firefox can’t install web apps on a computer. Open bvwallet.xyz in Chrome or Edge and choose Install, or use Firefox on Android: menu › Install.',
+        help_other: 'In Chrome or Edge: the install icon at the right of the address bar, or menu (⋮) › "Install BlackVault" (Edge: Apps › Install this site as an app).'
     },
     service: {
         action_update: 'Update',

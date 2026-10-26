@@ -18,6 +18,28 @@
                     class="q-mr-sm"
                 />{{$t('service.msg_paused')}}
             </div>
+            <!-- install as an app (PC, Mac, phone), unless it already is one -->
+            <div
+                v-if="!install.installed"
+                class="bvm-tile install-tile q-pa-md q-mb-lg row no-wrap items-center"
+            >
+                <q-icon
+                    name="o_install_desktop"
+                    size="28px"
+                    color="primary"
+                />
+                <div class="col q-mx-md">
+                    <div class="text-weight-bold">{{$t('install.title')}}</div>
+                    <div class="text-muted install-hint">{{$t('install.msg')}}</div>
+                </div>
+                <q-btn
+                    unelevated
+                    no-caps
+                    color="primary"
+                    :label="$t('install.action')"
+                    @click="installApp()"
+                />
+            </div>
             <div class="bvm-label q-mb-sm q-ml-xs">{{$t('dappsGrid.title')}}</div>
             <dapps-grid class="q-mb-lg" />
             <div class="bvm-label q-mb-sm q-ml-xs">BlackVeMarket</div>
@@ -161,6 +183,7 @@ import { openURL } from 'src/utils/open-url'
 import { selectedWallet } from 'src/utils/selection'
 import { featureOn, routeFeature } from 'src/utils/remote-config'
 import WhatsNewDialog from 'components/WhatsNewDialog.vue'
+import { install, installHelp, promptInstall } from 'src/utils/install'
 import { releases } from 'src/changelog'
 
 // a row of the menu
@@ -188,6 +211,7 @@ export default defineComponent({
     components: { PageContent, MoreItem, DappsGrid },
     data: () => ({
         marketURL,
+        install,
         // async computed (see src/shims-async-computed.d.ts)
         wallets: null as M.Wallet[] | null
     }),
@@ -205,6 +229,20 @@ export default defineComponent({
     },
     methods: {
         openURL,
+        async installApp() {
+            // Chrome and Edge: their own install window
+            if (this.install.prompt) {
+                if (await promptInstall()) this.$q.notify(this.$t('install.msg_done'))
+                return
+            }
+            // elsewhere: the steps for this browser
+            this.$q.dialog({
+                title: this.$t('install.title'),
+                message: this.$t(`install.help_${installHelp().replace('-', '_')}`),
+                style: 'white-space: pre-line',
+                ok: { label: this.$t('common.ok'), color: 'primary', unelevated: true, noCaps: true }
+            })
+        },
         whatsNew() {
             const release = releases[0]
             if (release) this.$dialog({ component: WhatsNewDialog, release }).catch(() => { })
@@ -220,6 +258,12 @@ export default defineComponent({
 </script>
 <style lang="sass" scoped>
 .version
+  font-size: 12px
+
+.install-tile
+  border-color: color-mix(in srgb, var(--q-primary) 35%, transparent)
+
+.install-hint
   font-size: 12px
 
 .paused-note

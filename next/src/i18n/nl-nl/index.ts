@@ -61,6 +61,7 @@ export default {
         msg_init_animation_s1: 'Je hoofdsleutel wordt gemaakt',
         msg_init_animation_s2: 'Versleutelen met je wachtwoord',
         msg_init_animation_s3: 'Herstelwoorden maken',
+        msg_init_animation_s3_import: 'Je herstelwoorden inlezen',
         msg_init_animation_s4: 'Je wallet versleutelen',
         msg_init_animation_s5: 'Opslaan op dit apparaat',
         msg_init_complete: 'Je wallet is klaar.',
@@ -71,7 +72,8 @@ export default {
         msg_follow: 'Hun nieuwe listings, verkopen en biedingen verschijnen in je volglijst. Je kunt dit altijd aanpassen.',
         action_follow: 'Volg {n} en rond af',
         action_skip: 'Overslaan en afronden',
-        action_get_started: 'Maak mijn wallet'
+        action_get_started: 'Maak mijn wallet',
+        action_import: 'Ik heb al een wallet'
     },
     index: {
         action_new_address: 'Adres toevoegen',
@@ -89,6 +91,7 @@ export default {
         label_wallets: 'Wallets'
     },
     newWallet: {
+        default_name: 'Wallet {n}',
         title: 'Wallet toevoegen',
         msg_mnemonic_error: 'Deze herstelwoorden zijn niet geldig',
         mnemonic_words_count: 'Aantal woorden',
@@ -164,6 +167,9 @@ export default {
         action_receive: 'Ontvangen'
     },
     nft: {
+        label_search: 'Zoek in je NFT\'s: naam, collectie of #nummer',
+        msg_no_match: 'Geen NFT gevonden voor “{q}”',
+        action_clear_search: 'Zoekopdracht wissen',
         label_nfts: 'NFT\'s',
         label_all: 'Alles',
         label_collection: 'Collectie',
@@ -746,6 +752,16 @@ export default {
         msg_not_a_backup: 'Dit is geen instellingenbestand van BlackVault.',
         msg_confirm: 'Dit bestand heeft {contacts} contacten, {notes} notities en {settings} soorten instellingen. Ze vervangen die op dit apparaat, daarna start BlackVault opnieuw.',
         label_contacts: 'Contacten'
+    },
+    install: {
+        title: 'BlackVault installeren',
+        msg: 'Als app op deze computer of telefoon: een eigen venster, in je Startmenu of Dock, sneller open.',
+        action: 'Installeren',
+        msg_done: 'BlackVault is geïnstalleerd',
+        help_ios: 'In Safari: tik op Delen (het vierkantje met de pijl) en dan "Zet op beginscherm".',
+        help_safari_mac: 'In Safari: Archief › Voeg toe aan Dock.',
+        help_firefox: 'Firefox kan op een computer geen web-apps installeren. Open bvwallet.xyz in Chrome of Edge en kies Installeren, of gebruik Firefox op Android: menu › Installeren.',
+        help_other: 'In Chrome of Edge: het installeer-icoon rechts in de adresbalk, of menu (⋮) › "BlackVault installeren" (Edge: Apps › Deze site installeren als app).'
     },
     service: {
         action_update: 'Bijwerken',
