@@ -113,10 +113,21 @@ function refreshSessions() {
     })
 }
 
+// one start at a time: the host and the WalletConnect page may both ask at once, and two clients
+// would split the pairings between them (a dApp's proposal then reaches neither listener)
+let starting: Promise<boolean> | null = null
+
 /** start the client and listen for proposals and requests */
 export async function initWalletConnect(h: Handlers): Promise<boolean> {
     handlers = h
     if (kit) return true
+    if (!starting) {
+        starting = startKit().finally(() => { starting = null })
+    }
+    return starting
+}
+
+async function startKit(): Promise<boolean> {
     const id = projectId()
     if (!id) {
         wc.error = 'no-project'
@@ -131,11 +142,12 @@ export async function initWalletConnect(h: Handlers): Promise<boolean> {
         const core = new Core({ projectId: id })
         kit = markRaw(await WalletKit.init({
             core,
+            // where this wallet really runs: WalletConnect checks it against the page and the project's domains
             metadata: {
                 name: 'BlackVault',
                 description: 'The VeChain wallet by BlackVeMarket',
-                url: 'https://blackvemarket.com',
-                icons: ['https://blackvemarket.com/favicon.ico']
+                url: window.location.origin,
+                icons: [`${window.location.origin}/icons/icon-192x192.png`]
             }
         }))
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
