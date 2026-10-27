@@ -18,6 +18,33 @@
                             clickable
                         />
                     </language-list-popup>
+                    <q-item>
+                        <q-item-section avatar>
+                            <q-avatar icon="o_payments" />
+                        </q-item-section>
+                        <q-item-section>
+                            <q-item-label>{{$t('settings.label_currency')}}</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                            <q-btn-toggle
+                                v-model="prefs.currency"
+                                dense
+                                no-caps
+                                unelevated
+                                toggle-color="primary"
+                                color="dark"
+                                :options="[{ label: '€ EUR', value: 'EUR' }, { label: '$ USD', value: 'USD' }]"
+                            />
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+                <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_security')}}</div>
+                <q-list role="group" class="bvm-list q-mb-lg">
+                    <item
+                        icon="o_shield"
+                        :title="$t('security.title')"
+                        :to="{name: 'security'}"
+                    />
                     <item
                         icon="o_lock"
                         :title="$t('settings.action_change_password')"
@@ -37,13 +64,6 @@
                             @update:model-value="toggleBioPass"
                         />
                     </item>
-                </q-list>
-                <q-list role="group" class="bvm-list q-mb-lg">
-                    <item
-                        icon="o_shield"
-                        :title="$t('security.title')"
-                        :to="{name: 'security'}"
-                    />
                     <q-item>
                         <q-item-section avatar>
                             <q-avatar icon="o_lock_clock" />
@@ -63,6 +83,63 @@
                             />
                         </q-item-section>
                     </q-item>
+                    <q-item>
+                        <q-item-section avatar>
+                            <q-avatar icon="o_front_hand" />
+                        </q-item-section>
+                        <q-item-section>
+                            <q-item-label>{{$t('spendLimit.setting')}}</q-item-label>
+                            <q-item-label caption>{{$t('spendLimit.setting_hint')}}</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                            <q-select
+                                v-model="prefs.spendLimit"
+                                :options="limitOptions"
+                                emit-value
+                                map-options
+                                dense
+                                borderless
+                                style="min-width: 96px"
+                            />
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+                <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_privacy')}}</div>
+                <q-list role="group" class="bvm-list q-mb-lg">
+                    <item
+                        icon="o_visibility_off"
+                        :title="$t('home.action_hide')"
+                    >
+                        <q-toggle
+                            :aria-label="$t('home.action_hide')"
+                            v-model="prefs.hideBalances"
+                            color="primary"
+                        />
+                    </item>
+                    <item
+                        v-if="motionSupported"
+                        icon="o_vibration"
+                        :title="$t('settings.label_shake_hide')"
+                    >
+                        <q-toggle
+                            :aria-label="$t('settings.label_shake_hide')"
+                            :model-value="prefs.shakeToHide"
+                            color="primary"
+                            @update:model-value="setShake"
+                        />
+                    </item>
+                    <item
+                        v-if="hasServer"
+                        icon="o_bug_report"
+                        :title="$t('service.label_error_reports')"
+                        :caption="$t('service.msg_error_reports')"
+                    >
+                        <q-toggle
+                            :aria-label="$t('service.label_error_reports')"
+                            v-model="prefs.errorReports"
+                            color="primary"
+                        />
+                    </item>
                 </q-list>
                 <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_appearance')}}</div>
                 <q-list role="group" class="bvm-list q-mb-lg">
@@ -88,67 +165,6 @@
                             </div>
                         </q-item-section>
                     </q-item>
-                    <q-item>
-                        <q-item-section avatar>
-                            <q-avatar icon="o_payments" />
-                        </q-item-section>
-                        <q-item-section>
-                            <q-item-label>{{$t('settings.label_currency')}}</q-item-label>
-                        </q-item-section>
-                        <q-item-section side>
-                            <q-btn-toggle
-                                v-model="prefs.currency"
-                                dense
-                                no-caps
-                                unelevated
-                                toggle-color="primary"
-                                color="dark"
-                                :options="[{ label: '€ EUR', value: 'EUR' }, { label: '$ USD', value: 'USD' }]"
-                            />
-                        </q-item-section>
-                    </q-item>
-                    <item
-                        icon="o_visibility_off"
-                        :title="$t('home.action_hide')"
-                    >
-                        <q-toggle
-                            :aria-label="$t('home.action_hide')"
-                            v-model="prefs.hideBalances"
-                            color="primary"
-                        />
-                    </item>
-                    <q-item>
-                        <q-item-section avatar>
-                            <q-avatar icon="o_front_hand" />
-                        </q-item-section>
-                        <q-item-section>
-                            <q-item-label>{{$t('spendLimit.setting')}}</q-item-label>
-                            <q-item-label caption>{{$t('spendLimit.setting_hint')}}</q-item-label>
-                        </q-item-section>
-                        <q-item-section side>
-                            <q-select
-                                v-model="prefs.spendLimit"
-                                :options="limitOptions"
-                                emit-value
-                                map-options
-                                dense
-                                borderless
-                                style="min-width: 96px"
-                            />
-                        </q-item-section>
-                    </q-item>
-                    <item
-                        v-if="motionSupported"
-                        icon="o_vibration"
-                        :title="$t('settings.label_shake_hide')"
-                    >
-                        <q-toggle
-                            :aria-label="$t('settings.label_shake_hide')"
-                            :model-value="prefs.shakeToHide"
-                            color="primary"
-                            @update:model-value="setShake"
-                        />
-                    </item>
                     <q-item>
                         <q-item-section avatar>
                             <q-avatar icon="o_format_size" />
@@ -200,26 +216,40 @@
                             @update:model-value="v => v && playChime()"
                         />
                     </item>
-                    <item
-                        v-if="hasServer"
-                        icon="o_bug_report"
-                        :title="$t('service.label_error_reports')"
-                        :caption="$t('service.msg_error_reports')"
-                    >
-                        <q-toggle
-                            :aria-label="$t('service.label_error_reports')"
-                            v-model="prefs.errorReports"
-                            color="primary"
-                        />
-                    </item>
                 </q-list>
+                <template v-if="desktopPrefs && (desktopPrefs.canTray || desktopPrefs.canLogin)">
+                    <div class="bvm-label q-mb-sm q-ml-xs">{{$t('desktopApp.title')}}</div>
+                    <q-list role="group" class="bvm-list q-mb-lg">
+                        <item
+                            v-if="desktopPrefs.canLogin"
+                            icon="o_power_settings_new"
+                            :title="$t('desktopApp.label_login')"
+                            :caption="$t('desktopApp.msg_login')"
+                        >
+                            <q-toggle
+                                :aria-label="$t('desktopApp.label_login')"
+                                :model-value="desktopPrefs.openAtLogin"
+                                color="primary"
+                                @update:model-value="v => setDesktop({ openAtLogin: v })"
+                            />
+                        </item>
+                        <item
+                            v-if="desktopPrefs.canTray"
+                            icon="o_move_to_inbox"
+                            :title="$t('desktopApp.label_tray')"
+                            :caption="$t('desktopApp.msg_tray')"
+                        >
+                            <q-toggle
+                                :aria-label="$t('desktopApp.label_tray')"
+                                :model-value="desktopPrefs.keepInTray"
+                                color="primary"
+                                @update:model-value="v => setDesktop({ keepInTray: v })"
+                            />
+                        </item>
+                    </q-list>
+                </template>
                 <div class="bvm-label q-mb-sm q-ml-xs">{{$t('settings.label_network')}}</div>
                 <q-list role="group" class="bvm-list q-mb-lg">
-                    <item
-                        icon="o_contacts"
-                        :title="$t('contacts.title')"
-                        :to="{name: 'contacts'}"
-                    />
                     <item
                         icon="o_toll"
                         :title="$t('settings.action_token_list')"
@@ -287,6 +317,7 @@ import { serverUrl } from 'src/utils/endpoints'
 import { BackupError, CONFIG_KEYS, LOCAL_KEYS, decryptSettings, encryptSettings, summarize, type Settings } from 'src/utils/settings-backup'
 import { downloadText } from 'src/utils/export'
 import { money } from 'src/utils/prefs'
+import { desktop, type DesktopPrefs } from 'src/utils/desktop'
 
 export default defineComponent({
     components: { Item, LanguageListPopup, PageToolbar, PageContent },
@@ -297,8 +328,13 @@ export default defineComponent({
         bioPass: null as BioPass | null,
         bioPassSaved: null as boolean | null,
         prefs,
-        accents
+        accents,
+        // the desktop app's tray and login item; null in the web app
+        desktopPrefs: null as DesktopPrefs | null
     }),
+    async created() {
+        this.desktopPrefs = desktop ? await desktop.getPrefs() : null
+    },
     asyncComputed: {
         bioPass() {
             return BioPass.open()
@@ -324,6 +360,11 @@ export default defineComponent({
     },
     methods: {
         playChime,
+        async setDesktop(next: Partial<Pick<DesktopPrefs, 'keepInTray' | 'openAtLogin'>>) {
+            if (!desktop || !this.desktopPrefs) return
+            await desktop.setPrefs(next)
+            this.desktopPrefs = await desktop.getPrefs()
+        },
         /** ask for the backup's password; twice when making one */
         askPassword(title: string, confirm: boolean): Promise<string | null> {
             const ask = (message: string) => new Promise<string | null>(resolve => {

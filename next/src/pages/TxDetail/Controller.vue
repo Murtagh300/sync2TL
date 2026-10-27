@@ -82,7 +82,7 @@
                     >
                         <span class="text-muted">{{$t('txDetail.label_block')}}</span>
                         <q-space />
-                        <span class="bvm-amount">{{tx.meta.blockNumber.toLocaleString()}} · {{$t('txDetail.label_confirmations', { n: confirmations })}}</span>
+                        <span class="bvm-amount">{{tx.meta.blockNumber.toLocaleString($i18n.locale)}} · {{$t('txDetail.label_confirmations', { n: confirmations })}}</span>
                     </div>
                     <div class="detail-row row no-wrap items-center">
                         <span class="text-muted">{{$t('txDetail.label_id')}}</span>

@@ -16,7 +16,25 @@
                     v-if="request && amount"
                     class="text-center bvm-display receive-amount q-mt-md"
                 >{{amount}} {{symbol}}</div>
-                <div class="text-center text-muted receive-address q-mt-sm">{{checksumed}}</div>
+                <!-- in blocks of four, to compare with what the sender sees -->
+                <div
+                    class="text-center receive-address q-mt-sm"
+                    :aria-label="checksumed"
+                >
+                    <span
+                        v-for="(g, n) in groups"
+                        :key="n"
+                        class="receive-group"
+                    >{{g}}</span>
+                </div>
+                <div class="receive-network row no-wrap items-start q-mt-md">
+                    <q-icon
+                        name="o_info"
+                        size="18px"
+                        class="q-mr-sm"
+                    />
+                    <span>{{$t('receive.msg_network')}}</span>
+                </div>
 
                 <q-toggle
                     v-model="request"
@@ -114,13 +132,24 @@ export default defineComponent({
         checksumed(): string {
             return address.toChecksumed(this.address)
         },
+        /** 0xC107 3c63 6B84 … */
+        groups(): string[] {
+            const hex = this.checksumed.slice(2)
+            const out = []
+            for (let i = 0; i < hex.length; i += 4) out.push((i ? '' : '0x') + hex.slice(i, i + 4))
+            return out
+        },
+        /** a comma for decimals is fine too */
+        plainAmount(): string {
+            return this.amount.trim().replace(',', '.')
+        },
         validAmount(): boolean {
-            return /^\d+(\.\d+)?$/.test(this.amount) && parseFloat(this.amount) > 0
+            return /^\d+(\.\d+)?$/.test(this.plainAmount) && parseFloat(this.plainAmount) > 0
         },
         /** what the QR code holds: the bare address, or a payment link */
         content(): string {
             if (this.request && this.validAmount) {
-                return buildPaymentLink({ to: this.address, amount: this.amount, symbol: this.symbol })
+                return buildPaymentLink({ to: this.address, amount: this.plainAmount, symbol: this.symbol })
             }
             return this.checksumed
         },
@@ -167,8 +196,26 @@ export default defineComponent({
   font-size: 28px
 
 .receive-address
+  font-size: 14px
+  font-variant-numeric: tabular-nums
+  line-height: 1.7
+  max-width: 300px
+  margin-left: auto
+  margin-right: auto
+
+.receive-group
+  display: inline-block
+  margin: 0 4px
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace
+  letter-spacing: 0.02em
+
+.receive-network
+  padding: 10px 12px
+  border-radius: 12px
+  background: rgba(252, 211, 77, 0.08)
+  color: $warning
   font-size: 12px
-  word-break: break-all
+  line-height: 1.4
 
 .receive-hint
   font-size: 12px

@@ -82,6 +82,12 @@
                         v-show="w.id === wallet?.id && !w.meta.backedUp"
                     />
                     <template v-if="wallet">
+                        <first-funds
+                            v-if="!all && canSign(wallet)"
+                            :key="'funds-' + wallet.id"
+                            :wallet="wallet"
+                            class="q-mb-md"
+                        />
                         <!-- the blocks in the user's order (WidgetsDialog) -->
                         <template
                             v-for="wd in shownWidgets"
@@ -181,6 +187,8 @@ import QuickActions from './QuickActions.vue'
 import BalancePulse from './BalancePulse.vue'
 import HomeWidgets from './HomeWidgets.vue'
 import HomeTour from './HomeTour.vue'
+import FirstFunds from './FirstFunds.vue'
+import { canSign } from 'src/utils/watch'
 import WidgetsDialog from './WidgetsDialog.vue'
 import { homeWidgets, type Widget } from './widgets'
 import { prefs } from 'src/utils/prefs'
@@ -189,7 +197,7 @@ import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { haptic } from 'src/utils/prefs'
 
 export default defineComponent({
-    components: { PullRefresh, PriceTicker, BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, BalancePulse, HomeWidgets, HomeTour },
+    components: { PullRefresh, PriceTicker, BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, BalancePulse, HomeWidgets, HomeTour, FirstFunds },
     data: () => {
         return {
             nodeHealth,
@@ -239,6 +247,7 @@ export default defineComponent({
     },
     methods: {
         lockNow,
+        canSign,
         onSelectWallet(id: number) {
             selection.walletId = id
             haptic()

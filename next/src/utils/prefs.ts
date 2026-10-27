@@ -1,4 +1,5 @@
 import { reactive, watch } from 'vue'
+import { numberLocale } from './format'
 
 /**
  * Small per-device preferences, kept in localStorage: hidden balances, the fiat currency
@@ -91,10 +92,10 @@ export function money(value: number, currency = prefs.currency, opts: { compact?
     }
     // fractions of a cent (small tokens): three significant digits
     if (value !== 0 && Math.abs(value) < 0.01) {
-        return new Intl.NumberFormat(undefined, { style: 'currency', currency, maximumSignificantDigits: 3 }).format(value)
+        return new Intl.NumberFormat(numberLocale(), { style: 'currency', currency, maximumSignificantDigits: 3 }).format(value)
     }
     const digits = Math.abs(value) >= 1000 ? 0 : Math.abs(value) >= 1 ? 2 : 4
-    return new Intl.NumberFormat(undefined, {
+    return new Intl.NumberFormat(numberLocale(), {
         style: 'currency',
         currency,
         maximumFractionDigits: digits,

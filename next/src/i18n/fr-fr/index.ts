@@ -1,6 +1,7 @@
 
 export default {
     common: {
+        lang_auto_as: '{lang} (automatique)',
         ok: 'OK',
         confirm: 'Confirmer',
         dismiss: 'Fermer',
@@ -50,6 +51,7 @@ export default {
         label_disclaimer_terms_accept: 'Je comprends que mes clés sont sous ma responsabilité'
     },
     wizard: {
+        default_wallet_name: 'Mon portefeuille',
         title_welcome: 'Votre coffre VeChain.',
         title_init: 'Préparation de votre coffre',
         title_feature_1: 'Vos clés restent sur cet appareil, chiffrées avec votre mot de passe',
@@ -120,6 +122,8 @@ export default {
         label_input_password: 'Saisissez votre mot de passe BlackVault'
     },
     settings: {
+        label_privacy: 'Confidentialité',
+        label_security: 'Sécurité',
         label_sound: 'Son à la réception',
         label_shake_hide: 'Secouer pour masquer les soldes',
         msg_motion_denied: 'BlackVault ne peut pas lire le capteur de mouvement. Autorisez l’accès au mouvement pour ce site dans les réglages du navigateur.',
@@ -259,6 +263,9 @@ export default {
         msg_no_more: 'C’est tout'
     },
     send: {
+        action_add_extras: 'Ajouter un message ou une note',
+        action_receive: 'Recevoir',
+        msg_empty: 'Il n\'y a pas encore de {sym} sur cette adresse. Recevez-en d\'abord.',
         title: 'Envoyer',
         label_to: 'À',
         label_amount: 'Montant',
@@ -383,6 +390,12 @@ export default {
         more: 'Plus'
     },
     more: {
+        label_app: 'App',
+        label_security: 'Sécurité',
+        label_insight: 'Analyse',
+        label_money: 'Argent',
+        msg_no_match: 'Rien dans le menu ne correspond.',
+        placeholder_search: 'Rechercher dans le menu',
         label_wallet: 'Portefeuille',
         open_market: 'Ouvrir BlackVeMarket'
     },
@@ -719,6 +732,8 @@ export default {
         comment: 'Révoquer le reste d’une autorisation : {amount} pour {spender}'
     },
     txStatus: {
+        msg_still_pending: 'Pas encore dans un bloc. Une transaction qui n\'aboutit pas expire après quelques minutes ; rien n\'est alors dépensé.',
+        action_recheck: 'Vérifier à nouveau',
         msg_pending: '{label} · en attente de la chaîne',
         msg_pending_many: '{n} transactions en attente de la chaîne',
         msg_done: '{label} · terminé',
@@ -754,13 +769,17 @@ export default {
         label_contacts: 'Contacts'
     },
     install: {
+        action_web_app: 'Ou installer comme app web',
+        action_download: 'Télécharger',
+        msg_desktop: 'L\'app de bureau pour Windows, macOS et Linux : sa propre fenêtre, les demandes des dApps s\'y ouvrent, et elle se met à jour toute seule.',
+        title_desktop: 'BlackVault pour votre ordinateur',
         title: 'Installer BlackVault',
         msg: 'En app sur cet ordinateur ou ce téléphone : sa propre fenêtre, dans le menu Démarrer ou le Dock, plus rapide à ouvrir.',
         action: 'Installer',
         msg_done: 'BlackVault est installé',
         help_ios: 'Dans Safari : touchez Partager (le carré avec la flèche), puis « Sur l’écran d’accueil ».',
         help_safari_mac: 'Dans Safari : Fichier › Ajouter au Dock.',
-        help_firefox: 'Firefox ne peut pas installer d’apps web sur ordinateur. Ouvrez bvwallet.xyz dans Chrome ou Edge et choisissez Installer, ou utilisez Firefox sur Android : menu › Installer.',
+        help_firefox: 'Firefox ne peut pas installer d’apps web sur ordinateur. Ouvrez wallet.blackvemarket.com dans Chrome ou Edge et choisissez Installer, ou utilisez Firefox sur Android : menu › Installer.',
         help_other: 'Dans Chrome ou Edge : l’icône d’installation à droite de la barre d’adresse, ou menu (⋮) › « Installer BlackVault » (Edge : Applications › Installer ce site en tant qu’application).'
     },
     service: {
@@ -918,6 +937,9 @@ export default {
         my_wallet: 'Mon BlackVault'
     },
     widgets: {
+        action_retry: 'Réessayer',
+        msg_prices_failed: 'Les cours ne peuvent pas être chargés pour le moment.',
+        tokens_popular: 'Populaire sur VeChain',
         ticker: 'Bandeau des cours',
         title: 'Modifier l’accueil',
         portfolio: 'Valeur totale',
@@ -1081,6 +1103,7 @@ export default {
         group_business: 'Professionnel'
     },
     receive: {
+        msg_network: 'Uniquement pour VeChain : VET, VTHO et tokens VeChain. Sur une plateforme, choisissez le réseau VeChain ; ce qui est envoyé depuis Ethereum, BSC ou une autre chaîne est perdu.',
         label_request: 'Demander un montant',
         msg_request_hint: 'Scanné dans BlackVault, ceci remplit le montant et le token pour l’expéditeur.',
         action_share: 'Partager',
@@ -1105,6 +1128,9 @@ export default {
         msg_not_found: 'Pas encore d’activité. Les transactions et signatures que vous approuvez apparaissent ici.'
     },
     newPasswordDialog: {
+        action_hide: 'Masquer le mot de passe',
+        action_show: 'Afficher le mot de passe',
+        msg_min_length: 'Au moins {n} caractères',
         msg_password_mismatch: 'Les mots de passe ne correspondent pas',
         msg_password_too_short: 'Utilisez au moins 6 caractères',
         strength_1: 'Faible',
@@ -1227,5 +1253,21 @@ export default {
     bioAuth: {
         title: 'Déverrouillage biométrique',
         msg_auth_failed: 'Non reconnu. Réessayez.'
-    }
+    },
+    firstFunds: {
+        action_copy: 'Copier l\'adresse',
+        action_receive: 'Afficher le QR code',
+        msg: 'Envoyez des VET ou des tokens à votre adresse depuis une plateforme (comme Bitvavo, Binance ou Coinbase) ou un autre portefeuille. Au retrait, choisissez le réseau VeChain.',
+        title: 'Déposez vos premiers VET',
+    },
+    desktopApp: {
+        msg_in_tray: 'BlackVault continue dans la zone de notification. Quittez-le depuis son icône.',
+        tray_quit: 'Quitter BlackVault',
+        tray_open: 'Ouvrir BlackVault',
+        msg_tray: 'Fermer la fenêtre garde BlackVault dans la zone de notification. Quittez-le depuis son icône.',
+        label_tray: 'Continuer après fermeture',
+        msg_login: 'Discrètement, dans la zone de notification : les demandes des dApps et les notifications arrivent tout de suite.',
+        label_login: 'Démarrer avec l\'ordinateur',
+        title: 'App de bureau',
+    },
 }

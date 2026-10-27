@@ -6,7 +6,7 @@
             <q-avatar :icon="icon" />
         </q-item-section>
         <q-item-section>
-            <q-item-label lines="1">{{title}}</q-item-label>
+            <q-item-label>{{title}}</q-item-label>
             <q-item-label
                 v-if="caption"
                 caption

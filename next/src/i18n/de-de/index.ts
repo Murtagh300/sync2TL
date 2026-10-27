@@ -1,6 +1,7 @@
 
 export default {
     common: {
+        lang_auto_as: '{lang} (automatisch)',
         ok: 'OK',
         confirm: 'Bestätigen',
         dismiss: 'Schließen',
@@ -50,6 +51,7 @@ export default {
         label_disclaimer_terms_accept: 'Ich verstehe, dass meine Schlüssel meine Verantwortung sind'
     },
     wizard: {
+        default_wallet_name: 'Meine Wallet',
         title_welcome: 'Dein VeChain-Tresor.',
         title_init: 'Dein Tresor wird eingerichtet',
         title_feature_1: 'Deine Schlüssel bleiben auf diesem Gerät, verschlüsselt mit deinem Passwort',
@@ -120,6 +122,8 @@ export default {
         label_input_password: 'Gib dein BlackVault-Passwort ein'
     },
     settings: {
+        label_privacy: 'Privatsphäre',
+        label_security: 'Sicherheit',
         label_sound: 'Ton bei Eingängen',
         label_shake_hide: 'Schütteln, um Guthaben zu verbergen',
         msg_motion_denied: 'BlackVault darf den Bewegungssensor nicht lesen. Erlaube den Bewegungszugriff für diese Seite in den Browsereinstellungen.',
@@ -259,6 +263,9 @@ export default {
         msg_no_more: 'Das war alles'
     },
     send: {
+        action_add_extras: 'Nachricht oder Notiz hinzufügen',
+        action_receive: 'Empfangen',
+        msg_empty: 'Auf dieser Adresse ist noch kein {sym}. Empfange zuerst etwas.',
         title: 'Senden',
         label_to: 'An',
         label_amount: 'Betrag',
@@ -383,6 +390,12 @@ export default {
         more: 'Mehr'
     },
     more: {
+        label_app: 'App',
+        label_security: 'Sicherheit',
+        label_insight: 'Einblick',
+        label_money: 'Geld',
+        msg_no_match: 'Nichts im Menü passt dazu.',
+        placeholder_search: 'Im Menü suchen',
         label_wallet: 'Wallet',
         open_market: 'BlackVeMarket öffnen'
     },
@@ -719,6 +732,8 @@ export default {
         comment: 'Rest einer Freigabe widerrufen: {amount} für {spender}'
     },
     txStatus: {
+        msg_still_pending: 'Noch in keinem Block. Eine Transaktion, die nicht ankommt, verfällt nach ein paar Minuten; dann wird nichts ausgegeben.',
+        action_recheck: 'Erneut prüfen',
         msg_pending: '{label} · wartet auf die Chain',
         msg_pending_many: '{n} Transaktionen warten auf die Chain',
         msg_done: '{label} · erledigt',
@@ -754,13 +769,17 @@ export default {
         label_contacts: 'Kontakte'
     },
     install: {
+        action_web_app: 'Oder als Web-App installieren',
+        action_download: 'Herunterladen',
+        msg_desktop: 'Die Desktop-App für Windows, macOS und Linux: ein eigenes Fenster, dApp-Anfragen öffnen sich darin, und sie aktualisiert sich selbst.',
+        title_desktop: 'BlackVault für deinen Computer',
         title: 'BlackVault installieren',
         msg: 'Als App auf diesem Computer oder Telefon: ein eigenes Fenster, im Startmenü oder Dock, schneller geöffnet.',
         action: 'Installieren',
         msg_done: 'BlackVault ist installiert',
         help_ios: 'In Safari: Teilen (das Quadrat mit dem Pfeil) und dann „Zum Home-Bildschirm“.',
         help_safari_mac: 'In Safari: Ablage › Zum Dock hinzufügen.',
-        help_firefox: 'Firefox kann auf dem Computer keine Web-Apps installieren. Öffne bvwallet.xyz in Chrome oder Edge und wähle Installieren, oder nutze Firefox auf Android: Menü › Installieren.',
+        help_firefox: 'Firefox kann auf dem Computer keine Web-Apps installieren. Öffne wallet.blackvemarket.com in Chrome oder Edge und wähle Installieren, oder nutze Firefox auf Android: Menü › Installieren.',
         help_other: 'In Chrome oder Edge: das Installieren-Symbol rechts in der Adressleiste, oder Menü (⋮) › „BlackVault installieren“ (Edge: Apps › Diese Website als App installieren).'
     },
     service: {
@@ -918,6 +937,9 @@ export default {
         my_wallet: 'Mein BlackVault'
     },
     widgets: {
+        action_retry: 'Erneut',
+        msg_prices_failed: 'Kurse können gerade nicht geladen werden.',
+        tokens_popular: 'Beliebt auf VeChain',
         ticker: 'Kursticker',
         title: 'Start bearbeiten',
         portfolio: 'Gesamtwert',
@@ -1081,6 +1103,7 @@ export default {
         group_business: 'Geschäftlich'
     },
     receive: {
+        msg_network: 'Nur für VeChain: VET, VTHO und VeChain-Tokens. Wähle bei einer Börse das VeChain-Netzwerk; was von Ethereum, BSC oder einer anderen Chain kommt, geht verloren.',
         label_request: 'Einen Betrag anfordern',
         msg_request_hint: 'In BlackVault gescannt, füllt dies den Betrag und Token für den Sender aus.',
         action_share: 'Teilen',
@@ -1105,6 +1128,9 @@ export default {
         msg_not_found: 'Noch keine Aktivität. Transaktionen und Signaturen, die du bestätigst, erscheinen hier.'
     },
     newPasswordDialog: {
+        action_hide: 'Passwort verbergen',
+        action_show: 'Passwort anzeigen',
+        msg_min_length: 'Mindestens {n} Zeichen',
         msg_password_mismatch: 'Die Passwörter stimmen nicht überein',
         msg_password_too_short: 'Verwende mindestens 6 Zeichen',
         strength_1: 'Schwach',
@@ -1227,5 +1253,21 @@ export default {
     bioAuth: {
         title: 'Biometrisches Entsperren',
         msg_auth_failed: 'Nicht erkannt. Versuche es erneut.'
-    }
+    },
+    firstFunds: {
+        action_copy: 'Adresse kopieren',
+        action_receive: 'QR-Code zeigen',
+        msg: 'Sende VET oder Tokens von einer Börse (etwa Bitvavo, Binance oder Coinbase) oder einer anderen Wallet an deine Adresse. Wähle beim Abheben das VeChain-Netzwerk.',
+        title: 'Lege deine ersten VET darauf',
+    },
+    desktopApp: {
+        msg_in_tray: 'BlackVault läuft im Infobereich weiter. Beenden über das Symbol dort.',
+        tray_quit: 'BlackVault beenden',
+        tray_open: 'BlackVault öffnen',
+        msg_tray: 'Das Schließen des Fensters lässt BlackVault im Infobereich. Beenden über das Symbol dort.',
+        label_tray: 'Nach dem Schließen weiterlaufen',
+        msg_login: 'Leise im Infobereich: dApp-Anfragen und Benachrichtigungen kommen sofort an.',
+        label_login: 'Mit dem Computer starten',
+        title: 'Desktop-App',
+    },
 }

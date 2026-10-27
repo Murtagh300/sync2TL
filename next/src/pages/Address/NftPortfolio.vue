@@ -49,6 +49,7 @@
 import { defineComponent, type PropType } from 'vue'
 import type { BVM } from 'boot/services/bvm'
 import NftValueChart from 'components/NftValueChart.vue'
+import { numberLocale } from 'src/utils/format'
 
 // the top of the NFT tab: the estimated value, counts, and the gallery and select buttons
 export default defineComponent({
@@ -72,7 +73,7 @@ export default defineComponent({
             }
             return Object.entries(sums)
                 .sort((a, b) => b[1] - a[1])
-                .map(([cur, v]) => `${v.toLocaleString(undefined, { maximumFractionDigits: 2 })} ${cur}`)
+                .map(([cur, v]) => `${v.toLocaleString(numberLocale(), { maximumFractionDigits: 2 })} ${cur}`)
         },
         /** NFTs in collections without a floor */
         unpriced(): number {

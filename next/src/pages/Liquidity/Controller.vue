@@ -103,6 +103,7 @@ import EmptyState from 'components/EmptyState.vue'
 import { findPositions, type Position } from 'src/utils/liquidity'
 import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { money, prefs } from 'src/utils/prefs'
+import { numberLocale } from 'src/utils/format'
 import { openURL } from 'src/utils/open-url'
 import { genesises } from 'src/consts'
 
@@ -127,7 +128,7 @@ export default defineComponent({
         money,
         openURL,
         fmt(v: number) {
-            return v.toLocaleString(undefined, { maximumFractionDigits: v >= 100 ? 0 : 4 })
+            return v.toLocaleString(numberLocale(), { maximumFractionDigits: v >= 100 ? 0 : 4 })
         },
         async load() {
             this.loading = true

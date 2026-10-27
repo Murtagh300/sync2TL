@@ -79,6 +79,10 @@ export namespace BVM {
         coverImage: string
         floorValue: number | null
         floorCurrency: string
+        /** NFTs listed for sale now */
+        listedCount?: number
+        /** sales in the last 30 days */
+        salesMonth?: number
     }
 
     export type LaunchPhase = {
@@ -205,7 +209,7 @@ const profileCache = new Map<string, Promise<BVM.Profile | null>>()
 const floorCache = new Map<string, { at: number, points: Promise<{ time: number, value: number, currency: string }[]> }>()
 
 async function loadCollections() {
-    const resp = await http.get<{ items: { collection: BVM.Collection, floorValue: number | null, floor: string }[] }>('/collections')
+    const resp = await http.get<{ items: { collection: BVM.Collection, floorValue: number | null, floor: string, listedCount?: number, sales?: { monthly?: number } }[] }>('/collections')
     const value: Record<string, BVM.Collection> = {}
     for (const item of resp.data.items || []) {
         const c = item.collection
@@ -213,7 +217,9 @@ async function loadCollections() {
             ...c,
             floorValue: item.floorValue,
             // "0.65 VET"
-            floorCurrency: (item.floor || '').split(' ')[1] || 'VET'
+            floorCurrency: (item.floor || '').split(' ')[1] || 'VET',
+            listedCount: item.listedCount || 0,
+            salesMonth: item.sales?.monthly || 0
         }
     }
     collectionsCache = { at: Date.now(), value }

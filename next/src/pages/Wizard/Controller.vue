@@ -72,6 +72,7 @@
                 <h4 class="q-mb-none bvm-display">{{$t('wizard.title_init')}}</h4>
                 <WizardProgress
                     :current="progressStr"
+                    :done="finished"
                     class="col overflow-auto"
                 />
                 <div
@@ -118,7 +119,7 @@
                             alt=""
                             loading="lazy"
                         >
-                        <span class="ellipsis">{{c.name}}</span>
+                        <span class="follow-name">{{c.name}}</span>
                         <q-icon
                             v-if="followed.includes(c.slug)"
                             name="check_circle"
@@ -156,6 +157,14 @@ import MnemonicInputDialog from 'pages/NewWallet/MnemonicInputDialog.vue'
 import Steps from './Steps.vue'
 import type { BVM } from 'boot/services/bvm'
 import { emptyWatchlist } from 'src/utils/alerts'
+
+/** six collections that trade: listed now and sold this month, in random order; the rest fill up */
+function pickIdeas(all: BVM.Collection[]): BVM.Collection[] {
+    const shuffle = <T>(a: T[]) => a.map(x => ({ x, r: Math.random() })).sort((p, q) => p.r - q.r).map(p => p.x)
+    const live = all.filter(c => (c.listedCount || 0) > 0 && (c.salesMonth || 0) > 0)
+    const listed = all.filter(c => (c.listedCount || 0) > 0 && !live.includes(c))
+    return [...shuffle(live), ...shuffle(listed)].slice(0, 6)
+}
 
 async function randomDelay<T>(p: () => Promise<T>, aboutSeconds: number) {
     const [r] = await Promise.all([
@@ -210,7 +219,7 @@ export default defineComponent({
                 }
             }
             // collections to suggest at the end, loaded while the wallet is made
-            this.$svc.bvm.collections().then(c => { this.ideas = Object.values(c).slice(0, 6) }).catch(() => { })
+            this.$svc.bvm.collections().then(c => { this.ideas = pickIdeas(Object.values(c)) }).catch(() => { })
             // set new password (it protects the wallet on this device; the recovery words restore it anywhere)
             let password: string
             try {
@@ -249,7 +258,7 @@ export default defineComponent({
             await randomDelay(async () => {
                 const node0 = vault.derive(0)
                 meta = {
-                    name: 'My Wallet',
+                    name: this.$t('wizard.default_wallet_name'),
                     type: 'hd',
                     addresses: [node0.address],
                     // restored from its words: those are the backup
@@ -262,9 +271,10 @@ export default defineComponent({
                 })
             }, 0.2)
 
-            this.progressStr = ''
             this.finished = true
             this.importState = { words: '', path: '' }
+            // let the finished checklist and "your wallet is ready" show before the backup covers them
+            await new Promise(resolve => setTimeout(resolve, 1200))
 
             // backup in lite mode (a restored wallet already has its words written down)
             if (!imported && (import.meta.env.QUASAR_MODE === 'spa' || import.meta.env.QUASAR_MODE === 'pwa' || import.meta.env.QUASAR_MODE === 'electron')) {
@@ -311,6 +321,17 @@ export default defineComponent({
     object-fit: cover
   span
     padding: 0 6px
+
+// two lines, so "Bubbly Caps Season 1" and "… Season 2" stay apart
+.follow-name
+  display: -webkit-box
+  -webkit-line-clamp: 2
+  -webkit-box-orient: vertical
+  overflow: hidden
+  min-height: 2.6em
+  line-height: 1.3
+  font-size: 12px
+  text-align: left
 
 .follow--on
   border-color: var(--q-primary) !important

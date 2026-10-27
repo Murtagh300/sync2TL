@@ -27,7 +27,7 @@
                 >
                     <span class="text-weight-bold">{{it.symbol}}</span>
                     <span class="ticker-price">{{it.price}}</span>
-                    <span :class="it.change >= 0 ? 'text-primary' : 'text-negative'">{{it.change >= 0 ? '▲' : '▼'}} {{Math.abs(it.change).toFixed(1)}}%</span>
+                    <span :class="it.change >= 0 ? 'text-primary' : 'text-negative'">{{it.change >= 0 ? '▲' : '▼'}} {{$fixed(Math.abs(it.change), 1)}}%</span>
                 </button>
             </template>
         </div>

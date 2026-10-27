@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { decimalSeparator, formatAmount, formatDate, toWei } from 'src/utils/format'
+import { decimalSeparator, formatAmount, formatDate, formatUnits, plainUnits, setNumberLocale, toWei } from 'src/utils/format'
 
 // amounts are what the user sees before signing: the output must not change
 // across bignumber.js upgrades
@@ -74,5 +74,30 @@ describe('formatDate', () => {
         expect(formatDate(at(1, 9), { relative: true })).toBe('Yesterday, 09:05')
         expect(formatDate(at(3, 9), { relative: true })).toMatch(/^[A-Z][a-z]+day 09:05$/)
         expect(formatDate(new Date(2024, 0, 2, 3, 4, 5).getTime(), { relative: true })).toBe('2 Jan 2024')
+    })
+})
+
+describe('setNumberLocale', () => {
+    it('writes amounts the way the app language does, and back', () => {
+        try {
+            setNumberLocale('nl-nl')
+            expect(formatUnits(1234500000000000000000n, 18)).toBe('1.234,5')
+            expect(decimalSeparator()).toBe(',')
+            setNumberLocale('de-de')
+            expect(formatAmount('1234.5')).toEqual({ int: '1.234', dec: '5', sep: ',' })
+        } finally {
+            setNumberLocale('en-US')
+        }
+        expect(formatUnits(1234500000000000000000n, 18)).toBe('1,234.5')
+    })
+
+    it('keeps amounts for a field plain, whatever the language', () => {
+        try {
+            setNumberLocale('nl-nl')
+            expect(plainUnits(1234500000000000000000n, 18)).toBe('1234.5')
+            expect(plainUnits('1', 18)).toBe('0.000000000000000001')
+        } finally {
+            setNumberLocale('en-US')
+        }
     })
 })

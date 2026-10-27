@@ -8,6 +8,7 @@ import { stack } from 'src/router/stack'
 import { installErrorReports } from 'src/utils/error-reports'
 import { startRemoteConfig } from 'src/utils/remote-config'
 import { startInstallWatch } from 'src/utils/install'
+import { fixed } from 'src/utils/format'
 
 declare module 'vue' {
     interface ComponentCustomProperties {
@@ -17,6 +18,8 @@ declare module 'vue' {
         $netDisplayName(gid: string): string
         /** it wraps window.addEventListener binding to vue component's life-cycle */
         $onWindowEvent(event: keyof WindowEventMap, listener: EventListenerOrEventListenerObject): void
+        /** a number with fixed decimals in the app's language, for percentages (utils/format.ts) */
+        $fixed(v: number, digits: number): string
     }
 }
 
@@ -42,6 +45,7 @@ export default defineBoot(({ app, router }) => {
     })
 
     const props = app.config.globalProperties
+    props.$fixed = fixed
     props.$backOrHome = function (this: ComponentPublicInstance) {
         stack.canGoBack
             ? this.$router.back()

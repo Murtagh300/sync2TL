@@ -14,6 +14,25 @@
                 class="bvm-tile q-ma-md q-pa-md text-warning"
                 role="alert"
             >{{$t('watch.msg_cannot_sign')}}</div>
+            <div
+                v-else-if="empty"
+                class="bvm-tile q-ma-md q-pa-md row items-center no-wrap"
+                role="status"
+            >
+                <q-icon
+                    name="o_south_west"
+                    size="22px"
+                    color="primary"
+                />
+                <div class="col q-mx-md">{{$t('send.msg_empty', { sym })}}</div>
+                <q-btn
+                    unelevated
+                    no-caps
+                    color="primary"
+                    :label="$t('send.action_receive')"
+                    @click="receive()"
+                />
+            </div>
             <q-item-label header>{{$t('send.label_to')}}</q-item-label>
             <To
                 v-model:address="recipient"
@@ -24,6 +43,27 @@
                 :error="!!errors.to"
                 @update:address="errors.to = ''"
             />
+            <div
+                v-if="!recipient && quickTo.length"
+                class="quick-to row no-wrap q-px-md q-pt-sm"
+                :aria-label="$t('send.label_recent_transfer')"
+            >
+                <q-chip
+                    v-for="a in quickTo"
+                    :key="a"
+                    clickable
+                    outline
+                    class="q-ml-none"
+                    @click="recipient = a"
+                >
+                    <AddressAvatar
+                        :addr="a"
+                        class="q-mr-xs"
+                        style="width: 18px; height: 18px"
+                    />
+                    {{nameOf(a) || `${a.slice(0, 6)}…${a.slice(-4)}`}}
+                </q-chip>
+            </div>
             <q-item-label header>{{$t('send.label_asset')}}</q-item-label>
             <TokenSelector
                 :tokens="tokenList"
@@ -54,11 +94,11 @@
                 :aria-label="$t('send.label_amount')"
                 :error-message="errors.amount"
                 :error="!!errors.amount"
-                @update:model-value="errors.amount = ''"
+                @update:model-value="onAmount"
                 input-class="send-amount bvm-display"
                 type="text"
                 inputmode="decimal"
-                placeholder="0.00"
+                :placeholder="`0${decimalSeparator()}00`"
                 outlined
                 spellcheck="false"
             />
@@ -75,7 +115,7 @@
                 input-class="send-amount bvm-display"
                 type="text"
                 inputmode="decimal"
-                placeholder="0.00"
+                :placeholder="`0${decimalSeparator()}00`"
                 outlined
                 spellcheck="false"
                 :prefix="prefs.currency === 'EUR' ? '€' : '$'"
@@ -91,7 +131,6 @@
                         v-for="p in [25, 50, 75, 100]"
                         :key="p"
                         outline
-                        dense
                         no-caps
                         size="sm"
                         class="pct"
@@ -100,6 +139,17 @@
                     />
                 </div>
             </div>
+            <q-btn
+                v-if="!extras"
+                flat
+                no-caps
+                color="primary"
+                icon="o_add"
+                class="q-mx-sm q-mt-md"
+                :label="$t('send.action_add_extras')"
+                @click="extras = true"
+            />
+            <template v-else>
             <q-item-label header>{{$t('send.label_message')}}</q-item-label>
             <q-input
                 v-model="message"
@@ -132,6 +182,7 @@
                     <q-icon name="o_edit_note" />
                 </template>
             </q-input>
+            </template>
         </page-content>
         <page-action>
             <q-btn
@@ -160,7 +211,7 @@ import { AddressGroup } from './models'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
-import { toWei } from 'src/utils/format'
+import { decimalSeparator, toWei } from 'src/utils/format'
 import { genesises } from 'src/consts'
 import { BigNumber } from 'bignumber.js'
 import { money, prefs } from 'src/utils/prefs'
@@ -174,11 +225,14 @@ import SuccessDialog from 'components/SuccessDialog.vue'
 import RecipientCheckDialog from './RecipientCheckDialog.vue'
 import { findLookalike, isKnownRecipient } from 'src/utils/recipient'
 import { nameOf } from 'src/utils/names'
+import AddressAvatar from 'components/AddressAvatar.vue'
+import ReceiveDialog from 'pages/Address/ReceiveDialog.vue'
 
 export default defineComponent({
     components: {
         To,
         TokenSelector,
+        AddressAvatar,
         PageToolbar,
         PageContent,
         PageAction
@@ -202,6 +256,8 @@ export default defineComponent({
             messageError: '',
             fiatMode: false,
             note: (this.schedule && payments.scheduled.find(x => x.id === this.schedule)?.note) || '',
+            // the message and note fields, folded away until wanted
+            extras: !!(this.schedule && payments.scheduled.find(x => x.id === this.schedule)?.note),
             prefs,
             unitPrice: 0,
             fx: 1,
@@ -312,10 +368,37 @@ export default defineComponent({
         },
         address(): string {
             return this.wallet ? (this.wallet.meta.addresses[parseInt(this.i || '0')] ?? '') : ''
+        },
+        /** nothing of this token here yet (the balance has loaded) */
+        empty(): boolean {
+            return this.balance !== '' && new BigNumber(this.balance).isZero()
+        },
+        /** the last few recipients and contacts, one tap away */
+        quickTo(): string[] {
+            const seen = new Set<string>()
+            return [...this.recent, ...this.contacts.map(c => c.address)]
+                .filter(a => {
+                    const k = a.toLowerCase()
+                    return k !== this.from.toLowerCase() && !seen.has(k) && !!seen.add(k)
+                })
+                .slice(0, 5)
         }
     },
     methods: {
         isAddress: address.test,
+        nameOf,
+        decimalSeparator,
+        receive() {
+            this.$dialog({ component: ReceiveDialog, address: this.from }).catch(() => { })
+        },
+        /** Dutch, German and French write a comma for decimals: the amount keeps a point */
+        onAmount(v: string | number | null) {
+            this.errors.amount = ''
+            const text = String(v ?? '')
+            if (text.includes(',')) {
+                this.amountText = text.replace(',', '.')
+            }
+        },
         /** the message as clause data for the recipient and this address; null when it can't be */
         async encryptFor(to: string, text: string): Promise<string | null> {
             const w = this.wallet!
@@ -504,7 +587,15 @@ export default defineComponent({
   font-variant-numeric: tabular-nums
 
 .pct
-  min-width: 44px
+  min-width: 48px
+  min-height: 36px
   border-radius: 8px
   font-weight: 800
+
+// recent recipients scroll sideways
+.quick-to
+  overflow-x: auto
+  scrollbar-width: none
+  .q-chip
+    flex: none
 </style>

@@ -67,7 +67,7 @@
                                 v-if="r.unrealizedPct !== null"
                                 class="bvm-amount"
                                 :class="tone(r.unrealized)"
-                            >{{r.unrealizedPct >= 0 ? '+' : ''}}{{r.unrealizedPct.toFixed(1)}}%</span>
+                            >{{r.unrealizedPct >= 0 ? '+' : ''}}{{$fixed(r.unrealizedPct, 1)}}%</span>
                             <span
                                 class="text-caption"
                                 :class="tone(r.unrealized)"

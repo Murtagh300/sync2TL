@@ -33,7 +33,7 @@
                     v-if="!compact"
                     class="bvm-amount"
                 >{{last}}</div>
-                <div :class="change >= 0 ? 'text-primary' : 'text-negative'">{{change >= 0 ? '+' : ''}}{{change.toFixed(1)}}%</div>
+                <div :class="change >= 0 ? 'text-primary' : 'text-negative'">{{change >= 0 ? '+' : ''}}{{$fixed(change, 1)}}%</div>
             </div>
         </div>
     </div>

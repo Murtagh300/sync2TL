@@ -7,7 +7,7 @@
                     v-if="change !== null"
                     class="chart-change"
                     :class="change >= 0 ? 'text-primary' : 'text-negative'"
-                >{{change >= 0 ? '+' : ''}}{{change.toFixed(2)}}% · {{scrubTime || rangeLabel}}</div>
+                >{{change >= 0 ? '+' : ''}}{{$fixed(change, 2)}}% · {{scrubTime || rangeLabel}}</div>
             </div>
             <div class="ranges row no-wrap">
                 <button

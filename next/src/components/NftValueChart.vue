@@ -7,7 +7,7 @@
         <div class="row items-center text-muted value-label">
             <span>{{$t('nftValue.label', { currency })}}</span>
             <q-space />
-            <span :class="change >= 0 ? 'text-primary' : 'text-negative'">{{change >= 0 ? '+' : ''}}{{change.toFixed(1)}}%</span>
+            <span :class="change >= 0 ? 'text-primary' : 'text-negative'">{{change >= 0 ? '+' : ''}}{{$fixed(change, 1)}}%</span>
         </div>
         <sparkline
             class="value-line"

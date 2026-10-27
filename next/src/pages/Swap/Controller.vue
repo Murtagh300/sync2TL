@@ -149,7 +149,7 @@
                 >
                     <span class="text-muted">{{$t('swap.label_impact')}}</span>
                     <q-space />
-                    <span :class="impactClass">{{priceImpact < 0.1 ? '< 0.1' : priceImpact.toFixed(1)}}%</span>
+                    <span :class="impactClass">{{priceImpact < 0.1 ? `< ${$fixed(0.1, 1)}` : $fixed(priceImpact, 1)}}%</span>
                 </div>
                 <div class="row no-wrap">
                     <span class="text-muted">{{$t('swap.label_route')}}</span>
@@ -327,7 +327,7 @@ export default defineComponent({
             }
             const out = new BigNumber(q.amountOut.toString()).div(new BigNumber(10).pow(this.toToken.decimals))
             const inp = new BigNumber(this.amountWei.toString()).div(new BigNumber(10).pow(this.fromToken.decimals))
-            return out.div(inp).toFormat(6).replace(/\.?0+$/, '')
+            return out.div(inp).decimalPlaces(6, BigNumber.ROUND_FLOOR).toFormat()
         }
     },
     watch: {

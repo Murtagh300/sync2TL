@@ -22,7 +22,7 @@
                         <span
                             class="q-ml-xs token-change"
                             :class="stat.change24h >= 0 ? 'text-primary' : 'text-negative'"
-                        >{{stat.change24h >= 0 ? '+' : ''}}{{stat.change24h.toFixed(1)}}%</span>
+                        >{{stat.change24h >= 0 ? '+' : ''}}{{$fixed(stat.change24h, 1)}}%</span>
                     </template>
                     <template v-else>{{token.name}}</template>
                 </q-item-label>

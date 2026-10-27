@@ -111,7 +111,7 @@
                                 size="sm"
                                 color="primary"
                                 :label="$t('swap.action_max')"
-                                @click="amount = formatUnits(available, 18, 18).replace(/,/g, '')"
+                                @click="amount = plainUnits(available, 18)"
                             />
                         </template>
                     </q-input>
@@ -144,7 +144,7 @@ import SuccessDialog from 'components/SuccessDialog.vue'
 import { blockTime, convertClauses, veBetterInfo, type VeBetterInfo } from 'src/utils/ecosystem'
 import { selectedWallet } from 'src/utils/selection'
 import { canSign } from 'src/utils/watch'
-import { formatUnits, formatDate, toWei } from 'src/utils/format'
+import { formatUnits, formatDate, plainUnits, toWei } from 'src/utils/format'
 import { openURL } from 'src/utils/open-url'
 import { genesises } from 'src/consts'
 
@@ -202,6 +202,7 @@ export default defineComponent({
     },
     methods: {
         formatUnits,
+        plainUnits,
         openURL,
         async load() {
             if (!this.address) return

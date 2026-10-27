@@ -1,4 +1,5 @@
 import type { Service } from 'boot/services'
+import { desktop } from './desktop'
 import type { BVM } from 'boot/services/bvm'
 import { genesises } from 'src/consts'
 
@@ -122,6 +123,11 @@ export async function checkAlerts(svc: Service, t: (key: string, params?: Record
 /** also as a system notification when the app is in the background and may notify */
 export function notifySystem(text: string) {
     try {
+        // the desktop app: its own notifications, also from the tray; a click opens the window
+        if (desktop) {
+            if (document.visibilityState !== 'visible' || !document.hasFocus()) desktop.notify('BlackVault', text)
+            return
+        }
         if (document.visibilityState === 'visible' || typeof Notification === 'undefined' || Notification.permission !== 'granted') {
             return
         }

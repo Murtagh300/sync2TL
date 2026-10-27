@@ -1,6 +1,7 @@
 
 export default {
     common: {
+        lang_auto_as: '{lang} (automatic)',
         ok: 'OK',
         confirm: 'Confirm',
         dismiss: 'Dismiss',
@@ -50,6 +51,7 @@ export default {
         label_disclaimer_terms_accept: 'I understand that my keys are my responsibility'
     },
     wizard: {
+        default_wallet_name: 'My Wallet',
         title_welcome: 'Your VeChain vault.',
         title_init: 'Setting up your vault',
         title_feature_1: 'Your keys stay on this device, encrypted with your password',
@@ -120,6 +122,8 @@ export default {
         label_input_password: 'Enter your BlackVault password'
     },
     settings: {
+        label_privacy: 'Privacy',
+        label_security: 'Security',
         label_sound: 'Sound when something comes in',
         label_shake_hide: 'Shake to hide balances',
         msg_motion_denied: 'BlackVault may not read the motion sensor. Allow motion access for this site in your browser settings.',
@@ -259,6 +263,9 @@ export default {
         msg_no_more: 'That is all'
     },
     send: {
+        action_add_extras: 'Add a message or note',
+        action_receive: 'Receive',
+        msg_empty: 'There is no {sym} on this address yet. Receive some first.',
         title: 'Send',
         label_to: 'To',
         label_amount: 'Amount',
@@ -383,6 +390,12 @@ export default {
         more: 'More'
     },
     more: {
+        label_app: 'App',
+        label_security: 'Security',
+        label_insight: 'Insight',
+        label_money: 'Money',
+        msg_no_match: 'Nothing in the menu matches that.',
+        placeholder_search: 'Search the menu',
         label_wallet: 'Wallet',
         open_market: 'Open BlackVeMarket'
     },
@@ -719,6 +732,8 @@ export default {
         comment: 'Revoke the rest of an approval: {amount} for {spender}'
     },
     txStatus: {
+        msg_still_pending: 'Not in a block yet. A transaction that never lands expires after a few minutes; nothing is spent then.',
+        action_recheck: 'Check again',
         msg_pending: '{label} · waiting for the chain',
         msg_pending_many: '{n} transactions waiting for the chain',
         msg_done: '{label} · done',
@@ -754,13 +769,17 @@ export default {
         label_contacts: 'Contacts'
     },
     install: {
+        action_web_app: 'Or install as a web app',
+        action_download: 'Download',
+        msg_desktop: 'The desktop app for Windows, macOS and Linux: its own window, dApp requests open in it, and it updates itself.',
+        title_desktop: 'BlackVault for your computer',
         title: 'Install BlackVault',
         msg: 'As an app on this computer or phone: its own window, in your Start menu or dock, quicker to open.',
         action: 'Install',
         msg_done: 'BlackVault is installed',
         help_ios: 'In Safari: tap Share (the square with the arrow), then "Add to Home Screen".',
         help_safari_mac: 'In Safari: File › Add to Dock.',
-        help_firefox: 'Firefox can’t install web apps on a computer. Open bvwallet.xyz in Chrome or Edge and choose Install, or use Firefox on Android: menu › Install.',
+        help_firefox: 'Firefox can’t install web apps on a computer. Open wallet.blackvemarket.com in Chrome or Edge and choose Install, or use Firefox on Android: menu › Install.',
         help_other: 'In Chrome or Edge: the install icon at the right of the address bar, or menu (⋮) › "Install BlackVault" (Edge: Apps › Install this site as an app).'
     },
     service: {
@@ -918,6 +937,9 @@ export default {
         my_wallet: 'My BlackVault'
     },
     widgets: {
+        action_retry: 'Try again',
+        msg_prices_failed: 'Prices can\'t be loaded right now.',
+        tokens_popular: 'Popular on VeChain',
         ticker: 'Price ticker',
         title: 'Edit home',
         portfolio: 'Total value',
@@ -1081,6 +1103,7 @@ export default {
         group_business: 'Business'
     },
     receive: {
+        msg_network: 'Only for VeChain: VET, VTHO and VeChain tokens. From an exchange, choose the VeChain network; anything sent from Ethereum, BSC or another chain is lost.',
         label_request: 'Ask for an amount',
         msg_request_hint: 'Scanned in BlackVault, this fills in the amount and token for the sender.',
         action_share: 'Share',
@@ -1105,6 +1128,9 @@ export default {
         msg_not_found: 'No activity yet. Transactions and signatures you approve show up here.'
     },
     newPasswordDialog: {
+        action_hide: 'Hide password',
+        action_show: 'Show password',
+        msg_min_length: 'At least {n} characters',
         msg_password_mismatch: 'The passwords do not match',
         msg_password_too_short: 'Use at least 6 characters',
         strength_1: 'Weak',
@@ -1227,5 +1253,21 @@ export default {
     bioAuth: {
         title: 'Biometric unlock',
         msg_auth_failed: 'Not recognized. Try again.'
-    }
+    },
+    firstFunds: {
+        action_copy: 'Copy address',
+        action_receive: 'Show QR code',
+        msg: 'Send VET or tokens to your address from an exchange (such as Bitvavo, Binance or Coinbase) or another wallet. When you withdraw, choose the VeChain network.',
+        title: 'Put your first VET on it',
+    },
+    desktopApp: {
+        msg_in_tray: 'BlackVault keeps running in the tray. Quit it from the tray icon.',
+        tray_quit: 'Quit BlackVault',
+        tray_open: 'Open BlackVault',
+        msg_tray: 'Closing the window keeps BlackVault in the tray. Quit it from the tray icon.',
+        label_tray: 'Keep running when closed',
+        msg_login: 'Quietly, in the tray: dApp requests and notifications arrive at once.',
+        label_login: 'Start with the computer',
+        title: 'Desktop app',
+    },
 }

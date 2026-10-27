@@ -14,7 +14,7 @@
                         v-if="pnl.percent !== null"
                         class="q-ml-sm pnl"
                         :class="pnl.percent >= 0 ? 'text-primary' : 'text-negative'"
-                    >{{pnl.percent >= 0 ? '+' : ''}}{{pnl.percent.toFixed(0)}}% {{$t('nft.label_vs_floor')}}</span>
+                    >{{pnl.percent >= 0 ? '+' : ''}}{{$fixed(pnl.percent, 0)}}% {{$t('nft.label_vs_floor')}}</span>
                 </span>
             </div>
             <div

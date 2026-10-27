@@ -1,6 +1,7 @@
 <template>
     <q-dialog
         ref="dialog"
+        @show="focus()"
         @hide="$emit('hide')"
         :position="$q.screen.xs ? 'bottom': 'standard'"
         :no-backdrop-dismiss="!$q.screen.xs"
@@ -26,9 +27,22 @@
                         :error-message="error"
                         v-model="inputValue"
                         outlined
-                        type="password"
+                        :type="reveal ? 'text' : 'password'"
                         autocomplete="new-password"
-                    />
+                        :hint="password ? '' : $t('newPasswordDialog.msg_min_length', { n: minLength })"
+                    >
+                        <template #append>
+                            <q-btn
+                                flat
+                                round
+                                dense
+                                size="sm"
+                                :icon="reveal ? 'o_visibility_off' : 'o_visibility'"
+                                :aria-label="$t(reveal ? 'newPasswordDialog.action_hide' : 'newPasswordDialog.action_show')"
+                                @click="reveal = !reveal"
+                            />
+                        </template>
+                    </q-input>
                     <div
                         v-if="!password && inputValue"
                         class="strength q-mx-xl q-mt-xs"
@@ -76,7 +90,10 @@ export default defineComponent({
         return {
             password: '',
             inputValue: '',
-            error: ''
+            error: '',
+            // the password in plain text, while the user wants to check what they typed
+            reveal: false,
+            minLength: MIN_PASSWORD_LEN
         }
     },
     computed: {
@@ -110,12 +127,16 @@ export default defineComponent({
         show() { (this.$refs.dialog as QDialog).show() },
         // method is REQUIRED by $q.dialog
         hide() { (this.$refs.dialog as QDialog).hide() },
+        // autofocus doesn't reach the field while the dialog slides in
+        focus() {
+            (this.$refs.pwd as ComponentPublicInstance | undefined)?.$el.getElementsByTagName('input')[0]?.focus()
+        },
         ok(result: string) {
             this.$emit('ok', result)
             this.hide()
         },
         async onSubmit() {
-            (this.$refs.pwd as ComponentPublicInstance).$el.getElementsByTagName('input')[0].focus()
+            this.focus()
 
             if (this.inputValue.length === 0) {
                 return

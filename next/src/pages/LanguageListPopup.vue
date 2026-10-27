@@ -46,7 +46,8 @@ export default defineComponent({
     methods: {
         displayName(lang: string): string {
             if (!lang) {
-                return this.$t('common.lang_auto').toString()
+                // the language it picked, so "auto" says what you get: "Nederlands (automatisch)"
+                return this.$t('common.lang_auto_as', { lang: this.displayName(this.$i18n.locale) })
             }
             const name = displayNames[lang]
             if (name) {

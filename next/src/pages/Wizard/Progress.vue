@@ -33,7 +33,9 @@ import { defineComponent } from 'vue'
 // the setup steps as a checklist: done ones checked, the running one spinning
 export default defineComponent({
     props: {
-        current: String
+        current: String,
+        /** all steps done: none spins any more */
+        done: Boolean
     },
     data() {
         return {
@@ -42,12 +44,12 @@ export default defineComponent({
     },
     watch: {
         current(newVal: string) {
-            this.history.push(newVal)
+            if (newVal) this.history.push(newVal)
         }
     },
     methods: {
         isCurrent(i: number) {
-            return i + 1 === this.history.length
+            return !this.done && i + 1 === this.history.length
         }
     }
 })

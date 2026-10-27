@@ -36,7 +36,7 @@
             <span
                 class="change-pill"
                 :class="shown.change24h >= 0 ? 'change-pill--up' : 'change-pill--down'"
-            >{{shown.change24h >= 0 ? '▲' : '▼'}} {{Math.abs(shown.change24h).toFixed(2)}}%</span>
+            >{{shown.change24h >= 0 ? '▲' : '▼'}} {{$fixed(Math.abs(shown.change24h), 2)}}%</span>
             <span class="text-muted q-ml-sm change-label">{{$t('home.label_24h')}}</span>
             <q-space />
             <span

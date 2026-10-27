@@ -1,6 +1,7 @@
 
 export default {
     common: {
+        lang_auto_as: '{lang} (automatisch)',
         ok: 'OK',
         confirm: 'Bevestigen',
         dismiss: 'Sluiten',
@@ -50,6 +51,7 @@ export default {
         label_disclaimer_terms_accept: 'Ik begrijp dat mijn sleutels mijn verantwoordelijkheid zijn'
     },
     wizard: {
+        default_wallet_name: 'Mijn wallet',
         title_welcome: 'Jouw VeChain-kluis.',
         title_init: 'Je kluis wordt ingericht',
         title_feature_1: 'Je sleutels blijven op dit apparaat, versleuteld met je wachtwoord',
@@ -120,6 +122,8 @@ export default {
         label_input_password: 'Voer je BlackVault-wachtwoord in'
     },
     settings: {
+        label_privacy: 'Privacy',
+        label_security: 'Beveiliging',
         label_sound: 'Geluid als er iets binnenkomt',
         label_shake_hide: 'Schudden om saldi te verbergen',
         msg_motion_denied: 'BlackVault mag de bewegingssensor niet lezen. Sta bewegingstoegang voor deze site toe in je browserinstellingen.',
@@ -259,6 +263,9 @@ export default {
         msg_no_more: 'Dat was alles'
     },
     send: {
+        action_add_extras: 'Bericht of notitie toevoegen',
+        action_receive: 'Ontvangen',
+        msg_empty: 'Er staat nog geen {sym} op dit adres. Ontvang eerst iets.',
         title: 'Verzenden',
         label_to: 'Aan',
         label_amount: 'Bedrag',
@@ -383,6 +390,12 @@ export default {
         more: 'Meer'
     },
     more: {
+        label_app: 'App',
+        label_security: 'Veiligheid',
+        label_insight: 'Inzicht',
+        label_money: 'Geld',
+        msg_no_match: 'Niets in het menu past daarbij.',
+        placeholder_search: 'Zoek in het menu',
         label_wallet: 'Wallet',
         open_market: 'BlackVeMarket openen'
     },
@@ -719,6 +732,8 @@ export default {
         comment: 'Restant van een goedkeuring intrekken: {amount} voor {spender}'
     },
     txStatus: {
+        msg_still_pending: 'Nog niet in een blok. Een transactie die er niet in komt, vervalt na een paar minuten; dan is er niets uitgegeven.',
+        action_recheck: 'Opnieuw controleren',
         msg_pending: '{label} · wacht op de chain',
         msg_pending_many: '{n} transacties wachten op de chain',
         msg_done: '{label} · klaar',
@@ -754,13 +769,17 @@ export default {
         label_contacts: 'Contacten'
     },
     install: {
+        action_web_app: 'Of installeer als web-app',
+        action_download: 'Downloaden',
+        msg_desktop: 'De desktop-app voor Windows, macOS en Linux: een eigen venster, dApp-verzoeken openen erin en hij werkt zichzelf bij.',
+        title_desktop: 'BlackVault voor je computer',
         title: 'BlackVault installeren',
         msg: 'Als app op deze computer of telefoon: een eigen venster, in je Startmenu of Dock, sneller open.',
         action: 'Installeren',
         msg_done: 'BlackVault is geïnstalleerd',
         help_ios: 'In Safari: tik op Delen (het vierkantje met de pijl) en dan "Zet op beginscherm".',
         help_safari_mac: 'In Safari: Archief › Voeg toe aan Dock.',
-        help_firefox: 'Firefox kan op een computer geen web-apps installeren. Open bvwallet.xyz in Chrome of Edge en kies Installeren, of gebruik Firefox op Android: menu › Installeren.',
+        help_firefox: 'Firefox kan op een computer geen web-apps installeren. Open wallet.blackvemarket.com in Chrome of Edge en kies Installeren, of gebruik Firefox op Android: menu › Installeren.',
         help_other: 'In Chrome of Edge: het installeer-icoon rechts in de adresbalk, of menu (⋮) › "BlackVault installeren" (Edge: Apps › Deze site installeren als app).'
     },
     service: {
@@ -918,6 +937,9 @@ export default {
         my_wallet: 'Mijn BlackVault'
     },
     widgets: {
+        action_retry: 'Opnieuw',
+        msg_prices_failed: 'Koersen kunnen nu niet worden geladen.',
+        tokens_popular: 'Populair op VeChain',
         ticker: 'Koersticker',
         title: 'Home aanpassen',
         portfolio: 'Totale waarde',
@@ -1081,6 +1103,7 @@ export default {
         group_business: 'Zakelijk'
     },
     receive: {
+        msg_network: 'Alleen voor VeChain: VET, VTHO en VeChain-tokens. Kies bij een exchange het VeChain-netwerk; wat je vanaf Ethereum, BSC of een andere chain stuurt, raak je kwijt.',
         label_request: 'Om een bedrag vragen',
         msg_request_hint: 'Gescand in BlackVault vult dit het bedrag en de token in voor de verzender.',
         action_share: 'Delen',
@@ -1105,6 +1128,9 @@ export default {
         msg_not_found: 'Nog geen activiteit. Transacties en handtekeningen die je goedkeurt, verschijnen hier.'
     },
     newPasswordDialog: {
+        action_hide: 'Wachtwoord verbergen',
+        action_show: 'Wachtwoord tonen',
+        msg_min_length: 'Minstens {n} tekens',
         msg_password_mismatch: 'De wachtwoorden komen niet overeen',
         msg_password_too_short: 'Gebruik minstens 6 tekens',
         strength_1: 'Zwak',
@@ -1227,5 +1253,21 @@ export default {
     bioAuth: {
         title: 'Ontgrendelen met biometrie',
         msg_auth_failed: 'Niet herkend. Probeer het opnieuw.'
-    }
+    },
+    firstFunds: {
+        action_copy: 'Adres kopiëren',
+        action_receive: 'QR-code tonen',
+        msg: 'Stuur VET of tokens naar je adres vanaf een exchange (zoals Bitvavo, Binance of Coinbase) of een andere wallet. Kies bij het opnemen het VeChain-netwerk.',
+        title: 'Zet je eerste VET erop',
+    },
+    desktopApp: {
+        msg_in_tray: 'BlackVault blijft draaien in het systeemvak. Afsluiten doe je via het icoon daar.',
+        tray_quit: 'BlackVault afsluiten',
+        tray_open: 'BlackVault openen',
+        msg_tray: 'Het venster sluiten houdt BlackVault in het systeemvak. Afsluiten doe je via het icoon daar.',
+        label_tray: 'Blijven draaien na sluiten',
+        msg_login: 'Stil, in het systeemvak: dApp-verzoeken en meldingen komen direct binnen.',
+        label_login: 'Starten bij opstarten',
+        title: 'Desktop-app',
+    },
 }

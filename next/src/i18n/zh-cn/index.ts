@@ -1,6 +1,7 @@
 
 export default {
     common: {
+        lang_auto_as: '{lang}（自动）',
         ok: '确定',
         confirm: '确认',
         dismiss: '忽略',
@@ -50,6 +51,7 @@ export default {
         label_disclaimer_terms_accept: '我理解，愿意承担一切责任'
     },
     wizard: {
+        default_wallet_name: '我的钱包',
         title_welcome: '欢迎',
         title_init: '稍等片刻',
         title_feature_1: 'BlackVault',
@@ -119,6 +121,8 @@ export default {
         label_input_password: '输入密码以解锁'
     },
     settings: {
+        label_privacy: '隐私',
+        label_security: '安全',
         label_sound: '收到资产时播放声音',
         label_shake_hide: '摇一摇隐藏余额',
         msg_motion_denied: 'BlackVault 无法读取运动传感器。请在浏览器设置中允许此网站访问运动数据。',
@@ -258,6 +262,9 @@ export default {
         msg_no_more: '- 完 - '
     },
     send: {
+        action_add_extras: '添加消息或备注',
+        action_receive: '接收',
+        msg_empty: '此地址还没有 {sym}。请先接收一些。',
         title: '发送',
         label_to: '接收人',
         label_amount: '数额',
@@ -382,6 +389,12 @@ export default {
         more: '更多'
     },
     more: {
+        label_app: '应用',
+        label_security: '安全',
+        label_insight: '分析',
+        label_money: '资金',
+        msg_no_match: '菜单中没有匹配项。',
+        placeholder_search: '搜索菜单',
         label_wallet: '钱包',
         open_market: '打开 BlackVeMarket'
     },
@@ -718,6 +731,8 @@ export default {
         comment: '撤销剩余授权：{spender} 的 {amount}'
     },
     txStatus: {
+        msg_still_pending: '尚未进入区块。未上链的交易会在几分钟后过期，届时不会产生任何花费。',
+        action_recheck: '重新检查',
         msg_pending: '{label} · 等待上链',
         msg_pending_many: '{n} 笔交易等待上链',
         msg_done: '{label} · 已完成',
@@ -753,13 +768,17 @@ export default {
         label_contacts: '联系人'
     },
     install: {
+        action_web_app: '或安装为网页应用',
+        action_download: '下载',
+        msg_desktop: '适用于 Windows、macOS 和 Linux 的桌面应用：独立窗口，dApp 请求在其中打开，并会自动更新。',
+        title_desktop: '电脑版 BlackVault',
         title: '安装 BlackVault',
         msg: '作为此电脑或手机上的应用：独立窗口，出现在开始菜单或程序坞中，打开更快。',
         action: '安装',
         msg_done: 'BlackVault 已安装',
         help_ios: '在 Safari 中：点“分享”（带箭头的方块），然后选“添加到主屏幕”。',
         help_safari_mac: '在 Safari 中：文件 › 添加到程序坞。',
-        help_firefox: 'Firefox 无法在电脑上安装网页应用。请在 Chrome 或 Edge 中打开 bvwallet.xyz 并选择“安装”，或在 Android 上使用 Firefox：菜单 › 安装。',
+        help_firefox: 'Firefox 无法在电脑上安装网页应用。请在 Chrome 或 Edge 中打开 wallet.blackvemarket.com 并选择“安装”，或在 Android 上使用 Firefox：菜单 › 安装。',
         help_other: '在 Chrome 或 Edge 中：点地址栏右侧的安装图标，或菜单 (⋮) › “安装 BlackVault”（Edge：应用 › 将此站点作为应用安装）。'
     },
     service: {
@@ -917,6 +936,9 @@ export default {
         my_wallet: '我的 BlackVault'
     },
     widgets: {
+        action_retry: '重试',
+        msg_prices_failed: '暂时无法加载价格。',
+        tokens_popular: 'VeChain 热门',
         ticker: '价格滚动条',
         title: '编辑首页',
         portfolio: '总价值',
@@ -1080,6 +1102,7 @@ export default {
         group_business: '商务'
     },
     receive: {
+        msg_network: '仅限 VeChain：VET、VTHO 和 VeChain 代币。从交易所提现请选择 VeChain 网络；从以太坊、BSC 或其他链发送的资产将会丢失。',
         label_request: '指定金额',
         msg_request_hint: '在 BlackVault 中扫码后，会自动填入金额和代币。',
         action_share: '分享',
@@ -1104,6 +1127,9 @@ export default {
         msg_not_found: '无操作记录'
     },
     newPasswordDialog: {
+        action_hide: '隐藏密码',
+        action_show: '显示密码',
+        msg_min_length: '至少 {n} 个字符',
         msg_password_mismatch: '密码不一致',
         msg_password_too_short: '密码过短(至少6位)',
         strength_1: '弱',
@@ -1226,5 +1252,21 @@ export default {
     bioAuth: {
         title: '生物识别验证',
         msg_auth_failed: '身份验证失败,请重试'
-    }
+    },
+    firstFunds: {
+        action_copy: '复制地址',
+        action_receive: '显示二维码',
+        msg: '从交易所（如 Bitvavo、Binance 或 Coinbase）或其他钱包向你的地址发送 VET 或代币。提现时请选择 VeChain 网络。',
+        title: '存入你的第一笔 VET',
+    },
+    desktopApp: {
+        msg_in_tray: 'BlackVault 会在托盘中继续运行。可通过托盘图标退出。',
+        tray_quit: '退出 BlackVault',
+        tray_open: '打开 BlackVault',
+        msg_tray: '关闭窗口后 BlackVault 会留在托盘中。可通过托盘图标退出。',
+        label_tray: '关闭后继续运行',
+        msg_login: '在托盘中静默运行：dApp 请求和通知会立即到达。',
+        label_login: '开机启动',
+        title: '桌面应用',
+    },
 }

@@ -15,6 +15,7 @@ import { notify as addNotification } from 'src/utils/notifications'
 import { dueScheduled } from 'src/utils/payments'
 import { dueReminders } from 'src/utils/launch-calendar'
 import dayjs from 'dayjs'
+import { setNumberLocale } from 'src/utils/format'
 // import more locales here
 import 'dayjs/locale/zh-cn'
 import 'dayjs/locale/nl'
@@ -68,6 +69,14 @@ export default defineComponent({
                         : wanted.startsWith('de') ? 'de-de'
                             : wanted.startsWith('fr') ? 'fr-fr' : 'en-us'
             this.$i18n.locale = lang
+            setNumberLocale(lang)
+            desktop?.setLabels({
+                open: this.$t('desktopApp.tray_open'),
+                login: this.$t('desktopApp.label_login'),
+                keep: this.$t('desktopApp.label_tray'),
+                quit: this.$t('desktopApp.tray_quit'),
+                inTray: this.$t('desktopApp.msg_in_tray')
+            })
 
             // should set to default first
             dayjs.locale('en')

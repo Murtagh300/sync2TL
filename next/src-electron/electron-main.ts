@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, Menu, net, session, shell, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
+import { app, BrowserWindow, ipcMain, Menu, nativeImage, net, Notification, session, shell, Tray, type IpcMainEvent, type IpcMainInvokeEvent } from 'electron'
 import { existsSync, readFileSync, statSync, writeFileSync } from 'node:fs'
 import path from 'node:path'
 import { pathToFileURL } from 'node:url'
@@ -15,6 +15,9 @@ import electronUpdater from 'electron-updater'
  *
  * dApps reach it with blackvault: links (connect.js), and with connex: links like Sync2's desktop
  * app when no other app has those.
+ *
+ * On Windows and Linux, closing the window keeps it in the tray (unless turned off), so links,
+ * updates and notifications keep arriving; it can start with the computer, hidden in the tray.
  */
 
 const HOST = 'wallet.blackvemarket.com'
@@ -36,6 +39,11 @@ const debug = !!import.meta.env.QUASAR_DEBUG
 const appUrl = dev ? new URL(import.meta.env.QUASAR_APP_URL) : new URL(`${ORIGIN}/index.html`)
 
 let win: BrowserWindow | null = null
+let tray: Tray | null = null
+// quitting for real (the tray's Quit, an update): the window closes instead of hiding
+let quitting = false
+// started with the computer: stays in the tray until opened
+const hiddenStart = process.argv.includes('--hidden')
 // links that arrive before the page listens
 let pending: string[] = []
 let listening = false
@@ -123,6 +131,81 @@ function permissions() {
     session.defaultSession.setPermissionCheckHandler((_wc, permission, origin) => allowed.includes(permission) && fromApp(origin))
 }
 
+// a tray on Windows and Linux (macOS has the Dock); a login item on Windows and macOS
+const canTray = process.platform !== 'darwin'
+const canLogin = process.platform !== 'linux'
+
+type Prefs = { keepInTray: boolean, openAtLogin: boolean }
+const prefsFile = () => path.join(app.getPath('userData'), 'desktop.json')
+function readPrefs(): Prefs {
+    const p: Prefs = { keepInTray: true, openAtLogin: false }
+    try {
+        const saved = JSON.parse(readFileSync(prefsFile(), 'utf8'))
+        if (typeof saved.keepInTray === 'boolean') p.keepInTray = saved.keepInTray
+        if (typeof saved.openAtLogin === 'boolean') p.openAtLogin = saved.openAtLogin
+    } catch { }
+    return p
+}
+let prefs: Prefs = { keepInTray: true, openAtLogin: false }
+function setPrefs(next: Partial<Prefs>) {
+    prefs = { ...prefs, ...next }
+    try {
+        writeFileSync(prefsFile(), JSON.stringify(prefs))
+    } catch { }
+    // the installed app only: in development this would start Electron itself with the computer
+    if (canLogin && app.isPackaged) {
+        app.setLoginItemSettings({ openAtLogin: prefs.openAtLogin, args: ['--hidden'] })
+    }
+    trayMenu()
+}
+
+const iconPath = () => path.join(app.getAppPath(), dev ? '../../../src-electron/electron-assets' : 'electron-assets', 'icons/icon.png')
+
+/** an icon in the tray (Windows, Linux): open, start with the computer, quit */
+function createTray() {
+    if (!canTray || tray) return
+    tray = new Tray(nativeImage.createFromPath(iconPath()).resize({ width: 16, height: 16 }))
+    tray.setToolTip('BlackVault')
+    tray.on('click', showWindow)
+    trayMenu()
+}
+
+function trayMenu() {
+    if (!tray) return
+    tray.setContextMenu(Menu.buildFromTemplate([
+        { label: labels.open, click: showWindow },
+        { type: 'separator' },
+        ...(canLogin ? [{ label: labels.login, type: 'checkbox' as const, checked: prefs.openAtLogin, click: () => setPrefs({ openAtLogin: !prefs.openAtLogin }) }] : []),
+        { label: labels.keep, type: 'checkbox', checked: prefs.keepInTray, click: () => setPrefs({ keepInTray: !prefs.keepInTray }) },
+        { type: 'separator' },
+        {
+            label: labels.quit,
+            click: () => {
+                quitting = true
+                app.quit()
+            }
+        }
+    ]))
+}
+
+/** a system notification; a click brings the window back */
+function notify(title: string, body: string) {
+    if (!Notification.isSupported()) return
+    const n = new Notification({ title, body, icon: iconPath() })
+    n.on('click', showWindow)
+    n.show()
+}
+
+// the tray's words in the app's language (the page sends them, see ipc()); English until then
+const labels = {
+    open: 'Open BlackVault',
+    login: 'Start with the computer',
+    keep: 'Keep running when closed',
+    quit: 'Quit BlackVault',
+    inTray: 'BlackVault keeps running in the tray. Quit it from the tray icon.'
+}
+
+let toldAboutTray = false
 const boundsFile = () => path.join(app.getPath('userData'), 'window.json')
 function savedBounds(): { width: number, height: number, x?: number, y?: number } {
     try {
@@ -141,7 +224,7 @@ async function createWindow() {
         title: 'BlackVault',
         backgroundColor: '#0b0b0c',
         autoHideMenuBar: true,
-        icon: path.join(app.getAppPath(), dev ? '../../../src-electron/electron-assets' : 'electron-assets', 'icons/icon.png'),
+        icon: iconPath(),
         webPreferences: {
             preload: path.join(import.meta.dirname, 'electron-preload.cjs'),
             contextIsolation: true,
@@ -152,11 +235,23 @@ async function createWindow() {
             devTools: dev || debug
         }
     })
-    win.once('ready-to-show', () => win?.show())
-    win.on('close', () => {
+    // started with the computer: in the tray until opened (when there is a tray to open it from)
+    win.once('ready-to-show', () => {
+        if (!(hiddenStart && tray && prefs.keepInTray)) win?.show()
+    })
+    win.on('close', e => {
         try {
-            if (win && !win.isMaximized() && !win.isMinimized()) writeFileSync(boundsFile(), JSON.stringify(win.getBounds()))
+            if (win && win.isVisible() && !win.isMaximized() && !win.isMinimized()) writeFileSync(boundsFile(), JSON.stringify(win.getBounds()))
         } catch { }
+        // to the tray, so links, updates and notifications keep arriving
+        if (tray && prefs.keepInTray && !quitting) {
+            e.preventDefault()
+            win?.hide()
+            if (!toldAboutTray) {
+                toldAboutTray = true
+                notify('BlackVault', labels.inTray)
+            }
+        }
     })
     win.on('closed', () => {
         win = null
@@ -206,11 +301,33 @@ function updates() {
     setTimeout(check, 10 * 1000)
     setInterval(check, 6 * 60 * 60 * 1000)
     ipcMain.handle('install-update', e => {
-        if (senderOk(e)) autoUpdater.quitAndInstall()
+        if (!senderOk(e)) return
+        quitting = true
+        autoUpdater.quitAndInstall()
     })
 }
 
 function ipc() {
+    ipcMain.on('notify', (e, title: unknown, body: unknown) => {
+        if (senderOk(e) && typeof title === 'string' && typeof body === 'string') notify(title.slice(0, 120), body.slice(0, 400))
+    })
+    ipcMain.on('tray-labels', (e, next: unknown) => {
+        if (!senderOk(e) || !next || typeof next !== 'object') return
+        for (const k of Object.keys(labels) as (keyof typeof labels)[]) {
+            const v = (next as Record<string, unknown>)[k]
+            if (typeof v === 'string' && v.length <= 200) labels[k] = v
+        }
+        trayMenu()
+    })
+    ipcMain.handle('desktop-prefs', e => senderOk(e) ? { ...prefs, canTray, canLogin } : null)
+    ipcMain.handle('set-desktop-prefs', (e, next: unknown) => {
+        if (!senderOk(e) || !next || typeof next !== 'object') return
+        const n = next as Record<string, unknown>
+        setPrefs({
+            ...(typeof n.keepInTray === 'boolean' ? { keepInTray: n.keepInTray } : {}),
+            ...(typeof n.openAtLogin === 'boolean' ? { openAtLogin: n.openAtLogin } : {})
+        })
+    })
     ipcMain.on('external-url-ready', e => {
         if (!senderOk(e)) return
         listening = true
@@ -245,12 +362,15 @@ if (!app.requestSingleInstanceLock()) {
     if (first) pending.push(first)
 
     guardContents()
+    app.on('before-quit', () => { quitting = true })
     void app.whenReady().then(async () => {
         if (!dev) serveApp()
+        prefs = readPrefs()
         permissions()
         menu()
         ipc()
         registerSchemes()
+        createTray()
         await createWindow()
         updates()
         app.on('activate', () => {

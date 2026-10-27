@@ -23,6 +23,8 @@ export namespace Prices {
         liquidity: number
     }
     export type Currency = 'EUR' | 'USD'
+    /** a token that trades a lot on VeChain's DEXes */
+    export type Popular = { address: string, symbol: string, name: string, image: string, price: number, change24h: number, volume24h: number }
 }
 
 // BetterSwap sends no CORS headers: the dev server proxies it, a build needs BETTERSWAP_API_URL
@@ -47,10 +49,11 @@ const historyCache = new Map<string, { at: number, points: Prices.Point[] }>()
 let ratesCache: { at: number, rates: Rates } | null = null
 
 type BetterSwapToken = {
-    address: string, description: string, circulatingSupply: number, totalSupply: number, maxSupply: number | null,
+    address: string, symbol: string, name: string, image: string, description: string, circulatingSupply: number, totalSupply: number, maxSupply: number | null,
     website: string | null, twitter: string | null, telegram: string | null, discord: string | null
 }
 type BetterSwapPool = { token0: { address: string }, token1: { address: string }, volume24h?: number, totalUsdValue?: number }
+let popularCache: { at: number, list: Prices.Popular[] } | null = null
 let tokensCache: { at: number, tokens: Promise<BetterSwapToken[]>, pools: Promise<BetterSwapPool[]> } | null = null
 
 function tokenLists() {
@@ -148,6 +151,44 @@ export function build() {
                 // the value of the pools it trades in
                 liquidity: mine.reduce((s, p) => s + (p.totalUsdValue || 0), 0)
             }
+        },
+        /**
+         * The tokens with the most 24h volume in BetterSwap's and VeTrade's pools (VET aside: it is in
+         * most pairs), with price and change; cached 10 minutes. Throws when BetterSwap can't be reached.
+         */
+        async popular(n = 5): Promise<Prices.Popular[]> {
+            if (popularCache && popularCache.at > Date.now() - 10 * 60 * 1000) {
+                return popularCache.list.slice(0, n)
+            }
+            const lists = tokenLists()
+            const [tokens, pools] = await Promise.all([lists.tokens, lists.pools])
+            const volume = new Map<string, number>()
+            for (const p of pools) {
+                // a pool's volume is both of its tokens' trade
+                for (const t of [p.token0, p.token1]) {
+                    const k = key(t.address)
+                    if (k) volume.set(k, (volume.get(k) || 0) + (p.volume24h || 0))
+                }
+            }
+            const top = tokens
+                .map(t => ({ t, k: key(t.address), v: volume.get(key(t.address)) || 0 }))
+                .filter(x => x.k && x.v > 0)
+                .sort((a, b) => b.v - a.v)
+                .slice(0, 10)
+            const stats = await this.stats(top.map(x => x.k))
+            const list = top
+                .filter(x => stats[x.k])
+                .map(x => ({
+                    address: x.k,
+                    symbol: x.t.symbol,
+                    name: x.t.name,
+                    image: /^https:\/\//.test(x.t.image || '') ? x.t.image : '',
+                    price: stats[x.k]!.price,
+                    change24h: stats[x.k]!.change24h,
+                    volume24h: x.v
+                }))
+            popularCache = { at: Date.now(), list }
+            return list.slice(0, n)
         },
         /** hourly USD prices over the last hours, by token address; cached 10 minutes */
         async history(addresses: Array<string | null | undefined>, hours = 168): Promise<Record<string, Prices.Point[]>> {

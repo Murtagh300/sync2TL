@@ -14,7 +14,7 @@
                             v-if="change !== null"
                             class="change"
                             :class="change >= 0 ? 'text-primary' : 'text-negative'"
-                        >{{change >= 0 ? '+' : ''}}{{change.toFixed(2)}}% · {{rangeLabel}}</div>
+                        >{{change >= 0 ? '+' : ''}}{{$fixed(change, 2)}}% · {{rangeLabel}}</div>
                     </div>
                     <div class="row no-wrap ranges">
                         <button
@@ -60,7 +60,7 @@
                         />
                         <span class="q-ml-sm text-weight-bold">{{movers.best.spec.symbol}}</span>
                         <q-space />
-                        <span class="text-primary text-weight-bold">+{{movers.best.change.toFixed(1)}}%</span>
+                        <span class="text-primary text-weight-bold">+{{$fixed(movers.best.change, 1)}}%</span>
                     </div>
                 </div>
                 <div
@@ -75,7 +75,7 @@
                         />
                         <span class="q-ml-sm text-weight-bold">{{movers.worst.spec.symbol}}</span>
                         <q-space />
-                        <span class="text-negative text-weight-bold">{{movers.worst.change.toFixed(1)}}%</span>
+                        <span class="text-negative text-weight-bold">{{$fixed(movers.worst.change, 1)}}%</span>
                     </div>
                 </div>
             </div>
@@ -113,7 +113,7 @@
                     </q-item-section>
                     <q-item-section side>
                         <div class="bvm-amount value">{{money(h.usd * fx)}}</div>
-                        <div class="text-muted">{{(share(h.usd) * 100).toFixed(1)}}%</div>
+                        <div class="text-muted">{{$fixed((share(h.usd) * 100), 1)}}%</div>
                     </q-item-section>
                 </q-item>
             </q-list>

@@ -29,9 +29,21 @@
                 class="tx-status-progress"
                 :style="{ width: progress + '%' }"
             />
+            <!-- a while without a block: look again now, or put the bar away -->
+            <q-btn
+                v-if="stuck"
+                :aria-label="$t('txStatus.action_recheck')"
+                flat
+                round
+                dense
+                size="sm"
+                icon="o_refresh"
+                :loading="rechecking"
+                @click.stop="recheck()"
+            />
             <q-btn
                 :aria-label="$t('common.close')"
-                v-if="shown.state !== 'pending'"
+                v-if="shown.state !== 'pending' || stuck"
                 flat
                 round
                 dense
@@ -51,7 +63,10 @@ import { who } from 'src/utils/describe-action'
 import { fns } from 'src/utils/actions'
 import { formatUnits } from 'src/utils/format'
 
-type Shown = { id: string, gid: string, signer: string, since: number, state: 'pending' | 'done' | 'failed', label: string, count: number }
+type Shown = { id: string, activityId: number, gid: string, signer: string, since: number, state: 'pending' | 'done' | 'failed', label: string, count: number }
+
+// a transaction usually lands in 10–20 s; after this the bar offers to look again or close
+const STUCK_AFTER = 2 * 60 * 1000
 
 // transactions on their way, at the bottom of every page, until they are in a block
 export default defineComponent({
@@ -61,11 +76,15 @@ export default defineComponent({
         // when each tx was first seen in a block, to show "done" a few seconds
         doneAt: {} as Record<string, number>,
         dismissed: {} as Record<string, true>,
-        now: Date.now()
+        now: Date.now(),
+        rechecking: false
     }),
     computed: {
         elapsed(): number {
             return this.shown ? Math.max(0, Math.round((this.now - this.shown.since) / 1000)) : 0
+        },
+        stuck(): boolean {
+            return !!this.shown && this.shown.state === 'pending' && this.now - this.shown.since > STUCK_AFTER
         },
         progress(): number {
             // eases toward 95% over ~20 s, so a slow block never looks finished
@@ -101,7 +120,7 @@ export default defineComponent({
                 const label = (a: M.Activity) => (a.type === 'tx' && a.glob.comment) || this.$t('common.transaction')
                 if (pending.length) {
                     const p = pending[0]!
-                    this.shown = { id: p.glob.id, gid: p.gid, signer: p.glob.signer, since: p.createdTime, state: 'pending', label: label(p), count: pending.length }
+                    this.shown = { id: p.glob.id, activityId: p.id, gid: p.gid, signer: p.glob.signer, since: p.createdTime, state: 'pending', label: label(p), count: pending.length }
                     return
                 }
                 // the latest one that made it into a block: show the outcome a few seconds
@@ -123,13 +142,33 @@ export default defineComponent({
                         }
                     }
                     if (Date.now() - this.doneAt[id]! < 6000) {
-                        this.shown = { id, gid: landed.gid, signer: landed.glob.signer, since: landed.createdTime, state: landed.glob.receipt!.reverted ? 'failed' : 'done', label: label(landed), count: 1 }
+                        this.shown = { id, activityId: landed.id, gid: landed.gid, signer: landed.glob.signer, since: landed.createdTime, state: landed.glob.receipt!.reverted ? 'failed' : 'done', label: label(landed), count: 1 }
                         return
                     }
                 }
                 this.shown = null
             } catch {
                 this.shown = null
+            }
+        },
+        /** ask the node for the receipt now (the updater does so with each block) */
+        async recheck() {
+            const s = this.shown
+            if (!s || this.rechecking) return
+            this.rechecking = true
+            try {
+                const receipt = await this.$svc.bc(s.gid).thor.transaction(s.id).getReceipt()
+                const [a] = (await this.$svc.activity.page(20, 0)).filter(x => x.id === s.activityId)
+                if (receipt && a && a.type === 'tx') {
+                    await this.$svc.activity.update(a.id, { glob: { ...a.glob, receipt } })
+                } else {
+                    this.$q.notify({ message: this.$t('txStatus.msg_still_pending') })
+                }
+                await this.check()
+            } catch {
+                this.$q.notify({ message: this.$t('common.something_wrong'), color: 'negative' })
+            } finally {
+                this.rechecking = false
             }
         },
         dismiss() {

@@ -17,9 +17,8 @@
                     <q-space />
                     <q-btn
                         flat
-                        dense
                         no-caps
-                        size="sm"
+                        class="tour-skip"
                         :label="$t('tour.action_skip')"
                         @click="done()"
                     />
@@ -111,4 +110,9 @@ export default defineComponent({
 
 .tour-enter-from, .tour-leave-to
   opacity: 0
+
+// a finger-sized target
+.tour-skip
+  min-height: 40px
+  margin-right: -8px
 </style>

@@ -49,6 +49,12 @@
 import { defineComponent } from 'vue'
 import { openURL } from 'src/utils/open-url'
 import bvmIcon from 'assets/bvm-icon.png'
+// the apps' own logos, shipped with the app: their sites' favicons often don't load (or show blank)
+import vetradeIcon from 'assets/dapps/vetrade.png'
+import betterswapIcon from 'assets/dapps/betterswap.png'
+import vebetterIcon from 'assets/dapps/vebetter.ico'
+import vetdomainsIcon from 'assets/dapps/vetdomains.png'
+import vechainstatsIcon from 'assets/dapps/vechainstats.png'
 
 type Dapp = { name: string, url: string, icon: string, what: 'market' | 'swap' | 'earn' | 'names' | 'explorer' }
 
@@ -59,11 +65,11 @@ export default defineComponent({
     data: () => ({
         dapps: [
             { name: 'BlackVeMarket', url: 'https://blackvemarket.com', icon: bvmIcon, what: 'market' },
-            { name: 'VeTrade', url: 'https://vetrade.vet', icon: 'https://vetrade.vet/favicon.ico', what: 'swap' },
-            { name: 'BetterSwap', url: 'https://www.betterswap.io', icon: 'https://www.betterswap.io/favicon.ico', what: 'swap' },
-            { name: 'VeBetterDAO', url: 'https://governance.vebetterdao.org', icon: 'https://governance.vebetterdao.org/favicon.ico', what: 'earn' },
-            { name: 'vet.domains', url: 'https://vet.domains', icon: '', what: 'names' },
-            { name: 'VeChainStats', url: 'https://vechainstats.com', icon: 'https://vechainstats.com/apple-touch-icon.png', what: 'explorer' }
+            { name: 'VeTrade', url: 'https://vetrade.vet', icon: vetradeIcon, what: 'swap' },
+            { name: 'BetterSwap', url: 'https://www.betterswap.io', icon: betterswapIcon, what: 'swap' },
+            { name: 'VeBetterDAO', url: 'https://governance.vebetterdao.org', icon: vebetterIcon, what: 'earn' },
+            { name: 'vet.domains', url: 'https://vet.domains', icon: vetdomainsIcon, what: 'names' },
+            { name: 'VeChainStats', url: 'https://vechainstats.com', icon: vechainstatsIcon, what: 'explorer' }
         ] as Dapp[],
         favs: [] as string[],
         broken: [] as string[]

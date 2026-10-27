@@ -6,6 +6,41 @@ import localizedFormat from 'dayjs/plugin/localizedFormat'
 dayjs.extend(relativeTime)
 dayjs.extend(localizedFormat)
 
+let locale = 'en-US'
+
+/**
+ * Numbers follow the app's language (App.vue), so token amounts and money read alike: "1.234,5 VET" and
+ * "€ 1.234,50" in Dutch. Only for display: amounts typed in or sent are plain ("1234.5").
+ */
+export function setNumberLocale(lang: string) {
+    locale = lang
+    const parts = new Intl.NumberFormat(lang).formatToParts(12345.6)
+    const part = (type: string, fallback: string) => parts.find(p => p.type === type)?.value ?? fallback
+    BigNumber.config({
+        FORMAT: {
+            ...BigNumber.config(undefined as unknown as BigNumber.Config).FORMAT,
+            decimalSeparator: part('decimal', '.'),
+            groupSeparator: part('group', ','),
+            groupSize: 3
+        }
+    })
+}
+
+/** the locale for Intl.NumberFormat / toLocaleString */
+export function numberLocale() {
+    return locale
+}
+
+/** a number with a fixed count of decimals, in the app's language ("3,5" in Dutch): for percentages */
+export function fixed(v: number, digits: number): string {
+    return new Intl.NumberFormat(locale, { minimumFractionDigits: digits, maximumFractionDigits: digits, useGrouping: false }).format(v)
+}
+
+/** an amount as a plain number for a field ("1234.5"): no grouping, a point for decimals */
+export function plainUnits(val: bigint | string, decimals: number): string {
+    return new BigNumber(val.toString()).div('1' + '0'.repeat(decimals)).toFixed()
+}
+
 export function decimalSeparator() {
     return BigNumber.config(undefined as unknown as BigNumber.Config).FORMAT!.decimalSeparator!
 }
