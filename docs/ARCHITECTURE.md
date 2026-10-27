@@ -48,6 +48,7 @@ Storage: `node:sqlite` with recorded migrations (`src/db.ts`).
 | Route | What |
 | --- | --- |
 | `GET /api/betterswap/*`, `GET /api/bvm/*` | gateway: only listed paths (`src/proxy.ts`), cached with stale-while-revalidate, rate limited per visitor |
+| `/relay/*` | sign requests from dApps (`connect.js`, Sync2's protocol), in memory for 10 minutes, open CORS; see `docs/CONNECT.md` |
 | `GET /health`, `GET /status` | the services the wallet depends on, as JSON and as a page |
 | `GET /config` | remote config (`flags.json`, read again when it changes) |
 | `GET /push/key`, `POST /push/subscribe`, `POST /push/unsubscribe` | push for incoming transfers |

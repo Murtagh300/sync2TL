@@ -24,7 +24,7 @@ www.{$WALLET_DOMAIN} {
 	}
 
 	# the server: gateway, push, health, config, error reports
-	@server path /api/* /push/* /health /status /config /errors
+	@server path /api/* /push/* /relay/* /health /status /config /errors
 	handle @server {
 		reverse_proxy server:8787 {
 			header_up X-Forwarded-For {remote_host}
@@ -35,7 +35,7 @@ www.{$WALLET_DOMAIN} {
 		root * /srv/wallet
 
 		# the app shell and the service worker are always checked for a newer version
-		@shell path / /index.html /sw.js /push-sw.js /forward.js /manifest.json
+		@shell path / /index.html /sw.js /push-sw.js /forward.js /connect.js /manifest.json
 		header @shell Cache-Control "no-cache"
 		# built assets carry a hash in their name: cache them for a year
 		@assets path /assets/*

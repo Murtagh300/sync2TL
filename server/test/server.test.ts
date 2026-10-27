@@ -8,6 +8,7 @@ import { createProxy, ruleFor } from '../src/proxy.ts'
 import { sanitizeFlags, DEFAULT_FLAGS } from '../src/flags.ts'
 import { cleanReport, scrub } from '../src/scrub.ts'
 import { createRouter } from '../src/http.ts'
+import { createRelay, KEY } from '../src/relay.ts'
 import { openDb } from '../src/db.ts'
 import { createStore, validateSubscribe } from '../src/push/store.ts'
 import { formatAmount, messagesFor, type Arrival } from '../src/push/watcher.ts'
@@ -187,4 +188,21 @@ test('push messages: one per transaction, known tokens only, no own moves', () =
     assert.equal(msgs[0]!.title, '25 VET + 5 B3TR ontvangen')
     assert.equal(formatAmount(1234567n, 6), '1.2345')
     assert.equal(formatAmount(10n ** 18n, 18), '1')
+})
+
+test('the relay keeps each key once, wakes a waiting reader, and forgets after 10 minutes', async () => {
+    let t = 0
+    const relay = createRelay(() => t)
+    const id = 'a'.repeat(64)
+    const waiting = relay.get(`${id}.resp`, 5000)
+    assert.equal(relay.put(id, '{"type":"cert"}', 'https://blackvemarket.com'), 'ok')
+    assert.equal(relay.put(id, '{"type":"tx"}', 'https://evil.example'), 'exists')
+    assert.deepEqual(await relay.get(id), { body: '{"type":"cert"}', origin: 'https://blackvemarket.com', at: 0 })
+    relay.put(`${id}.resp`, '{"payload":{}}', 'https://wallet.blackvemarket.com')
+    assert.equal((await waiting)?.body, '{"payload":{}}')
+    assert.equal(await relay.get('b'.repeat(64), 10), null)
+    t = 11 * 60 * 1000
+    assert.equal(await relay.get(id), null)
+    assert.equal(relay.size(), 0)
+    assert.ok(KEY.test(`${id}.accepted`) && !KEY.test(`${id}.other`) && !KEY.test('../etc'))
 })

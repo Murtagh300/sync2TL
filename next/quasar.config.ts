@@ -108,6 +108,10 @@ export default defineConfig(() => {
                         proxy.on('proxyReq', req => req.removeHeader('origin'))
                     }
                 },
+                // the sign relay (connect.js): keeps the dApp's origin, which the wallet shows
+                '/relay': {
+                    target: process.env.DEV_SERVER_TARGET || 'http://localhost:8787'
+                },
                 '/betterswap-api': {
                     target: 'https://www.betterswap.io/api',
                     changeOrigin: true,

@@ -108,6 +108,18 @@ export async function readJson<T>(req: IncomingMessage, limit = 16 * 1024): Prom
     }
 }
 
+/** the request body as text, at most `limit` bytes */
+export async function readText(req: IncomingMessage, limit: number): Promise<string> {
+    const chunks: Buffer[] = []
+    let size = 0
+    for await (const chunk of req) {
+        size += (chunk as Buffer).length
+        if (size > limit) throw new HttpError(413, 'body too large')
+        chunks.push(chunk as Buffer)
+    }
+    return Buffer.concat(chunks).toString('utf8')
+}
+
 /** the client's address: the socket's, or the first X-Forwarded-For hop behind our own proxy */
 export function clientIp(req: IncomingMessage, trustProxy: boolean): string {
     if (trustProxy) {

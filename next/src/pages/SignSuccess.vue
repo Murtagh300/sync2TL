@@ -24,7 +24,7 @@
             <q-btn
                 unelevated
                 color="primary"
-                @click="close()"
+                @click="onClose()"
                 :label="$t('common.close')"
             />
         </page-action>
@@ -39,7 +39,11 @@ import PageAction from 'src/components/PageAction.vue'
 export default defineComponent({
     components: { PageToolbar, PageContent, PageAction },
     props: {
-        type: String as () => 'tx' | 'cert'
+        type: String as () => 'tx' | 'cert',
+        close: String // '1': this window was opened by a dApp, and closes itself
+    },
+    mounted() {
+        if (this.close) setTimeout(() => window.close(), 1500)
     },
     computed: {
         typeText(): string {
@@ -54,8 +58,9 @@ export default defineComponent({
         }
     },
     methods: {
-        close() {
-            this.$backOrHome()
+        onClose() {
+            if (this.close) window.close()
+            else this.$backOrHome()
         }
     }
 })

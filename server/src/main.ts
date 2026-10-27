@@ -1,8 +1,9 @@
-import { createServer } from 'node:http'
+import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
 import { createHash, timingSafeEqual } from 'node:crypto'
 import webpush from 'web-push'
 import { loadConfig } from './config.ts'
-import { clientIp, cors, createRouter, HttpError, json, readJson, securityHeaders } from './http.ts'
+import { clientIp, cors, createRouter, HttpError, json, readJson, readText, securityHeaders } from './http.ts'
+import { createRelay, KEY, MAX_BODY } from './relay.ts'
 import { RateLimiter } from './rate-limit.ts'
 import { createProxy, proxyError } from './proxy.ts'
 import { createHealth, statusPage } from './health.ts'
@@ -25,6 +26,7 @@ import { createWatcher, tokenRegistry } from './push/watcher.ts'
  *   POST /push/unsubscribe   { endpoint }
  *   POST /errors             an opt-in, scrubbed error report
  *   GET  /errors             the latest reports (Authorization: Bearer ADMIN_TOKEN)
+ *   *    /relay/*            sign requests from dApps to the wallet and back (see relay.ts)
  */
 
 const config = loadConfig()
@@ -35,6 +37,9 @@ const health = createHealth({ nodes: config.mainnetNodes, bvmUrl: config.bvmUrl,
 const proxy = createProxy({ betterswap: config.betterswapUrl, bvm: config.bvmUrl })
 const gatewayLimit = new RateLimiter(config.rateLimit.gateway)
 const writeLimit = new RateLimiter(config.rateLimit.writes)
+const relay = createRelay()
+// a sign request is a handful of calls; a waiting wallet asks again every 20 seconds
+const relayLimit = new RateLimiter(120)
 
 // push: on when VAPID keys are set
 let send: ((sub: Subscription, payload: string) => Promise<void>) | null = null
@@ -126,11 +131,61 @@ router.get('/errors', ctx => {
     json(ctx.res, 200, latestReports.all(n), { 'Cache-Control': 'no-store' })
 })
 
+/** the relay is for any dApp: open CORS, plain-text bodies (no preflight), its own limits */
+async function relayRoute(req: IncomingMessage, res: ServerResponse, url: URL, ip: string) {
+    res.setHeader('Access-Control-Allow-Origin', '*')
+    res.setHeader('Access-Control-Expose-Headers', 'X-Data-Origin')
+    res.setHeader('Cache-Control', 'no-store')
+    if (req.method === 'OPTIONS') {
+        res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+        res.setHeader('Access-Control-Allow-Headers', 'content-type')
+        res.setHeader('Access-Control-Max-Age', '600')
+        res.statusCode = 204
+        res.end()
+        return
+    }
+    const key = url.pathname.slice('/relay/'.length)
+    if (!KEY.test(key)) throw new HttpError(404, 'not found')
+    if (req.method === 'GET') {
+        if (!relayLimit.take(`get:${ip}`)) throw new HttpError(429, 'slow down')
+        const ac = new AbortController()
+        res.on('close', () => ac.abort())
+        const e = await relay.get(key, url.searchParams.get('wait') === '1' ? 20000 : 0, ac.signal)
+        if (res.destroyed) return
+        res.statusCode = 200
+        res.setHeader('Content-Type', 'text/plain; charset=utf-8')
+        if (e) res.setHeader('X-Data-Origin', e.origin)
+        res.end(e ? e.body : '')
+        return
+    }
+    if (req.method !== 'POST') throw new HttpError(405, 'not allowed')
+    if (!relayLimit.take(`post:${ip}`)) throw new HttpError(429, 'slow down')
+    // the origin the wallet shows: browsers set it, a page can't
+    const origin = String(req.headers.origin || '')
+    if (!/^https?:\/\/[^\s/]+$/.test(origin)) throw new HttpError(400, 'origin missing')
+    const body = await readText(req, MAX_BODY)
+    if (!body) throw new HttpError(400, 'empty')
+    const r = relay.put(key, body, origin)
+    if (r === 'exists') throw new HttpError(409, 'already written')
+    if (r === 'full') throw new HttpError(503, 'relay is full')
+    json(res, 200, { ok: true })
+}
+
 const server = createServer(async (req, res) => {
     securityHeaders(res)
-    if (!cors(req, res, config.allowedOrigins)) return
     const url = new URL(req.url || '/', 'http://localhost')
     const ip = clientIp(req, config.trustProxy)
+    if (url.pathname.startsWith('/relay/')) {
+        try {
+            await relayRoute(req, res, url, ip)
+        } catch (err) {
+            if (res.headersSent) return void res.end()
+            if (!(err instanceof HttpError)) console.error('[relay]', err)
+            json(res, err instanceof HttpError ? err.status : 500, { error: err instanceof HttpError ? err.message : 'server error' })
+        }
+        return
+    }
+    if (!cors(req, res, config.allowedOrigins)) return
     const route = router.match(req.method || 'GET', url.pathname)
     if (!route) {
         json(res, router.knows(url.pathname) ? 405 : 404, { error: 'not found' })

@@ -47,7 +47,7 @@
                     outline
                     :label="$t('common.decline')"
                     color="negative"
-                    @click="$backOrHome()"
+                    @click="decline()"
                 />
                 <q-btn
                     unelevated
@@ -61,7 +61,7 @@
                 unelevated
                 :label="$t('common.close')"
                 color="primary"
-                @click="$backOrHome()"
+                @click="decline()"
             />
         </page-action>
     </div>
@@ -83,7 +83,8 @@ const RESP_SUFFIX = '.resp'
 export default defineComponent({
     components: { TxSummary: Summary, DelayRender, PageToolbar, PageContent, PageAction },
     props: {
-        src: String // the url to fetch request object
+        src: String, // the url to fetch request object
+        close: String // '1': opened in a window of its own by a dApp (connect.js), closed when done
     },
     data: () => {
         return {
@@ -135,8 +136,9 @@ export default defineComponent({
                 throw new Error(this.$t('sign.msg_fetch_request_failed').toString())
             })()
 
-            const dataHash = blake2b256(resp.data).toString('hex')
-            if (dataHash !== rid) {
+            // Sync2's relay names a request by its blake2b-256, connect.js by its sha-256
+            const sha256 = Buffer.from(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(resp.data))).toString('hex')
+            if (blake2b256(resp.data).toString('hex') !== rid.toLowerCase() && sha256 !== rid.toLowerCase()) {
                 throw new Error(this.$t('sign.msg_request_hash_mismatch').toString())
             }
             const request = RelayedRequest.validate(JSON.parse(resp.data))
@@ -199,8 +201,23 @@ export default defineComponent({
                     domain: host || ''
                 })
             }
-            this.respond({ payload: result! })
-            this.$router.replace({ name: 'sign-success', query: { type: request.type } })
+            await this.respond({ payload: result! })
+            this.$router.replace({ name: 'sign-success', query: { type: request.type, ...(this.close ? { close: this.close } : {}) } })
+        },
+        async decline() {
+            if (this.close) {
+                await this.respond()
+                window.close()
+            } else {
+                this.$backOrHome()
+            }
+        },
+        /** the window is closed before an answer: tell the dApp, which is waiting */
+        onPageHide() {
+            if (!this.responded && this.urlObject) {
+                this.responded = true
+                navigator.sendBeacon(`${this.src}${RESP_SUFFIX}`, JSON.stringify({ error: 'user decline' }))
+            }
         },
         async postStatus(suffix: string, result: object) {
             for (let i = 0; i < 3; i++) {
@@ -213,17 +230,21 @@ export default defineComponent({
                 }
             }
         },
-        respond(resp?: RelayedResponse) {
+        async respond(resp?: RelayedResponse) {
             if (!this.responded) {
                 this.responded = true
-                this.postStatus(RESP_SUFFIX, resp || {
+                await this.postStatus(RESP_SUFFIX, resp || {
                     error: 'user decline'
                 })
             }
         }
     },
+    mounted() {
+        window.addEventListener('pagehide', this.onPageHide)
+    },
     beforeUnmount() {
-        this.respond()
+        window.removeEventListener('pagehide', this.onPageHide)
+        void this.respond()
     }
 })
 </script>
