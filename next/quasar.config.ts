@@ -41,17 +41,17 @@ export default defineConfig(() => {
                     // an index into an array or a record may be undefined: say so (and check)
                     tsConfig.compilerOptions!.noUncheckedIndexedAccess = true
                     tsConfig.compilerOptions!.noFallthroughCasesInSwitch = true
-                    // not used by the ported Sync2 code base
+                    // not used by the older components
                     tsConfig.compilerOptions!.exactOptionalPropertyTypes = false
                 }
             },
 
             vueRouterMode: 'hash',
 
-            // the ported Sync2 components use the Options API (data, methods, mixins)
+            // the older components use the Options API (data, methods, mixins)
             vueOptionsAPI: true,
 
-            // the import prefixes used throughout the Sync2 code base
+            // the import prefixes used throughout the code base
             alias: {
                 src: srcDir(''),
                 assets: srcDir('assets'),

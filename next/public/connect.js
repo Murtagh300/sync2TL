@@ -3,14 +3,14 @@
  *
  * A request goes to the wallet's relay, BlackVault opens in a window of its own (a tab on a phone),
  * the user signs there, the window closes, and the answer comes back through the relay. It is the
- * protocol of VeChain's Sync2, so the signer has the same shape as Sync2's:
+ * VeChain's standard relay protocol, so the signer has the shape dApps already know:
  *
  *   const bv = BlackVault.signer()               // mainnet, the wallet this file was loaded from
  *   const cert = await bv.signCert({ purpose: 'identification', payload: { type: 'text', content: 'Sign in' } })
  *   const tx = await bv.signTx([{ to, value, data }], { signer: cert.annex.signer, comment: 'Buy' })
  *
  *   BlackVault.connect()                         // the above sign-in: { address, certificate }
- *   BlackVault.dappKit()                         // VeChain dapp-kit's "sync2" wallet becomes BlackVault
+ *   BlackVault.dappKit()                         // VeChain dapp-kit's relay wallet becomes BlackVault
  *
  * Options for each: { wallet: 'https://wallet.blackvemarket.com', genesisId, labels, app }.
  *
@@ -41,7 +41,7 @@
         try { choice === 'desktop' ? localStorage.setItem(PREF, 'desktop') : localStorage.removeItem(PREF) } catch (e) { }
     }
 
-    var current = null // one request at a time, like Sync2
+    var current = null // one request at a time
 
     function hex(buf) {
         return Array.prototype.map.call(new Uint8Array(buf), function (b) { return ('0' + b.toString(16)).slice(-2) }).join('')
@@ -183,7 +183,7 @@
             return { address: certificate.annex.signer, certificate: certificate }
         },
         /**
-         * VeChain dapp-kit loads Sync2's helper (window.ConnexWalletBuddy) for its "sync2" wallet;
+         * VeChain dapp-kit loads a helper (window.ConnexWalletBuddy) for its relay wallet ('sync2');
          * after this call that helper is BlackVault, so dapp-kit's own connect and signing use it.
          * Call it before dapp-kit connects.
          */

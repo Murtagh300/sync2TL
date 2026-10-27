@@ -108,7 +108,7 @@ longer open.
 `thor.explain`, and shows every token with a balance next to the ones switched on in Settings › Tokens.
 Results are cached for 5 minutes per address; the token registry itself refreshes every hour.
 
-## Beyond Sync2 and VeWorld
+## What sets BlackVault apart
 
 - **Readable signing** (`src/utils/actions.ts`, `describe-action.ts`, `simulate.ts`): every clause the wallet
   recognises is shown as a sentence ("Give BlackVeMarket access to all your Squad Pop NFTs"), unlimited and

@@ -19,7 +19,7 @@ fewer dependencies (`@ledgerhq/hw-transport`, `@ledgerhq/hw-transport-webhid`,
 
 ## What holds up
 
-- **Keys stay local and encrypted.** The vault format is Sync2's: the password goes through
+- **Keys stay local and encrypted.** The vault format: the password goes through
   PBKDF2-HMAC-SHA256 in a web worker (with iterations tuned to the device), and the
   recovery words are AES-encrypted with the derived key. A private key is derived only
   inside a signing call and is never stored or sent.

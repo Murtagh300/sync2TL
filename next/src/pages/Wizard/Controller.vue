@@ -204,7 +204,7 @@ export default defineComponent({
             }
             this.$emit('done')
         },
-        /** a new wallet, or one restored from its recovery words (a wallet made elsewhere, VeWorld, Sync2) */
+        /** a new wallet, or one restored from its recovery words (a wallet made elsewhere) */
         async onClickStart(mode: 'create' | 'import') {
             let imported: { words: string[], path: string } | null = null
             if (mode === 'import') {

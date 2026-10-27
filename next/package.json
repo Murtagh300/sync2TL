@@ -1,7 +1,7 @@
 {
   "name": "com.blackvemarket.blackvault",
   "version": "2.2.1",
-  "description": "BlackVault — the VeChain wallet by BlackVeMarket (BVM), based on VeChain Sync2",
+  "description": "BlackVault — the VeChain wallet by BlackVeMarket (BVM)",
   "productName": "BlackVault",
   "author": "BlackVeMarket (BVM)",
   "private": true,

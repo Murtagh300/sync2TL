@@ -124,7 +124,7 @@ export function formatDate(date: number, opts?: FormatDateOptions) {
     }
     const d = dayjs(date)
     const now = dayjs()
-    // "2 minutes ago" within the hour (Sync2 used toNow(), which reads "in x minutes" for past dates)
+    // "2 minutes ago" within the hour (toNow() would read "in x minutes" for past dates)
     if (now.diff(d, 'minute') < 60) {
         return d.fromNow()
     }

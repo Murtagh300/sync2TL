@@ -13,8 +13,8 @@ import electronUpdater from 'electron-updater'
  * its code never comes from the network. Its storage is its own (Electron's profile), apart from
  * any browser.
  *
- * dApps reach it with blackvault: links (connect.js), and with connex: links like Sync2's desktop
- * app when no other app has those.
+ * dApps reach it with blackvault: links (connect.js), and with connex: links (VeChain's standard
+ * wallet links) when no other app has those.
  *
  * On Windows and Linux, closing the window keeps it in the tray (unless turned off), so links,
  * updates and notifications keep arriving; it can start with the computer, hidden in the tray.
@@ -282,7 +282,7 @@ function registerSchemes() {
     // the installed app only: in development this would register Electron itself
     if (!app.isPackaged) return
     for (const scheme of SCHEMES) {
-        // connex: belongs to Sync2's desktop app when that is installed: leave it
+        // connex: belongs to another wallet app when one has it: leave it
         const owner = app.getApplicationNameForProtocol(`${scheme}://`)
         if (scheme === 'connex' && owner && !app.isDefaultProtocolClient(scheme)) continue
         app.setAsDefaultProtocolClient(scheme)

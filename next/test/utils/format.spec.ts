@@ -53,7 +53,7 @@ describe('toWei', () => {
 })
 
 describe('formatDate', () => {
-    // fixed in BlackVault: Sync2 printed "in a minute" for past dates
+    // past dates never read "in a minute"
     it('shows recent dates relative to now', () => {
         expect(formatDate(Date.now() - 60 * 1000, { relative: true })).toBe('a minute ago')
     })
@@ -63,7 +63,7 @@ describe('formatDate', () => {
         expect(formatDate(old)).toBe('01/02/2024 03:04:05')
     })
 
-    // changed in BlackVault: today/yesterday, the weekday, then a short date (Sync2: full date and time)
+    // today/yesterday, the weekday, then a short date
     it('reads older dates in words', () => {
         const at = (daysAgo: number, h: number) => {
             const d = new Date()

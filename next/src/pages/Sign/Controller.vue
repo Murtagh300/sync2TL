@@ -136,7 +136,7 @@ export default defineComponent({
                 throw new Error(this.$t('sign.msg_fetch_request_failed').toString())
             })()
 
-            // Sync2's relay names a request by its blake2b-256, connect.js by its sha-256
+            // a request is named by its blake2b-256 (VeChain's relay) or its sha-256 (connect.js)
             const sha256 = Buffer.from(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(resp.data))).toString('hex')
             if (blake2b256(resp.data).toString('hex') !== rid.toLowerCase() && sha256 !== rid.toLowerCase()) {
                 throw new Error(this.$t('sign.msg_request_hash_mismatch').toString())

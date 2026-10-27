@@ -34,13 +34,13 @@ an update comes from `next/src/changelog.ts` (keep the two in step).
   updates through electron-updater once a release is published.
 - Runs as https://wallet.blackvemarket.com from its own files (server paths go to the network), so the
   server, WalletConnect and BlackVeMarket work as on the web; its storage is its own.
-- Takes `blackvault:` links from dApps, and `connex:` links when Sync2's desktop app isn't installed.
+- Takes `blackvault:` links from dApps, and `connex:` links when no other wallet app has them.
 - Sandboxed page, no Node, no navigation away, links open in the browser, camera and clipboard only.
 
 **Direct connection for dApps**
 - `connect.js` on the wallet's domain: sign-in, transactions and certificates without WalletConnect; a
   window of its own that closes itself, or the desktop app.
-- `/relay/` on the server (Sync2's protocol): each key written once, kept 10 minutes in memory.
+- `/relay/` on the server (VeChain's relay protocol): each key written once, kept 10 minutes in memory.
 - The sign page accepts sha-256 request ids and tells the dApp when its window is closed unanswered.
 
 ## 2.1.1 — 2026-10-26
@@ -76,12 +76,12 @@ Security review fixes:
 
 **Development**
 - CI on GitHub Actions, Playwright end-to-end and accessibility tests, ESLint.
-- The legacy Sync2 app was removed from the repository root.
+- The legacy app was removed from the repository root.
 - Documentation: architecture, deploy and incident runbook, contributing.
 
 ## 2.0.10 and earlier
 
-Built up in rounds from VeChain Sync2:
+Built up in rounds:
 
 - **WalletConnect, StarGate, VeBetterDAO, market tools**, German and French.
 - **Overview, watch-only wallets**, dust clean-up, consolidation and safety tools.
@@ -93,4 +93,4 @@ Built up in rounds from VeChain Sync2:
 - **Home dashboard**, tabs, prices, onboarding.
 - **Trading, readable signing, approvals, swap.**
 - **BlackVeMarket NFTs**, token auto-detection; the blackvemarket.com look.
-- **Vue 3 and Quasar 2**: every page and component ported from Sync2's Vue 2 code.
+- **Vue 3 and Quasar 2**: every page and component ported from Vue 2.

@@ -1,0 +1,8 @@
+BlackVault
+Copyright (C) BlackVeMarket (BVM)
+
+BlackVault is licensed under the GNU Lesser General Public License, version 3 (see LICENSE).
+
+It is a modified version of VeChain Sync2 (https://github.com/vechain/sync2), also licensed under the
+LGPL-3.0. The licence asks that a modified version says so and keeps the original's licence; this file
+does that. CHANGELOG.md describes what was changed.

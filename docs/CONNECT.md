@@ -7,7 +7,7 @@ closes and the dApp has the answer.
 How it works: `connect.js` posts the request to the wallet's relay (`/relay/`, see `server/src/relay.ts`),
 opens `https://<wallet>/#/sign?src=<relay url>&close=1`, and waits for the answer on the relay. The wallet
 checks the request against its id (its sha-256), shows the dApp's origin (set by the browser, not the page)
-and signs through its usual dialogs. It is the protocol of VeChain's Sync2, so the signer has Sync2's shape.
+and signs through its usual dialogs. It is VeChain's standard relay protocol, so the signer has the shape dApps already know.
 
 ## Load it
 
@@ -32,7 +32,7 @@ closed window rejects with `user decline`.
 
 ## With VeChain dapp-kit
 
-dapp-kit's "sync2" wallet loads Sync2's helper; `BlackVault.dappKit()` replaces that helper, so dapp-kit's
+dapp-kit's relay wallet (its id is `'sync2'`) loads a helper script; `BlackVault.dappKit()` replaces that helper, so dapp-kit's
 own connect, `signer` and `requestTransaction` go to BlackVault:
 
 ```js

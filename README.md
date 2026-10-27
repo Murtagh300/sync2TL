@@ -2,7 +2,7 @@
 
 The VeChain wallet by [BlackVeMarket](https://blackvemarket.com): VET, VTHO, tokens and NFTs, trading on
 BlackVeMarket, WalletConnect, and signing for every VeChain dApp. Keys stay on the device, encrypted with the
-user's password. It started as a fork of VeChain Sync2 and has been rebuilt since.
+user's password.
 
 | Folder | What |
 | --- | --- |
@@ -42,4 +42,4 @@ BlackVeMarket privately (a GitHub security advisory on this repository) rather t
 
 ## License
 
-[LGPL-3.0](LICENSE), as VeChain Sync2 it is based on. What changed: [CHANGELOG.md](CHANGELOG.md).
+[LGPL-3.0](LICENSE); see [NOTICE](NOTICE). What changed: [CHANGELOG.md](CHANGELOG.md).

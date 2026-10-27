@@ -15,7 +15,7 @@ BlackVault for Windows, macOS and Linux, built with Electron from the same code 
 - **Storage.** The app's own (Electron's profile folder), apart from any browser: a wallet is restored or
   imported once in the app. Uninstalling leaves it in place (`%APPDATA%\BlackVault` on Windows).
 - **Links.** dApps open `blackvault:sign?src=<relay url>` (`connect.js`, docs/CONNECT.md). The app also takes
-  `connex:` links, like Sync2's desktop app, unless Sync2 is installed and has them. One copy runs at a time;
+  `connex:` links, VeChain's standard wallet links, unless another wallet app has them. One copy runs at a time;
   a link reaches the running copy.
 - **Safety.** The page is sandboxed with context isolation and no Node; it can't navigate elsewhere or open
   windows (links go to the browser); only the camera (QR codes), clipboard writes and notifications are

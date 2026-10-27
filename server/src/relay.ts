@@ -1,6 +1,6 @@
 /**
- * The sign relay: how a dApp reaches the wallet without WalletConnect. It speaks the protocol
- * of VeChain's Sync2 relay (TOS), so the wallet's sign page works with either:
+ * The sign relay: how a dApp reaches the wallet without WalletConnect. It speaks VeChain's
+ * standard relay protocol (TOS), so the wallet's sign page works with either relay:
  *
  *   POST /relay/<id>            the dApp posts its request (id: sha-256 or blake2b-256 of the body)
  *   GET  /relay/<id>?wait=1     the wallet reads it (X-Data-Origin: the dApp's origin)

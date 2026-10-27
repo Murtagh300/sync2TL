@@ -124,7 +124,7 @@ describe('wallet', () => {
     })
 
     it('treats wallets saved without a type as HD wallets', async () => {
-        // rows written by early Sync2 versions have no meta.type
+        // rows written by early versions have no meta.type
         const id = await storage.wallets.insert({ gid: 'g', vault: 'v', meta: JSON.stringify({ name: 'Old', addresses: [] }) })
         expect((await wallet.get(id))!.meta.type).toBe('hd')
     })
