@@ -12,6 +12,41 @@ export type Release = {
 }
 
 export const releases: Release[] = [{
+    version: '2.2.1',
+    date: '2026-10-27',
+    items: {
+        en: [
+            'A sent transaction no longer stays on "waiting for the chain" once it is in a block.',
+            'Amounts are written the way your language writes them, and an empty wallet shows how to get your first VET.',
+            'A tidier Meer tab with groups and search, and clearer Send and Receive screens.',
+            'Desktop app: an icon in the tray, start with the computer, and notifications from Windows or macOS.'
+        ],
+        nl: [
+            'Een verstuurde transactie blijft niet meer op "wacht op de chain" staan als hij in een blok staat.',
+            'Bedragen staan in de notatie van je taal, en een lege wallet laat zien hoe je je eerste VET erop zet.',
+            'Een overzichtelijkere Meer-tab met groepen en zoeken, en duidelijkere schermen voor Verzenden en Ontvangen.',
+            'Desktop-app: een icoon in het systeemvak, starten bij opstarten, en meldingen van Windows of macOS.'
+        ],
+        de: [
+            'Eine gesendete Transaktion bleibt nicht mehr auf „wartet auf die Chain“, sobald sie in einem Block ist.',
+            'Beträge stehen so, wie deine Sprache sie schreibt, und eine leere Wallet zeigt, wie du deine ersten VET bekommst.',
+            'Ein übersichtlicherer Mehr-Tab mit Gruppen und Suche, und klarere Bildschirme zum Senden und Empfangen.',
+            'Desktop-App: ein Symbol im Infobereich, Start mit dem Computer und Benachrichtigungen von Windows oder macOS.'
+        ],
+        fr: [
+            'Une transaction envoyée ne reste plus sur « en attente de la chaîne » une fois dans un bloc.',
+            'Les montants s’écrivent comme dans votre langue, et un portefeuille vide montre comment recevoir vos premiers VET.',
+            'Un onglet Plus mieux rangé, avec groupes et recherche, et des écrans Envoyer et Recevoir plus clairs.',
+            'App de bureau : une icône dans la zone de notification, le démarrage avec l’ordinateur et les notifications de Windows ou macOS.'
+        ],
+        zh: [
+            '已发送的交易进入区块后，不会再一直显示“等待上链”。',
+            '金额按你的语言习惯显示；空钱包会提示如何存入第一笔 VET。',
+            '“更多”页按分组整理并可搜索，发送和接收页面更清晰。',
+            '桌面应用：托盘图标、开机启动，以及来自 Windows 或 macOS 的通知。'
+        ]
+    }
+}, {
     version: '2.2.0',
     date: '2026-10-27',
     items: {

@@ -3,6 +3,30 @@
 What changed in BlackVault, newest first. The version is `next/package.json`; what users see after
 an update comes from `next/src/changelog.ts` (keep the two in step).
 
+## 2.2.1 — 2026-10-27
+
+**Fixes**
+- The transaction status and transfer notifications watched an object that stays the same in Vue 3, so a
+  sent transaction stayed "waiting for the chain" until a reload; they now follow the chain's head.
+- Numbers follow the app's language (amounts, money, percentages); typed amounts accept a comma.
+  VeBetterDAO's Max no longer misreads a grouped amount.
+
+**UI/UX**
+- Password field: focus, show/hide, the minimum length shown.
+- Meer: groups, search, a settings button, the desktop app download on a computer; the Apps grid ships
+  its logos. Settings regrouped (security, privacy, appearance); labels wrap.
+- Home: a first-funds card for an empty wallet; top tokens fall back to BetterSwap's most traded tokens
+  (24h pool volume) and show a retry when prices fail.
+- Receive: the address in blocks of four, a VeChain-only note. Send: an empty-balance hint, message and
+  note folded away, recent recipients as chips, bigger buttons.
+- Setup: the backup opens after the checklist; six collections with listings and sales this month; the
+  first wallet named in the app's language. The transaction bar offers "check again" and close after 2 min.
+
+**Desktop app**
+- Tray icon (Windows, Linux) with open, start with the computer, keep running when closed, and quit;
+  closing the window keeps the app in the tray. Start with the computer (Windows, macOS), hidden.
+- System notifications through Electron; a click opens the app. Tray words come from the app's language.
+
 ## 2.2.0 — 2026-10-27
 
 **Desktop app** (`next/src-electron`, Electron 44)
