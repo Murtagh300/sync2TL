@@ -12,6 +12,8 @@ export default defineComponent({
     },
     computed: {
         thor(): Connex.Thor { return this.$svc.bc(this.gid).thor },
+        // changes with each block; thor itself stays the same object, so watching it never fires
+        head(): string { return this.$svc.bc(this.gid).thor.status.head.id },
         addresses(): string[] {
             if (!this.wallets) {
                 return []
@@ -106,7 +108,7 @@ export default defineComponent({
         }
     },
     watch: {
-        thor() {
+        head() {
             this.$asyncComputed.events?.update()
             this.$asyncComputed.transfers?.update()
         },

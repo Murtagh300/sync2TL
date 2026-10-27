@@ -16,6 +16,8 @@ services:
       WALLET_DOMAIN: ${WALLET_DOMAIN}
       # all domains the wallet is served on; the main one when not set
       WALLET_SITES: ${WALLET_SITES:-${WALLET_DOMAIN}}
+      # old domains that redirect to the main one; a name that never resolves when not set
+      WALLET_REDIRECTS: ${WALLET_REDIRECTS:-http://redirect.localhost}
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile:ro
       - ./wallet:/srv/wallet:ro

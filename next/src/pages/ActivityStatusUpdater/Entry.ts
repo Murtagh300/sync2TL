@@ -9,7 +9,9 @@ export default defineComponent({
         activity: { type: Object as () => M.Activity, required: true }
     },
     computed: {
-        thor(): Connex.Thor { return this.$svc.bc(this.activity.gid).thor }
+        thor(): Connex.Thor { return this.$svc.bc(this.activity.gid).thor },
+        // changes with each block; thor itself stays the same object, so watching it never fires
+        head(): string { return this.$svc.bc(this.activity.gid).thor.status.head.id }
     },
     data: () => ({
         // async computed (see src/shims-async-computed.d.ts)
@@ -56,7 +58,7 @@ export default defineComponent({
         }
     },
     watch: {
-        thor() {
+        head() {
             this.$asyncComputed.task?.update()
         }
     },

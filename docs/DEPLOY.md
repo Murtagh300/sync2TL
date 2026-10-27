@@ -29,6 +29,8 @@ Fill in `/opt/blackvault/deploy/.env`:
 - Optional, more than one domain: `WALLET_SITES=bvwallet.xyz, wallet.blackvemarket.com` and
   `WALLET_ORIGINS=https://bvwallet.xyz,https://wallet.blackvemarket.com`. Every domain needs an A record to the
   host. Each domain is its own origin for the browser: wallets saved on one are not on the other.
+- Optional, an old domain that sends everyone to the main one: `WALLET_REDIRECTS=bvwallet.xyz, www.bvwallet.xyz`
+  (and not in `WALLET_SITES`). Wallets saved on the old domain stay there: import them on the main one first.
 
 `deploy/flags.json` is the remote config; edit it on the host (see below).
 
