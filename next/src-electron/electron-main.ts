@@ -78,8 +78,21 @@ function serveApp() {
     const root = app.getAppPath()
     session.defaultSession.protocol.handle('https', async req => {
         const url = new URL(req.url)
-        if (url.host !== HOST || SERVER_PATH.test(url.pathname)) {
+        if (url.host !== HOST) {
             return net.fetch(req, { bypassCustomProtocolHandlers: true })
+        }
+        if (SERVER_PATH.test(url.pathname)) {
+            // the page's Origin is lost on the way through here; these come from the app's own page,
+            // so they carry its origin, as a browser sends it (the relay shows it, CORS checks it)
+            const headers = new Headers(req.headers)
+            headers.set('origin', ORIGIN)
+            const hasBody = req.method !== 'GET' && req.method !== 'HEAD'
+            return net.fetch(req.url, {
+                method: req.method,
+                headers,
+                body: hasBody ? await req.arrayBuffer() : undefined,
+                bypassCustomProtocolHandlers: true
+            })
         }
         let rel = decodeURIComponent(url.pathname)
         if (rel === '/') rel = '/index.html'
