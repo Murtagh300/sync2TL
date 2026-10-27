@@ -1,6 +1,6 @@
 {
   "name": "com.blackvemarket.blackvault",
-  "version": "2.1.1",
+  "version": "2.2.0",
   "description": "BlackVault — the VeChain wallet by BlackVeMarket (BVM), based on VeChain Sync2",
   "productName": "BlackVault",
   "author": "BlackVeMarket (BVM)",
@@ -14,7 +14,9 @@
     "e2e": "playwright test",
     "test": "vitest run",
     "markets": "node scripts/update-markets.cjs",
-    "postinstall": "quasar prepare"
+    "postinstall": "quasar prepare",
+    "dev:desktop": "quasar dev -m electron",
+    "build:desktop": "quasar build -m electron"
   },
   "dependencies": {
     "@fontsource-variable/geist": "^5.3.0",
@@ -55,6 +57,8 @@
     "@types/elliptic": "^6.4.18",
     "@types/node": "^24.0.0",
     "@types/qrcode-svg": "^1.1.5",
+    "electron-builder": "26.18.0",
+    "electron-updater": "6.8.11",
     "eslint": "9.39.5",
     "eslint-plugin-vue": "10.11.1",
     "fake-indexeddb": "^6.2.6",

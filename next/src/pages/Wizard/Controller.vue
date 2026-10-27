@@ -267,7 +267,7 @@ export default defineComponent({
             this.importState = { words: '', path: '' }
 
             // backup in lite mode (a restored wallet already has its words written down)
-            if (!imported && (import.meta.env.QUASAR_MODE === 'spa' || import.meta.env.QUASAR_MODE === 'pwa')) {
+            if (!imported && (import.meta.env.QUASAR_MODE === 'spa' || import.meta.env.QUASAR_MODE === 'pwa' || import.meta.env.QUASAR_MODE === 'electron')) {
                 try {
                     await this.$dialog({
                         component: BackupDialog,

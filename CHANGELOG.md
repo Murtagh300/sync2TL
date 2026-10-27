@@ -3,6 +3,22 @@
 What changed in BlackVault, newest first. The version is `next/package.json`; what users see after
 an update comes from `next/src/changelog.ts` (keep the two in step).
 
+## 2.2.0 — 2026-10-27
+
+**Desktop app** (`next/src-electron`, Electron 44)
+- Windows (NSIS), macOS (dmg) and Linux (AppImage), built by the Desktop workflow into a draft release;
+  updates through electron-updater once a release is published.
+- Runs as https://wallet.blackvemarket.com from its own files (server paths go to the network), so the
+  server, WalletConnect and BlackVeMarket work as on the web; its storage is its own.
+- Takes `blackvault:` links from dApps, and `connex:` links when Sync2's desktop app isn't installed.
+- Sandboxed page, no Node, no navigation away, links open in the browser, camera and clipboard only.
+
+**Direct connection for dApps**
+- `connect.js` on the wallet's domain: sign-in, transactions and certificates without WalletConnect; a
+  window of its own that closes itself, or the desktop app.
+- `/relay/` on the server (Sync2's protocol): each key written once, kept 10 minutes in memory.
+- The sign page accepts sha-256 request ids and tells the dApp when its window is closed unanswered.
+
 ## 2.1.1 — 2026-10-26
 
 Security review fixes:

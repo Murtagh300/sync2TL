@@ -9,7 +9,7 @@ user's password. It started as a fork of VeChain Sync2 and has been rebuilt sinc
 | [`next/`](next/README.md) | the wallet: Quasar 2, Vue 3, Vite, a PWA |
 | [`server/`](server/) | the BlackVault server: API gateway, push for incoming transfers, health, remote config, error reports |
 | [`deploy/`](deploy/) | hosting: Caddy (HTTPS, security headers) and the server with Docker Compose |
-| [`docs/`](docs/) | [architecture](docs/ARCHITECTURE.md), [deploy and incidents](docs/DEPLOY.md), [contributing](docs/CONTRIBUTING.md), [manual test checklist](docs/TEST-CHECKLIST.md) |
+| [`docs/`](docs/) | [architecture](docs/ARCHITECTURE.md), [deploy and incidents](docs/DEPLOY.md), [desktop app](docs/DESKTOP.md), [connecting dApps](docs/CONNECT.md), [contributing](docs/CONTRIBUTING.md), [manual test checklist](docs/TEST-CHECKLIST.md) |
 
 ## Quick start
 

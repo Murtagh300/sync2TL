@@ -1,4 +1,5 @@
 import { reactive } from 'vue'
+import { desktop } from './desktop'
 
 /**
  * Installing BlackVault as an app (PWA): on a PC in Chrome or Edge it gets its own window, a Start
@@ -18,6 +19,8 @@ export const install = reactive({
 
 export function runningInstalled(): boolean {
     if (typeof window === 'undefined') return false
+    // the desktop app is installed already
+    if (desktop) return true
     return window.matchMedia?.('(display-mode: standalone)').matches ||
         window.matchMedia?.('(display-mode: window-controls-overlay)').matches ||
         (navigator as { standalone?: boolean }).standalone === true

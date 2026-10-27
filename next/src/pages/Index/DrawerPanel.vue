@@ -116,6 +116,8 @@ export default defineComponent({
                 case 'spa':
                 case 'pwa':
                     return 'web app'
+                case 'electron':
+                    return 'desktop app'
                 default: return import.meta.env.QUASAR_MODE || ''
             }
         }

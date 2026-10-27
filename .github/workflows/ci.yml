@@ -27,13 +27,23 @@ jobs:
         with:
           node-version: 24
           cache: npm
-          cache-dependency-path: next/package-lock.json
+          cache-dependency-path: |
+            next/package-lock.json
+            next/src-electron/package-lock.json
       # npm ci fails when package-lock.json does not match package.json
       - run: npm ci
       - name: Lockfile unchanged
         run: git diff --exit-code package-lock.json
       - name: Audit (production dependencies, high and up)
         run: npm audit --omit=dev --audit-level=high
+      # the desktop app's types (Electron's binary isn't needed for that)
+      - name: Desktop app dependencies
+        run: |
+          npm ci --prefix src-electron
+          git diff --exit-code src-electron/package-lock.json
+          npm audit --prefix src-electron --omit=dev --audit-level=high
+        env:
+          ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
       - run: npm run typecheck
       - run: npm run lint
       - run: npm test

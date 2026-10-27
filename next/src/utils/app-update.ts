@@ -1,8 +1,15 @@
+import { desktop } from './desktop'
+
 /**
  * Updating the installed app: the service worker of the new version waits (src-pwa/register-sw.ts)
- * until this tells it to take over, then the page reloads once on the new version.
+ * until this tells it to take over, then the page reloads once on the new version. The desktop app
+ * restarts on its downloaded version.
  */
 export async function applyUpdate() {
+    if (desktop) {
+        await desktop.installUpdate()
+        return
+    }
     const reg = 'serviceWorker' in navigator ? await navigator.serviceWorker.getRegistration().catch(() => undefined) : undefined
     const waiting = reg?.waiting
     if (!waiting) {

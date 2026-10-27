@@ -12,7 +12,11 @@
  *   BlackVault.connect()                         // the above sign-in: { address, certificate }
  *   BlackVault.dappKit()                         // VeChain dapp-kit's "sync2" wallet becomes BlackVault
  *
- * Options for each: { wallet: 'https://wallet.blackvemarket.com', genesisId, labels }.
+ * Options for each: { wallet: 'https://wallet.blackvemarket.com', genesisId, labels, app }.
+ *
+ * With BlackVault's desktop app installed, a blackvault: link opens the app instead of a window.
+ * The bar offers it ("Desktop app"); once chosen, this browser remembers it and uses the app first,
+ * with "Web wallet" as the way back. `app: 'web' | 'desktop'` fixes the choice.
  */
 (function (root) {
     'use strict'
@@ -23,7 +27,18 @@
         waiting: 'Confirm in BlackVault',
         blocked: 'Open BlackVault to confirm',
         open: 'Open BlackVault',
+        desktop: 'Desktop app',
+        inDesktop: 'Confirm in the BlackVault app',
+        web: 'Web wallet',
         cancel: 'Cancel'
+    }
+    var PREF = 'blackvault-app'
+    function preferred(cfg) {
+        if (cfg.app === 'web' || cfg.app === 'desktop') return cfg.app
+        try { return localStorage.getItem(PREF) === 'desktop' ? 'desktop' : 'web' } catch (e) { return 'web' }
+    }
+    function remember(choice) {
+        try { choice === 'desktop' ? localStorage.setItem(PREF, 'desktop') : localStorage.removeItem(PREF) } catch (e) { }
     }
 
     var current = null // one request at a time, like Sync2
@@ -54,7 +69,7 @@
     }
 
     /** a small bar at the bottom of the dApp while BlackVault is open; it opens it again when asked */
-    function bar(labels, blocked, openWallet, cancel) {
+    function bar(labels, text0, primary, other, cancel) {
         var el = document.createElement('div')
         var s = el.style
         s.position = 'fixed'; s.left = '50%'; s.bottom = '16px'; s.transform = 'translateX(-50%)'
@@ -63,23 +78,26 @@
         s.background = '#121212'; s.color = '#fff'; s.boxShadow = '0 6px 24px rgba(0,0,0,.35)'
         s.font = '14px/1.3 system-ui, sans-serif'
         var text = document.createElement('span')
-        text.textContent = blocked ? labels.blocked : labels.waiting
-        var open = document.createElement('button')
-        open.type = 'button'
-        open.textContent = labels.open
-        var no = document.createElement('button')
-        no.type = 'button'
-        no.textContent = labels.cancel
-        ;[open, no].forEach(function (b) {
-            b.style.font = 'inherit'; b.style.cursor = 'pointer'; b.style.borderRadius = '8px'; b.style.padding = '6px 12px'
-            b.style.border = '1px solid rgba(255,255,255,.3)'; b.style.background = 'transparent'; b.style.color = '#fff'
-        })
-        if (blocked) { open.style.background = '#fff'; open.style.color = '#121212' }
-        open.onclick = openWallet
-        no.onclick = cancel
-        el.appendChild(text); el.appendChild(open); el.appendChild(no)
+        el.appendChild(text)
+        var buttons = []
+        // [label, onclick, highlighted]
+        var render = function (t, actions) {
+            text.textContent = t
+            buttons.forEach(function (b) { b.remove() })
+            buttons = actions.concat([[labels.cancel, cancel]]).map(function (a) {
+                var b = document.createElement('button')
+                b.type = 'button'
+                b.textContent = a[0]
+                b.style.font = 'inherit'; b.style.cursor = 'pointer'; b.style.borderRadius = '8px'; b.style.padding = '6px 12px'
+                b.style.border = '1px solid rgba(255,255,255,.3)'; b.style.background = a[2] ? '#fff' : 'transparent'; b.style.color = a[2] ? '#121212' : '#fff'
+                b.onclick = a[1]
+                el.appendChild(b)
+                return b
+            })
+        }
+        render(text0, [primary, other])
         document.body.appendChild(el)
-        return function () { el.remove() }
+        return { render: render, hide: function () { el.remove() } }
     }
 
     async function request(type, message, options, cfg) {
@@ -111,8 +129,27 @@
             var left = Math.max(0, (screen.width - w) / 2), top = Math.max(0, (screen.height - h) / 2)
             return window.open(url, 'blackvault', 'popup,width=' + w + ',height=' + h + ',left=' + left + ',top=' + top)
         }
-        var opened = openWallet()
-        var hide = bar(labels, !opened, openWallet, me.cancel)
+        // the desktop app takes blackvault: links; the page stays (no app: nothing happens)
+        var openApp = function () { location.href = 'blackvault:sign?src=' + encodeURIComponent(src) }
+
+        var ui
+        var useWeb = function () {
+            remember('web')
+            var opened = openWallet()
+            ui.render(opened ? labels.waiting : labels.blocked, [[labels.open, openWallet, !opened], [labels.desktop, useApp]])
+        }
+        var useApp = function () {
+            remember('desktop')
+            openApp()
+            ui.render(labels.inDesktop, [[labels.desktop, openApp], [labels.web, useWeb]])
+        }
+        if (preferred(cfg) === 'desktop') {
+            openApp()
+            ui = bar(labels, labels.inDesktop, [labels.desktop, openApp], [labels.web, useWeb], me.cancel)
+        } else {
+            var opened = openWallet()
+            ui = bar(labels, opened ? labels.waiting : labels.blocked, [labels.open, openWallet, !opened], [labels.desktop, useApp], me.cancel)
+        }
         try {
             var until = Date.now() + 10 * 60 * 1000
             read(src + '.accepted', until, aborted).then(function () { onAccepted && onAccepted() }, function () { })
@@ -122,7 +159,7 @@
         } finally {
             cancelled = true
             if (current === me) current = null
-            hide()
+            ui.hide()
         }
     }
 

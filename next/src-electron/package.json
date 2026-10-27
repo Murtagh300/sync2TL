@@ -1,0 +1,14 @@
+{
+  "name": "blackvault-desktop",
+  "version": "1.0.0",
+  "description": "BlackVault's desktop app (Electron): what it needs at run time and to package",
+  "private": true,
+  "type": "module",
+  "dependencies": {
+    "electron-updater": "6.8.11"
+  },
+  "devDependencies": {
+    "electron": "44.9.3",
+    "electron-builder": "^26.18.0"
+  }
+}

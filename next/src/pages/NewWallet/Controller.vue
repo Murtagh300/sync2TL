@@ -346,7 +346,7 @@ export default defineComponent({
                         })
                     })
                     // backup in lite mode
-                    if (import.meta.env.QUASAR_MODE === 'spa' || import.meta.env.QUASAR_MODE === 'pwa') {
+                    if (import.meta.env.QUASAR_MODE === 'spa' || import.meta.env.QUASAR_MODE === 'pwa' || import.meta.env.QUASAR_MODE === 'electron') {
                         if (type === 'generate') {
                             try {
                                 await this.$dialog({

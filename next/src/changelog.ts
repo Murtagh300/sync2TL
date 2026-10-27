@@ -12,6 +12,16 @@ export type Release = {
 }
 
 export const releases: Release[] = [{
+    version: '2.2.0',
+    date: '2026-10-27',
+    items: {
+        en: ['BlackVault for Windows, macOS and Linux: a desktop app that updates itself.', 'Websites connect to BlackVault directly: no WalletConnect link to copy. You confirm in BlackVault and it closes by itself.'],
+        nl: ['BlackVault voor Windows, macOS en Linux: een desktop-app die zichzelf bijwerkt.', 'Websites verbinden direct met BlackVault: geen WalletConnect-link meer kopiëren. Je bevestigt in BlackVault en het venster sluit vanzelf.'],
+        de: ['BlackVault für Windows, macOS und Linux: eine Desktop-App, die sich selbst aktualisiert.', 'Websites verbinden sich direkt mit BlackVault: kein WalletConnect-Link mehr zum Kopieren. Du bestätigst in BlackVault, und das Fenster schließt sich von selbst.'],
+        fr: ['BlackVault pour Windows, macOS et Linux : une application de bureau qui se met à jour seule.', 'Les sites se connectent directement à BlackVault : plus de lien WalletConnect à copier. Vous confirmez dans BlackVault, qui se ferme tout seul.'],
+        zh: ['适用于 Windows、macOS 和 Linux 的 BlackVault 桌面应用，可自动更新。', '网站可直接连接 BlackVault，无需再复制 WalletConnect 链接。在 BlackVault 中确认后，窗口会自动关闭。']
+    }
+}, {
     version: '2.1.1',
     date: '2026-10-26',
     items: {

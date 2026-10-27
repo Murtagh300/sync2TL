@@ -141,6 +141,43 @@ export default defineConfig(() => {
 
         animations: [],
 
+        // the desktop app (src-electron): `npm run build:desktop`, see docs/DESKTOP.md
+        electron: {
+            preloadScripts: ['electron-preload'],
+            bundler: 'builder',
+            builder: {
+                appId: 'com.blackvemarket.blackvault',
+                productName: 'BlackVault',
+                artifactName: 'BlackVault-${version}-${os}-${arch}.${ext}',
+                copyright: 'BlackVeMarket (BVM)',
+                // macOS and Linux register the links at install; Windows when the app starts
+                protocols: [{ name: 'BlackVault', schemes: ['blackvault'] }],
+                // updates (electron-updater) come from this repository's releases; a build makes a draft that
+                // becomes the update for everyone once it is published (docs/DESKTOP.md)
+                publish: [{ provider: 'github', owner: 'Murtagh300', repo: 'sync2TL', releaseType: 'draft' }],
+                win: {
+                    target: [{ target: 'nsis', arch: ['x64'] }],
+                    icon: fileURLToPath(new URL('./src-electron/electron-assets/icons/icon.png', import.meta.url))
+                },
+                nsis: {
+                    oneClick: true,
+                    perMachine: false,
+                    // the wallets live in the app's data: an uninstall never takes them along
+                    deleteAppDataOnUninstall: false
+                },
+                mac: {
+                    target: ['dmg', 'zip'],
+                    category: 'public.app-category.finance',
+                    icon: fileURLToPath(new URL('./src-electron/electron-assets/icons/icon.png', import.meta.url))
+                },
+                linux: {
+                    target: ['AppImage'],
+                    category: 'Finance',
+                    icon: fileURLToPath(new URL('./src-electron/electron-assets/icons/icon.png', import.meta.url))
+                }
+            }
+        },
+
         pwa: {
             workboxMode: 'GenerateSW',
             extendPWAGenerateSWOptions(cfg) {

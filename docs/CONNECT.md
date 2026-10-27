@@ -44,6 +44,13 @@ setSource('sync2'); await connect()
 
 dapp-kit still loads the helper from unpkg.com (it is then ignored), so a CSP must allow that script.
 
+## The desktop app
+
+With BlackVault's desktop app installed (docs/DESKTOP.md), the bar has a "Desktop app" button: it opens the
+request in the app with a `blackvault:` link (the browser asks once whether to open BlackVault). The choice is
+remembered in that browser, so the next request goes to the app at once, with "Web wallet" to go back.
+`{ app: 'desktop' }` or `{ app: 'web' }` fixes it for a dApp.
+
 ## Limits
 
 - Each wallet domain is its own origin: the window opens the wallet the dApp names, with the wallets saved

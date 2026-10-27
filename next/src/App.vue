@@ -9,6 +9,7 @@ import { defineComponent } from 'vue'
 // Geist, the typeface of blackvemarket.com, bundled (no font CDN for a wallet)
 import '@fontsource-variable/geist'
 import { listen } from 'src/utils/external-url'
+import { desktop } from 'src/utils/desktop'
 import { checkAlerts, notifySystem } from 'src/utils/alerts'
 import { notify as addNotification } from 'src/utils/notifications'
 import { dueScheduled } from 'src/utils/payments'
@@ -23,7 +24,7 @@ import { nodeHealth, startNodeHealth } from 'src/utils/node-health'
 
 /**
  * parse connex request url and return the request src
- * the incoming url looks like connex:sign?src=xxx, or https://<wallet host>/#/sign?src=xxx
+ * the incoming url looks like blackvault:sign?src=xxx, connex:sign?src=xxx, or https://<wallet host>/#/sign?src=xxx
  */
 function parseConnexURL(urlStr: string) {
     try {
@@ -32,7 +33,7 @@ function parseConnexURL(urlStr: string) {
             urlStr = urlStr.replace('/#', '')
         }
         const url = new URL(urlStr)
-        if ((url.protocol === 'connex:' && url.pathname === 'sign') ||
+        if (((url.protocol === 'connex:' || url.protocol === 'blackvault:') && url.pathname === 'sign') ||
             (url.protocol === 'https:' && url.pathname === '/sign')
         ) {
             return url.searchParams.get('src')
@@ -135,8 +136,9 @@ export default defineComponent({
         // price alerts and new offers, while BlackVault is open
         setTimeout(() => void this.runAlerts(), 15 * 1000)
         this.alertTimer = setInterval(() => void this.runAlerts(), 5 * 60 * 1000)
-        // the desktop (phase 5) and native (phase 6) apps report updates and style
-        // the status bar here; the PWA reports updates from src-pwa/register-sw.ts
+        // the desktop app reports a downloaded update here (the PWA from src-pwa/register-sw.ts);
+        // the native app (phase 6) will report updates and style the status bar here
+        desktop?.onUpdateReady(() => { window.AppState.updateAvailable = true })
     },
     beforeUnmount() {
         this.destroyed = true
