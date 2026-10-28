@@ -19,7 +19,33 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
+  # one draft for all three builds: left to themselves they each create one at the same moment.
+  # Publishing the draft pushes its tag, which starts this workflow again: then there is nothing to do.
+  release:
+    runs-on: ubuntu-latest
+    outputs:
+      build: ${{ steps.draft.outputs.build }}
+    steps:
+      - uses: actions/checkout@v5
+      - id: draft
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          v=$(node -p "require('./next/package.json').version")
+          draft=$(gh release view "v$v" --json isDraft --jq .isDraft 2>/dev/null || echo none)
+          if [ "$draft" = false ]; then
+            echo "v$v is already published: nothing to build"
+            echo build=false >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+          if [ "$draft" = none ]; then
+            gh release create "v$v" --draft --title "$v" --notes "" --target "$GITHUB_SHA"
+          fi
+          echo build=true >> "$GITHUB_OUTPUT"
+
   build:
+    needs: release
+    if: needs.release.outputs.build == 'true'
     strategy:
       fail-fast: false
       matrix:
