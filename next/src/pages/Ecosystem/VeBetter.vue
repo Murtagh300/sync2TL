@@ -14,6 +14,16 @@
             padding
         >
             <p class="text-soft">{{$t('vebetter.msg_intro')}}</p>
+            <!-- the apps that pay B3TR, and what they paid you -->
+            <q-btn
+                outline
+                no-caps
+                color="primary"
+                icon="o_explore"
+                class="full-width q-mb-md"
+                :label="$t('discover.action_open')"
+                :to="{ name: 'discover' }"
+            />
             <q-select
                 v-if="addresses.length > 1"
                 v-model="address"

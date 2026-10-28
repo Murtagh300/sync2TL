@@ -77,6 +77,38 @@
                 </q-list>
                 <p class="text-caption text-muted q-mt-md">{{$t('pnl.msg_how')}}</p>
             </template>
+            <!-- a year of transfers for tax software -->
+            <div
+                v-if="!loading"
+                class="bvm-tile tax q-mt-lg"
+            >
+                <div class="text-weight-bold">{{$t('tax.title')}}</div>
+                <div class="text-muted tax-msg q-mt-xs">{{$t('tax.msg')}}</div>
+                <div class="row no-wrap items-center q-gutter-x-sm q-mt-md">
+                    <q-btn-toggle
+                        v-model="taxYear"
+                        class="tax-years"
+                        dense
+                        no-caps
+                        unelevated
+                        color="transparent"
+                        text-color="grey-5"
+                        toggle-color="primary"
+                        toggle-text-color="dark"
+                        :options="years.map(y => ({ value: y, label: String(y) }))"
+                    />
+                    <q-space />
+                    <q-btn
+                        unelevated
+                        no-caps
+                        color="primary"
+                        icon="o_download"
+                        :label="$t('tax.action_download')"
+                        :loading="exporting"
+                        @click="exportYear()"
+                    />
+                </div>
+            </div>
         </page-content>
     </div>
 </template>
@@ -85,7 +117,9 @@ import { defineComponent } from 'vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import EmptyState from 'components/EmptyState.vue'
-import { flows, ZERO } from 'src/utils/overview'
+import { feesByTx, flows, yearRange, ZERO } from 'src/utils/overview'
+import { KOINLY_HEADERS, koinlyRows } from 'src/utils/tax-export'
+import { downloadText } from 'src/utils/export'
 import { costBasis } from 'src/utils/cost-basis'
 import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { money, prefs } from 'src/utils/prefs'
@@ -101,9 +135,16 @@ export default defineComponent({
         error: false,
         rows: [] as Row[],
         /** fiat per VET, to show VET amounts in money */
-        vetFiat: 0
+        vetFiat: 0,
+        taxYear: new Date().getFullYear() - 1,
+        exporting: false
     }),
     computed: {
+        /** this year and the two before */
+        years(): number[] {
+            const y = new Date().getFullYear()
+            return [y - 2, y - 1, y]
+        },
         totalUnrealized(): number {
             return this.rows.reduce((s, r) => s + r.unrealized, 0)
         },
@@ -129,13 +170,49 @@ export default defineComponent({
         tone(v: number) {
             return v > 0 ? 'text-primary' : v < 0 ? 'text-negative' : ''
         },
+        async addresses(): Promise<string[]> {
+            const main = (await this.$svc.wallet.all()).filter(w => w.gid === genesises.main.id)
+            const chosen = selection.walletId === ALL_WALLETS ? main : [selectedWallet(main)].filter((w): w is M.Wallet => !!w)
+            return [...new Set(chosen.flatMap(w => w.meta.addresses.map(a => a.toLowerCase())))]
+        },
+        /** the chosen year as a Koinly CSV, with the VTHO fees this wallet paid */
+        async exportYear() {
+            this.exporting = true
+            try {
+                const addresses = await this.addresses()
+                const thor = this.$svc.bc(genesises.main.id).thor
+                const [from, to] = yearRange(this.taxYear)
+                const [list, specs] = await Promise.all([
+                    flows(thor, addresses, from, Math.min(to, Date.now())),
+                    this.$svc.config.token.all()
+                ])
+                const known = new Map(specs.filter(t => t.gid === genesises.main.id).map(t => [(t.address || ZERO).toLowerCase(), t]))
+                known.set(ZERO, { symbol: 'VET', decimals: 18 } as M.TokenSpec)
+                const ownTx = [...new Set(list.filter(f => addresses.includes(f.origin)).map(f => f.txId))]
+                const { fees, complete } = await feesByTx(thor, addresses, ownTx)
+                const rows = koinlyRows(list, t => known.get(t), fees)
+                if (!rows.length) {
+                    this.$q.notify({ message: this.$t('tax.msg_empty', { year: this.taxYear }).toString() })
+                    return
+                }
+                const csv = [KOINLY_HEADERS, ...rows].map(r => r.map(c => /[",\n]/.test(c) ? `"${c.replace(/"/g, '""')}"` : c).join(',')).join('\n')
+                downloadText(`blackvault-${this.taxYear}-koinly.csv`, csv)
+                this.$q.notify({
+                    type: 'positive',
+                    message: this.$t(complete ? 'tax.msg_done' : 'tax.msg_done_fees_partial', { n: rows.length }).toString()
+                })
+            } catch (err) {
+                console.warn('tax export:', err)
+                this.$q.notify({ type: 'negative', message: this.$t('common.something_wrong').toString() })
+            } finally {
+                this.exporting = false
+            }
+        },
         async load() {
             this.loading = true
             this.error = false
             try {
-                const main = (await this.$svc.wallet.all()).filter(w => w.gid === genesises.main.id)
-                const chosen = selection.walletId === ALL_WALLETS ? main : [selectedWallet(main)].filter((w): w is M.Wallet => !!w)
-                const addresses = [...new Set(chosen.flatMap(w => w.meta.addresses.map(a => a.toLowerCase())))]
+                const addresses = await this.addresses()
                 if (!addresses.length) {
                     this.rows = []
                     return
@@ -190,4 +267,18 @@ export default defineComponent({
 .tile-value
   font-size: 18px
   margin-top: 2px
+
+.tax
+  padding: 14px
+
+.tax-msg
+  font-size: 13px
+
+.tax-years
+  border: 1px solid $hairline-2
+  border-radius: $radius
+  :deep(.q-btn)
+    min-height: 34px
+    padding: 0 10px
+    font-weight: 700
 </style>

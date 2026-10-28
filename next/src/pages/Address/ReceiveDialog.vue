@@ -5,7 +5,7 @@
         @hide="$emit('hide')"
     >
         <q-card class="full-width receive">
-            <prompt-dialog-toolbar>{{$t('address.action_receive')}}</prompt-dialog-toolbar>
+            <prompt-dialog-toolbar>{{title || $t('address.action_receive')}}</prompt-dialog-toolbar>
             <q-card-section class="q-pt-none">
                 <div class="qr-frame q-mx-auto">
                     <q-responsive :ratio="1">
@@ -35,6 +35,18 @@
                     />
                     <span>{{$t('receive.msg_network')}}</span>
                 </div>
+                <!-- the public page: name, NFTs and a pay button -->
+                <q-btn
+                    v-if="!visitor"
+                    flat
+                    dense
+                    no-caps
+                    color="primary"
+                    icon="o_badge"
+                    class="q-mt-sm q-px-sm"
+                    :label="$t('profile.action_share_mine')"
+                    @click="copyProfile()"
+                />
 
                 <q-toggle
                     v-model="request"
@@ -113,6 +125,7 @@ import { copyText } from 'src/utils/clipboard'
 import { buildPaymentLink } from 'src/utils/payment-request'
 import { shareCard } from 'src/utils/share-card'
 import { nameOf } from 'src/utils/names'
+import { profileLink } from 'src/utils/profile'
 
 // the address as a QR code; with an amount it becomes a payment request
 export default defineComponent({
@@ -121,7 +134,10 @@ export default defineComponent({
     components: { PromptDialogToolbar, QRCode },
     props: {
         address: { type: String, required: true },
-        symbols: { type: Array as () => string[], default: () => ['VET', 'VTHO'] }
+        symbols: { type: Array as () => string[], default: () => ['VET', 'VTHO'] },
+        /** someone else's address (a public profile): their name on top, no link to "my" profile */
+        visitor: Boolean,
+        title: String
     },
     data: () => ({
         request: false,
@@ -165,6 +181,13 @@ export default defineComponent({
         copy() {
             copyText(this.content)
                 .then(() => this.$q.notify(this.$t('common.copied')))
+                .catch(console.error)
+        },
+        /** the profile link, by .vet name when there is one */
+        copyProfile() {
+            const url = profileLink(nameOf(this.address).endsWith('.vet') ? nameOf(this.address) : this.checksumed)
+            copyText(url)
+                .then(() => this.$q.notify(this.$t('profile.msg_link_copied')))
                 .catch(console.error)
         },
         shareImage() {

@@ -30,13 +30,14 @@ import Payout from 'pages/Payout'
 import Overview from 'pages/Overview'
 import Pnl from 'pages/Pnl'
 import { Listings, OfferInbox } from 'pages/Market'
-import { Stargate, VeBetter } from 'pages/Ecosystem'
+import { Discover, Stargate, VeBetter } from 'pages/Ecosystem'
 import WalletConnect from 'pages/WalletConnect'
 import SwitchGuide from 'pages/SwitchGuide'
 import { Dust, Consolidate } from 'pages/Tidy'
 import Liquidity from 'pages/Liquidity'
 import Emergency from 'pages/Emergency'
 import Security, { Dapps } from 'pages/Security'
+import Profile from 'pages/Profile'
 
 const routes: RouteRecordRaw[] = [
     {
@@ -147,6 +148,10 @@ const routes: RouteRecordRaw[] = [
             name: 'vebetter',
             component: VeBetter
         }, {
+            path: 'discover',
+            name: 'discover',
+            component: Discover
+        }, {
             path: 'listings',
             name: 'listings',
             component: Listings
@@ -212,6 +217,13 @@ const routes: RouteRecordRaw[] = [
             name: 'activities',
             component: Activities
         }]
+    },
+    // a public profile: outside the app's frame, so it opens without a wallet
+    {
+        path: '/u/:id',
+        name: 'profile',
+        component: Profile,
+        props: true
     },
     // Always leave this as last one
     {

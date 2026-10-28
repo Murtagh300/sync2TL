@@ -3,6 +3,27 @@
 What changed in BlackVault, newest first. The version is `next/package.json`; what users see after
 an update comes from `next/src/changelog.ts` (keep the two in step).
 
+## Unreleased
+
+**What top wallets do, now in BlackVault**
+- The fee in VET or B3TR instead of VTHO, through VeChain's generic delegator (VIP-194, as VeWorld):
+  it adds its own payment clause and signs as gas payer; the wallet checks the returned transaction
+  (only that clause, the gas and the nonce may change, the fee is capped) before the user signs.
+- Risk labels before signing: brand-new or young contracts (their first block with code, from the
+  node), a contract used for the first time, VET or tokens sent to a token contract, a transaction
+  where several things leave and nothing comes back. A high risk asks once more.
+- Token page: your average buy price (in VET, from a year of swaps) as a line on the chart, with +/-%.
+- Tax export: a year of transfers, swaps and VTHO fees as a Koinly CSV; X2Earn rewards labelled.
+- Discover: VeBetterDAO's X2Earn apps of this round, most voted first, and the B3TR each paid you.
+- NFTs: select all, take several off sale in one transaction, hide several at once; watch-only
+  wallets get no signing actions there.
+- A public profile at /u/name.vet: BlackVeMarket name and avatar, a showcase, "Pay me" and share.
+- Recurring and limit buys: a reminder (in the app, and by push from the BlackVault server) that opens
+  the swap filled in; nothing is bought without signing.
+- Buy VET: vechain.energy's ramp (card, iDEAL) or an exchange, with the address to withdraw to.
+- Desktop: dApps open in a window of their own (own storage, no permissions); their wallet links come
+  to BlackVault.
+
 ## 2.2.1 — 2026-10-27
 
 **Fixes**

@@ -109,6 +109,7 @@ import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import { clearNotifications, markAllRead, notifications, type AppNotification, type NotificationKind } from 'src/utils/notifications'
 import { bvmSession, bvmSignIn, disablePush, enablePush, pushEnabled, pushSupported, signInMessage, ownPushAvailable, ownPushState, enableOwnPush, disableOwnPush, type OwnPushState } from 'src/utils/push'
+import { syncBuyReminders } from 'src/utils/buy-reminders'
 import { featureOn } from 'src/utils/remote-config'
 import { selectedWallet } from 'src/utils/selection'
 import { formatDate } from 'src/utils/format'
@@ -224,6 +225,8 @@ export default defineComponent({
             try {
                 if (on) {
                     await enableOwnPush(this.watchAddresses, this.$i18n.locale)
+                    // recurring buys come by push too from now on
+                    void syncBuyReminders(this.$t.bind(this))
                     this.ownState = 'on'
                     this.$q.notify(this.$t('notifications.msg_push_on'))
                 } else {

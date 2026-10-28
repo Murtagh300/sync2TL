@@ -21,9 +21,10 @@ self.addEventListener('push', event => {
 
 self.addEventListener('notificationclick', event => {
     event.notification.close()
-    // only the wallet's own pages (#/…): BlackVeMarket links to its site, which opens the notification center
+    // only the wallet's own pages (#/…, a plain query allowed): BlackVeMarket links to its site, which
+    // opens the notification center
     const url = (event.notification.data && event.notification.data.url) || ''
-    const target = self.registration.scope + (/^#\/[a-z0-9/-]*$/i.test(url) ? url : '#/notifications')
+    const target = self.registration.scope + (/^#\/[a-z0-9/-]*(\?[a-z0-9=&%._-]*)?$/i.test(url) ? url : '#/notifications')
     event.waitUntil(self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(list => {
         for (const c of list) {
             if ('focus' in c) {

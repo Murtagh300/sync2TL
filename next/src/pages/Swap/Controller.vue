@@ -206,6 +206,8 @@ import { genesises } from 'src/consts'
 import SuccessDialog from 'components/SuccessDialog.vue'
 import { money, prefs } from 'src/utils/prefs'
 import type { Prices } from 'boot/services/prices'
+import { buyOpened } from 'src/utils/payments'
+import { syncBuyReminders } from 'src/utils/buy-reminders'
 
 // swap tokens through the VeChain DEXes
 export default defineComponent({
@@ -215,13 +217,17 @@ export default defineComponent({
         i: String,
         /** a pair to start with (the sign dialog links here when VTHO runs short) */
         from: String,
-        to: String
+        to: String,
+        /** an amount to start with (a recurring buy's reminder) */
+        amt: String,
+        /** the recurring or limit buy this swap is for (utils/payments.ts) */
+        buy: String
     },
     data: (vm) => ({
         fromSymbol: vm.from || 'VET',
         toSymbol: vm.to || (vm.from === 'VTHO' ? 'VET' : 'VTHO'),
         recentPairs: recentPairs(),
-        amount: '',
+        amount: vm.amt && /^\d+([.,]\d+)?$/.test(vm.amt) ? vm.amt : '',
         slippageBps: 100,
         quoting: false,
         quoteResult: null as Quote | null,
@@ -332,13 +338,21 @@ export default defineComponent({
             return out.div(inp).decimalPlaces(6, BigNumber.ROUND_FLOOR).toFormat()
         }
     },
+    created() {
+        // a reminder brought you here: the next one is set, a limit buy is done
+        if (this.buy) {
+            buyOpened(this.buy)
+            void syncBuyReminders(this.$t.bind(this))
+        }
+    },
     watch: {
         fromSymbol() { this.loadBalance(); this.requote(); void this.loadPrices() },
         toSymbol() { this.requote(); void this.loadPrices() },
         amount() { this.requote() },
         slippageBps() { this.requote() },
-        address() { this.loadBalance() },
-        tokens() { this.loadBalance(); void this.loadPrices() }
+        // a preset amount quotes once the wallet and its balance are there
+        address() { this.loadBalance(); this.requote() },
+        tokens() { this.loadBalance(); void this.loadPrices(); this.requote() }
     },
     methods: {
         money,

@@ -284,6 +284,7 @@
                 <span class="q-ml-sm text-weight-bold ellipsis">{{$t('nft.label_selected_short')}}</span>
             </div>
             <q-btn
+                v-if="signable"
                 outline
                 no-caps
                 color="primary"
@@ -293,6 +294,7 @@
                 @click="bulkSend()"
             />
             <q-btn
+                v-if="signable"
                 unelevated
                 no-caps
                 color="primary"
@@ -301,6 +303,51 @@
                 :label="$t('market.action_list')"
                 @click="bulkList()"
             />
+            <!-- the rest: all at once, off the market, out of sight -->
+            <q-btn
+                outline
+                round
+                dense
+                color="primary"
+                icon="more_horiz"
+                :aria-label="$t('nft.action_more')"
+            >
+                <q-menu
+                    anchor="top right"
+                    self="bottom right"
+                    :offset="[0, 8]"
+                >
+                    <q-list style="min-width: 220px">
+                        <q-item
+                            v-close-popup
+                            clickable
+                            @click="selectAll()"
+                        >
+                            <q-item-section avatar><q-icon name="o_select_all" /></q-item-section>
+                            <q-item-section>{{$t('nft.action_select_all', { n: Math.min(visibleItems.length, maxBatch) })}}</q-item-section>
+                        </q-item>
+                        <q-item
+                            v-if="signable"
+                            v-close-popup
+                            clickable
+                            :disable="!delistable.length"
+                            @click="bulkDelist()"
+                        >
+                            <q-item-section avatar><q-icon name="o_remove_shopping_cart" /></q-item-section>
+                            <q-item-section>{{$t('nft.action_bulk_delist', { n: delistable.length })}}</q-item-section>
+                        </q-item>
+                        <q-item
+                            v-close-popup
+                            clickable
+                            :disable="!selected.length"
+                            @click="bulkHide()"
+                        >
+                            <q-item-section avatar><q-icon name="o_visibility_off" /></q-item-section>
+                            <q-item-section>{{$t('nft.action_bulk_hide', { n: selected.length })}}</q-item-section>
+                        </q-item>
+                    </q-list>
+                </q-menu>
+            </q-btn>
         </div>
     </div>
 </template>
@@ -311,7 +358,7 @@ import { openURL } from 'src/utils/open-url'
 import { address as addressUtil } from 'thor-devkit'
 import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
 import ListDialog, { type ListResult } from 'pages/Nft/ListDialog.vue'
-import { canTrade, listClauses, listingCurrencies, sendClauses, signMarketTx } from 'src/utils/market'
+import { cancelListingClauses, canTrade, listClauses, listingCurrencies, sendClauses, signMarketTx } from 'src/utils/market'
 import { fixed, toWei } from 'src/utils/format'
 import { readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 import { navigateWithHero } from 'src/utils/hero'
@@ -345,7 +392,9 @@ export default defineComponent({
         address: { type: String, required: true },
         walletId: { type: String, required: true },
         addressIndex: { type: String, required: true },
-        gid: { type: String, required: true }
+        gid: { type: String, required: true },
+        /** false for a watch-only wallet: nothing that needs signing */
+        signable: { type: Boolean, default: true }
     },
     emits: ['total'],
     data: () => ({
@@ -360,6 +409,7 @@ export default defineComponent({
         listedCount: 0,
         offerCount: 0,
         selecting: false,
+        maxBatch: MAX_BATCH,
         sort: 'default',
         status: 'all' as 'all' | 'listed' | 'unlisted',
         ideas: [] as BVM.Collection[],
@@ -411,6 +461,10 @@ export default defineComponent({
         },
         listable(): BVM.NFT[] {
             return this.selected.filter(n => !n.listed && canTrade(n))
+        },
+        /** listed with a sale the market can cancel */
+        delistable(): BVM.NFT[] {
+            return this.selected.filter(n => n.listed && !!n.saleId && !!n.maasContract)
         }
     },
     watch: {
@@ -448,8 +502,8 @@ export default defineComponent({
             haptic()
             type Action = { label: string, icon: string, id: string }
             const actions: Action[] = []
-            if (!nft.listed && canTrade(nft)) actions.push({ label: this.$t('market.action_list'), icon: 'o_sell', id: 'list' })
-            if (!nft.listed) actions.push({ label: this.$t('nft.action_send'), icon: 'o_north_east', id: 'send' })
+            if (this.signable && !nft.listed && canTrade(nft)) actions.push({ label: this.$t('market.action_list'), icon: 'o_sell', id: 'list' })
+            if (this.signable && !nft.listed) actions.push({ label: this.$t('nft.action_send'), icon: 'o_north_east', id: 'send' })
             actions.push(this.isFavoriteNft(nft)
                 ? { label: this.$t('nft.action_unfavorite'), icon: 'star', id: 'favorite' }
                 : { label: this.$t('nft.action_favorite'), icon: 'star_outline', id: 'favorite' })
@@ -539,6 +593,34 @@ export default defineComponent({
             } else {
                 this.$q.notify(this.$t('nft.msg_max_batch', { n: MAX_BATCH }))
             }
+        },
+        /** what is on screen, up to a batch */
+        selectAll() {
+            this.selected = this.visibleItems.slice(0, MAX_BATCH)
+            if (this.visibleItems.length > MAX_BATCH) {
+                this.$q.notify(this.$t('nft.msg_max_batch', { n: MAX_BATCH }))
+            }
+        },
+        /** off the market in one transaction */
+        async bulkDelist() {
+            const nfts = this.delistable
+            const comment = this.$t('nft.comment_bulk_delist', { n: nfts.length })
+            try {
+                await signMarketTx(this.$signTx, this.$svc.bvm, this.gid, this.address, cancelListingClauses(nfts), comment)
+                this.$dialog({ component: SuccessDialog, title: comment, message: this.$t('market.msg_delisted'), image: nfts[0]?.image }).catch(() => { })
+                this.toggleSelecting()
+            } catch { }
+        },
+        /** out of sight (spam, mostly); the Hidden folder has them back */
+        async bulkHide() {
+            const keys = this.selected.map(n => nftKey(n.contract, n.tokenId))
+            const h = await loadHidden(this.$svc)
+            h.shown = h.shown.filter(k => !keys.includes(k))
+            h.hidden = [...h.hidden.filter(k => !keys.includes(k)), ...keys]
+            await saveHidden(this.$svc, h)
+            this.hiddenPrefs = h
+            this.$q.notify(this.$t('nft.msg_bulk_hidden', { n: keys.length }))
+            this.toggleSelecting()
         },
         async bulkSend(only?: BVM.NFT[]) {
             const nfts = only || this.sendable

@@ -38,12 +38,14 @@ type Prefs = {
     sound: boolean
     /** send scrubbed error reports to the BlackVault server (utils/error-reports.ts); off unless turned on */
     errorReports: boolean
+    /** what pays transaction fees: VTHO, or VET or B3TR through VeChain's delegator (utils/fee-token.ts) */
+    feeToken: 'vtho' | 'vet' | 'b3tr'
 }
 
 const KEY = 'bv-prefs'
 
 function load(): Prefs {
-    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, homeLayout: 'wide', highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true, errorReports: false }
+    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, homeLayout: 'wide', highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true, errorReports: false, feeToken: 'vtho' }
     try {
         return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') as Partial<Prefs> }
     } catch {

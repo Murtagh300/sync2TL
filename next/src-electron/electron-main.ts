@@ -16,6 +16,9 @@ import electronUpdater from 'electron-updater'
  * dApps reach it with blackvault: links (connect.js), and with connex: links (VeChain's standard
  * wallet links) when no other app has those.
  *
+ * dApps also open inside the app (openDapp): a window of their own with their own storage, no
+ * access to the wallet's page, and their signing links going to the wallet.
+ *
  * On Windows and Linux, closing the window keeps it in the tray (unless turned off), so links,
  * updates and notifications keep arriving; it can start with the computer, hidden in the tray.
  */
@@ -70,6 +73,64 @@ function openExternal(url: string) {
         const u = new URL(url)
         if (u.protocol === 'https:' || u.protocol === 'http:') void shell.openExternal(u.href)
     } catch { }
+}
+
+// the dApp windows: they may browse the web; everything else may not
+const dappContents = new Set<number>()
+const DAPP_PARTITION = 'persist:dapps'
+
+/** a dApp in a window of its own; its title says which site it is */
+function openDapp(url: string) {
+    let u: URL
+    try {
+        u = new URL(url)
+    } catch {
+        return
+    }
+    if (u.protocol !== 'https:') return
+    const dapp = new BrowserWindow({
+        width: 1200,
+        height: 820,
+        minWidth: 380,
+        minHeight: 500,
+        title: u.host,
+        backgroundColor: '#0b0b0c',
+        autoHideMenuBar: true,
+        icon: iconPath(),
+        webPreferences: {
+            partition: DAPP_PARTITION,
+            contextIsolation: true,
+            sandbox: true,
+            nodeIntegration: false,
+            webSecurity: true,
+            spellcheck: false,
+            devTools: dev || debug
+        }
+    })
+    const id = dapp.webContents.id
+    dappContents.add(id)
+    dapp.on('closed', () => dappContents.delete(id))
+    // always the real host in the title: a page can't pretend to be another site
+    const title = (pageTitle: string) => {
+        let host = ''
+        try {
+            host = new URL(dapp.webContents.getURL()).host
+        } catch { }
+        dapp.setTitle(pageTitle ? `${host} · ${pageTitle}` : host)
+    }
+    dapp.on('page-title-updated', (e, t) => {
+        e.preventDefault()
+        title(t)
+    })
+    dapp.webContents.on('did-navigate', () => title(dapp.webContents.getTitle()))
+    void dapp.loadURL(u.href)
+}
+
+/** a wallet link from a dApp window (blackvault:, connex:) goes to the wallet */
+function walletLink(url: string): boolean {
+    if (!SCHEMES.some(scheme => url.toLowerCase().startsWith(`${scheme}:`))) return false
+    deliver(url)
+    return true
 }
 
 const fromApp = (url: string | undefined) => {
@@ -265,17 +326,36 @@ function guardContents() {
     app.on('web-contents-created', (_e, wc) => {
         // the app never navigates away or opens windows: links go to the browser
         wc.on('will-navigate', (e, url) => {
+            if (dappContents.has(wc.id)) {
+                // a dApp browses the web; its wallet links go to the wallet, nothing else leaves
+                if (walletLink(url)) e.preventDefault()
+                else if (!/^https?:/i.test(url)) e.preventDefault()
+                return
+            }
             if (!fromApp(url)) {
                 e.preventDefault()
                 openExternal(url)
             }
         })
         wc.setWindowOpenHandler(({ url }) => {
+            if (dappContents.has(wc.id)) {
+                // a dApp's pop-up (a sign-in, a wallet link) stays in the app
+                if (!walletLink(url) && /^https:/i.test(url)) openDapp(url)
+                return { action: 'deny' }
+            }
             openExternal(url)
             return { action: 'deny' }
         })
         wc.on('will-attach-webview', e => e.preventDefault())
     })
+}
+
+/** a dApp's storage is its own; it gets nothing but copying (no camera, no notifications) */
+function dappSession() {
+    const s = session.fromPartition(DAPP_PARTITION)
+    const allowed: string[] = ['clipboard-sanitized-write']
+    s.setPermissionRequestHandler((_wc, permission, callback) => callback(allowed.includes(permission)))
+    s.setPermissionCheckHandler((_wc, permission) => allowed.includes(permission))
 }
 
 function registerSchemes() {
@@ -328,6 +408,9 @@ function ipc() {
             ...(typeof n.openAtLogin === 'boolean' ? { openAtLogin: n.openAtLogin } : {})
         })
     })
+    ipcMain.on('open-dapp', (e, url: unknown) => {
+        if (senderOk(e) && typeof url === 'string' && url.length <= 2048) openDapp(url)
+    })
     ipcMain.on('external-url-ready', e => {
         if (!senderOk(e)) return
         listening = true
@@ -367,6 +450,7 @@ if (!app.requestSingleInstanceLock()) {
         if (!dev) serveApp()
         prefs = readPrefs()
         permissions()
+        dappSession()
         menu()
         ipc()
         registerSchemes()

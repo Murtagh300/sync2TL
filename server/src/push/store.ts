@@ -63,6 +63,7 @@ export function createStore(db: DatabaseSync) {
         JOIN subscriptions s ON s.endpoint = w.endpoint WHERE w.address = ?`)
     const allAddresses = db.prepare('SELECT DISTINCT address FROM watched')
     const count = db.prepare('SELECT COUNT(*) AS n FROM subscriptions')
+    const exists = db.prepare('SELECT 1 AS x FROM subscriptions WHERE endpoint = ?')
     const watchedCount = db.prepare('SELECT COUNT(DISTINCT address) AS n FROM watched')
     const getState = db.prepare('SELECT value FROM state WHERE key = ?')
     const setState = db.prepare('INSERT INTO state (key, value) VALUES (?, ?) ON CONFLICT(key) DO UPDATE SET value = excluded.value')
@@ -91,6 +92,9 @@ export function createStore(db: DatabaseSync) {
         },
         addresses(): string[] {
             return (allAddresses.all() as { address: string }[]).map(r => r.address)
+        },
+        has(endpoint: string): boolean {
+            return !!exists.get(endpoint)
         },
         count(): number {
             return (count.get() as { n: number }).n

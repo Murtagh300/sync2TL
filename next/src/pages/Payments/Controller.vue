@@ -22,6 +22,10 @@
                     name="scheduled"
                     :label="$t('payments.tab_scheduled')"
                 />
+                <q-tab
+                    name="buys"
+                    :label="$t('buys.tab')"
+                />
             </q-tabs>
 
             <!-- requests you sent -->
@@ -88,6 +92,61 @@
                         @click="splitBill()"
                     />
                 </div>
+            </template>
+
+            <!-- buys on a schedule, or at a price: a reminder and the swap filled in -->
+            <template v-else-if="tab === 'buys'">
+                <p class="text-soft">{{$t('buys.msg_intro')}}</p>
+                <q-list
+                    v-if="payments.buys.length"
+                    role="group"
+                    class="bvm-list q-mb-md"
+                >
+                    <q-item
+                        v-for="b in payments.buys"
+                        :key="b.id"
+                    >
+                        <q-item-section avatar>
+                            <q-avatar :icon="b.every ? 'o_event_repeat' : 'o_trending_down'" />
+                        </q-item-section>
+                        <q-item-section style="min-width: 0">
+                            <q-item-label class="bvm-amount">{{b.amount}} {{b.from}} → {{b.to}}</q-item-label>
+                            <q-item-label caption>{{buyWhen(b)}}</q-item-label>
+                        </q-item-section>
+                        <q-item-section side>
+                            <div class="column items-end q-gutter-y-xs">
+                                <q-btn
+                                    :unelevated="isDue(b)"
+                                    :outline="!isDue(b)"
+                                    dense
+                                    no-caps
+                                    color="primary"
+                                    class="q-px-sm"
+                                    :label="$t('buys.action_buy_now')"
+                                    @click="buyNow(b)"
+                                />
+                                <q-btn
+                                    flat
+                                    dense
+                                    no-caps
+                                    size="sm"
+                                    color="negative"
+                                    :label="$t('common.delete')"
+                                    @click="removeBuy(b)"
+                                />
+                            </div>
+                        </q-item-section>
+                    </q-item>
+                </q-list>
+                <q-btn
+                    unelevated
+                    no-caps
+                    color="primary"
+                    icon="add"
+                    class="full-width"
+                    :label="$t('buys.title_new')"
+                    @click="newBuy()"
+                />
             </template>
 
             <!-- payments you make regularly -->
@@ -158,7 +217,10 @@ import PageContent from 'components/PageContent.vue'
 import AddressLabel from 'components/AddressLabel.vue'
 import PaymentDialog, { type PaymentDialogResult } from './PaymentDialog.vue'
 import SplitDialog, { type SplitResult } from './SplitDialog.vue'
-import { matchPaidRequests, newId, payments, type PaymentRequestRecord, type ScheduledPayment } from 'src/utils/payments'
+import BuyDialog, { type BuyDialogResult } from './BuyDialog.vue'
+import { money, prefs } from 'src/utils/prefs'
+import { syncBuyReminders } from 'src/utils/buy-reminders'
+import { buyRoute, matchPaidRequests, newId, payments, type PaymentRequestRecord, type ScheduledBuy, type ScheduledPayment } from 'src/utils/payments'
 import { incomingTransfers } from 'src/utils/incoming'
 import { buildPaymentLink } from 'src/utils/payment-request'
 import { selectedWallet } from 'src/utils/selection'
@@ -169,7 +231,9 @@ import { formatDate } from 'src/utils/format'
 export default defineComponent({
     components: { PageToolbar, PageContent, AddressLabel },
     data: () => ({
-        tab: 'requests' as 'requests' | 'scheduled',
+        tab: 'requests' as 'requests' | 'scheduled' | 'buys',
+        /** one token in the chosen currency, by symbol */
+        prices: {} as Record<string, number>,
         payments,
         wallets: [] as M.Wallet[],
         tokens: [] as M.TokenSpec[],
@@ -298,6 +362,64 @@ export default defineComponent({
         },
         removeScheduled(s: ScheduledPayment) {
             payments.scheduled = payments.scheduled.filter(x => x.id !== s.id)
+        },
+        isDue(b: ScheduledBuy) {
+            return b.every ? b.next <= this.now : !!b.fired
+        },
+        buyWhen(b: ScheduledBuy): string {
+            if (b.every) {
+                const every = b.every === 'day' ? this.$t('buys.every_day') : this.$t(b.every === 'week' ? 'payments.every_week' : 'payments.every_month')
+                return `${every} · ${this.$t('payments.label_next', { when: this.day(b.next) })}`
+            }
+            return this.$t('buys.label_at', { symbol: b.to, price: money(b.below || 0) })
+        },
+        async loadPrices() {
+            try {
+                const [stats, fx] = await Promise.all([
+                    this.$svc.prices.stats(this.tokens.map(t => t.address || '0x0000000000000000000000000000000000000000')),
+                    this.$svc.prices.fx(prefs.currency)
+                ])
+                const out: Record<string, number> = {}
+                for (const t of this.tokens) {
+                    const st = stats[(t.address || '0x0000000000000000000000000000000000000000').toLowerCase()]
+                    if (st) out[t.symbol] = st.price * fx
+                }
+                this.prices = out
+            } catch { }
+        },
+        async newBuy() {
+            const w = this.wallet
+            if (!w) return
+            void this.loadPrices()
+            try {
+                const r = await this.$dialog<BuyDialogResult>({
+                    component: BuyDialog,
+                    symbols: this.tokens.map(t => t.symbol),
+                    currency: prefs.currency,
+                    priceOf: (symbol: string) => this.prices[symbol] ? money(this.prices[symbol]) : ''
+                })
+                const b: ScheduledBuy = {
+                    id: newId(),
+                    walletId: w.id,
+                    addressIndex: 0,
+                    from: r.from,
+                    to: r.to,
+                    amount: r.amount,
+                    every: r.every,
+                    below: r.below,
+                    currency: prefs.currency,
+                    next: Date.now()
+                }
+                payments.buys = [...payments.buys, b]
+                void syncBuyReminders(this.$t.bind(this))
+            } catch { }
+        },
+        buyNow(b: ScheduledBuy) {
+            void this.$router.push(buyRoute(b))
+        },
+        removeBuy(b: ScheduledBuy) {
+            payments.buys = payments.buys.filter(x => x.id !== b.id)
+            void syncBuyReminders(this.$t.bind(this))
         }
     }
 })

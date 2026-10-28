@@ -51,7 +51,7 @@ export type StakePosition = {
 }
 
 /** run view calls in one dry run; null for a reverted one */
-async function read(thor: Connex.Thor, calls: { to: string, f: abi.Function, args: unknown[] }[]): Promise<(abi.Decoded | null)[]> {
+export async function read(thor: Connex.Thor, calls: { to: string, f: abi.Function, args: unknown[] }[]): Promise<(abi.Decoded | null)[]> {
     if (!calls.length) return []
     const out = await thor.explain(calls.map(c => ({ to: c.to, value: 0, data: c.f.encode(...c.args) }))).execute()
     return calls.map((c, i) => {

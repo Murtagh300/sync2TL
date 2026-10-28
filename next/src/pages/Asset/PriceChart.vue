@@ -47,6 +47,16 @@
                     :class="{ 'chart-line--down': (change || 0) < 0 }"
                     vector-effect="non-scaling-stroke"
                 />
+                <!-- what you paid on average -->
+                <line
+                    v-if="costY !== null"
+                    x1="0"
+                    :x2="W"
+                    :y1="costY"
+                    :y2="costY"
+                    class="cost-line"
+                    vector-effect="non-scaling-stroke"
+                />
                 <!-- your own transfers on the line -->
                 <circle
                     v-for="(m, i) in markPoints"
@@ -73,11 +83,14 @@
             >{{$t('asset.msg_no_chart')}}</div>
         </div>
         <div
-            v-if="markPoints.length"
+            v-if="markPoints.length || costY !== null"
             class="row q-gutter-x-md text-muted legend q-mt-xs"
         >
-            <span><i class="dot mark-in-bg" /> {{$t('common.received')}}</span>
-            <span><i class="dot mark-out-bg" /> {{$t('common.sent')}}</span>
+            <template v-if="markPoints.length">
+                <span><i class="dot mark-in-bg" /> {{$t('common.received')}}</span>
+                <span><i class="dot mark-out-bg" /> {{$t('common.sent')}}</span>
+            </template>
+            <span v-if="costY !== null"><i class="dash" /> {{$t('asset.label_avg_buy_short')}}</span>
         </div>
     </div>
 </template>
@@ -93,7 +106,9 @@ export type ChartMark = { time: number, direction: '+' | '-' }
 export default defineComponent({
     props: {
         token: { type: Object as () => M.TokenSpec, required: true },
-        marks: { type: Array as () => ChartMark[], default: () => [] }
+        marks: { type: Array as () => ChartMark[], default: () => [] },
+        /** the average buy price in the chosen currency, as a dashed line; 0 for none */
+        costPrice: { type: Number, default: 0 }
     },
     data: () => ({
         W: 600,
@@ -119,7 +134,24 @@ export default defineComponent({
         span(): { t0: number, t1: number, min: number, max: number } {
             const p = this.points
             const prices = p.map(x => x.price)
+            // the buy price in view too, when it is near the range
+            const cost = this.costUsd
+            if (cost > 0 && prices.length) {
+                const lo = Math.min(...prices)
+                const hi = Math.max(...prices)
+                if (cost >= lo / 2 && cost <= hi * 2) prices.push(cost)
+            }
             return { t0: p[0]?.time || 0, t1: p[p.length - 1]?.time || 1, min: Math.min(...prices), max: Math.max(...prices) }
+        },
+        /** the buy price in USD, as the points are */
+        costUsd(): number {
+            return this.costPrice > 0 && this.fx > 0 ? this.costPrice / this.fx : 0
+        },
+        costY(): number | null {
+            const c = this.costUsd
+            const { min, max } = this.span
+            if (!c || this.points.length < 2 || c < min || c > max) return null
+            return this.y(c, min, max)
         },
         xy(): [number, number][] {
             const { t0, t1, min, max } = this.span
@@ -259,6 +291,18 @@ export default defineComponent({
 
 .legend
   font-size: 12px
+
+.cost-line
+  stroke: rgba(255, 255, 255, 0.55)
+  stroke-width: 1
+  stroke-dasharray: 5 4
+
+.dash
+  display: inline-block
+  width: 14px
+  border-top: 1px dashed rgba(255, 255, 255, 0.7)
+  vertical-align: middle
+  margin-right: 4px
 
 .dot
   display: inline-block

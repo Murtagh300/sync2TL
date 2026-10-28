@@ -8,6 +8,7 @@ import {
 import routes from './routes'
 import { installStack } from './stack'
 import { featureOn, routeFeature } from 'src/utils/remote-config'
+import { profilePathToHash } from 'src/utils/profile'
 
 export default defineRouter(function () {
     const createHistory = import.meta.env.QUASAR_SERVER
@@ -15,6 +16,12 @@ export default defineRouter(function () {
         : import.meta.env.QUASAR_VUE_ROUTER_MODE === 'history'
             ? createWebHistory
             : createWebHashHistory
+
+    // wallet.blackvemarket.com/u/name.vet: the page is the app; its route goes in the hash
+    if (typeof window !== 'undefined') {
+        const hash = profilePathToHash(window.location.pathname)
+        if (hash) window.history.replaceState(null, '', `/#${hash}`)
+    }
 
     const router = createRouter({
         scrollBehavior: () => ({ left: 0, top: 0 }),

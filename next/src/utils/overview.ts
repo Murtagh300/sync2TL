@@ -101,6 +101,22 @@ export async function feesPaid(thor: Connex.Thor, addresses: string[], txIds: st
     return { vtho, count, complete: ids.length <= cap }
 }
 
+/** the VTHO each transaction cost, for the ones these addresses paid (the first `cap` transactions) */
+export async function feesByTx(thor: Connex.Thor, addresses: string[], txIds: string[], cap = 300): Promise<{ fees: Map<string, bigint>, complete: boolean }> {
+    const own = new Set(addresses.map(a => a.toLowerCase()))
+    const ids = [...new Set(txIds.map(i => i.toLowerCase()))]
+    const fees = new Map<string, bigint>()
+    const todo = ids.slice(0, cap)
+    for (let i = 0; i < todo.length; i += 8) {
+        const batch = todo.slice(i, i + 8)
+        const receipts = await Promise.all(batch.map(id => thor.transaction(id).getReceipt().catch(() => null)))
+        receipts.forEach((r, j) => {
+            if (r && own.has(r.gasPayer.toLowerCase())) fees.set(batch[j]!, BigInt(r.paid))
+        })
+    }
+    return { fees, complete: ids.length <= cap }
+}
+
 /** the first and last moment of a month (month 0-11), local time */
 export function monthRange(year: number, month: number): [number, number] {
     return [new Date(year, month, 1).getTime(), new Date(year, month + 1, 1).getTime() - 1]

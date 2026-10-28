@@ -52,6 +52,7 @@ Storage: `node:sqlite` with recorded migrations (`src/db.ts`).
 | `GET /health`, `GET /status` | the services the wallet depends on, as JSON and as a page |
 | `GET /config` | remote config (`flags.json`, read again when it changes) |
 | `GET /push/key`, `POST /push/subscribe`, `POST /push/unsubscribe` | push for incoming transfers |
+| `POST /push/reminders` | a subscribed device's reminders (recurring buys), pushed when due |
 | `POST /errors`, `GET /errors` | opt-in, scrubbed error reports; reading needs `ADMIN_TOKEN` |
 
 - **Push watcher** (`src/push/watcher.ts`): every 10 s it reads the transfer and token-transfer logs for the

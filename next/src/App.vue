@@ -12,8 +12,10 @@ import { listen } from 'src/utils/external-url'
 import { desktop } from 'src/utils/desktop'
 import { checkAlerts, notifySystem } from 'src/utils/alerts'
 import { notify as addNotification } from 'src/utils/notifications'
-import { dueScheduled } from 'src/utils/payments'
+import { buyRoute, dueBuys, dueScheduled, payments, reachedLimits } from 'src/utils/payments'
 import { dueReminders } from 'src/utils/launch-calendar'
+import { genesises } from 'src/consts'
+import { money } from 'src/utils/prefs'
 import dayjs from 'dayjs'
 import { setNumberLocale } from 'src/utils/format'
 // import more locales here
@@ -92,6 +94,12 @@ export default defineComponent({
                 this.$q.notify({ message: text, icon: 'o_rocket_launch', timeout: 10000 })
                 notifySystem(text)
             }
+            // recurring buys that are due, and limit buys whose price came
+            for (const b of dueBuys()) {
+                const text = this.$t('buys.msg_due', { amount: `${b.amount} ${b.from}`, symbol: b.to })
+                addNotification({ id: `buy:${b.id}:${b.next}`, kind: 'alert', title: text, route: buyRoute(b) })
+            }
+            await this.checkLimitBuys()
             for (const s of dueScheduled()) {
                 addNotification({
                     id: `due:${s.id}:${s.next}`,
@@ -119,6 +127,28 @@ export default defineComponent({
                 }
             } catch (err) {
                 console.warn('alerts:', err)
+            }
+        },
+        async checkLimitBuys() {
+            const limits = payments.buys.filter(b => b.below !== null && !b.fired)
+            if (!limits.length) return
+            try {
+                const specs = (await this.$svc.config.token.all()).filter(t => t.gid === genesises.main.id)
+                const addr = (symbol: string) => symbol === 'VET' ? '0x0000000000000000000000000000000000000000' : (specs.find(t => t.symbol === symbol)?.address || '').toLowerCase()
+                const [stats, eur, usd] = await Promise.all([
+                    this.$svc.prices.stats(limits.map(b => addr(b.to))),
+                    this.$svc.prices.fx('EUR'),
+                    this.$svc.prices.fx('USD')
+                ])
+                for (const b of reachedLimits((symbol, currency) => (stats[addr(symbol)]?.price || 0) * (currency === 'EUR' ? eur : usd))) {
+                    b.fired = true
+                    const text = this.$t('buys.msg_limit', { symbol: b.to, price: money(b.below || 0), amount: `${b.amount} ${b.from}` })
+                    addNotification({ id: `buy-limit:${b.id}`, kind: 'alert', title: text, route: buyRoute(b) })
+                    this.$q.notify({ message: text, icon: 'o_trending_down', timeout: 10000, actions: [{ label: this.$t('buys.action_buy_now'), color: 'primary', handler: () => { void this.$router.push(buyRoute(b)) } }] })
+                    notifySystem(text)
+                }
+            } catch (err) {
+                console.warn('limit buys:', err)
             }
         },
         async externalSignHandlerLoop() {

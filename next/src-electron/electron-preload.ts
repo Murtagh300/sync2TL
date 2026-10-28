@@ -2,7 +2,7 @@ import { contextBridge, ipcRenderer } from 'electron'
 
 /**
  * What the desktop app adds to the page, as window.blackvaultDesktop (src/utils/desktop.ts):
- * links from dApps, updates, notifications and the tray. Nothing else of Electron or Node reaches the page.
+ * links from dApps, dApp windows, updates, notifications and the tray. Nothing else of Electron or Node reaches the page.
  */
 contextBridge.exposeInMainWorld('blackvaultDesktop', {
     platform: process.platform,
@@ -28,6 +28,10 @@ contextBridge.exposeInMainWorld('blackvaultDesktop', {
     },
     setPrefs(prefs: { keepInTray?: boolean, openAtLogin?: boolean }): Promise<void> {
         return ipcRenderer.invoke('set-desktop-prefs', prefs)
+    },
+    /** a dApp in a window of its own (its signing links come back here) */
+    openDapp(url: string) {
+        ipcRenderer.send('open-dapp', url)
     },
     /** the tray menu in the app's language */
     setLabels(labels: Record<string, string>) {

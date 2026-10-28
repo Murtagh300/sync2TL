@@ -166,6 +166,7 @@
                     :wallet-id="walletId"
                     :address-index="addressIndex"
                     :gid="wallet.gid"
+                    :signable="canSign(wallet)"
                     @total="nftTotal = $event"
                 />
             </page-content>
@@ -173,6 +174,7 @@
     </div>
 </template>
 <script lang="ts">
+import { canSign } from 'src/utils/watch'
 import { defineComponent } from 'vue'
 import TokenItem from './TokenItem.vue'
 import HeadItem from './HeadItem.vue'
@@ -251,6 +253,7 @@ export default defineComponent({
         this.tokenPrefs = await this.$svc.config.getJSON<TokenPrefs>('token-prefs', { pinned: [], hidden: [] })
     },
     methods: {
+        canSign,
         async saveTokenPrefs(p: TokenPrefs) {
             this.tokenPrefs = p
             await this.$svc.config.setJSON('token-prefs', p)

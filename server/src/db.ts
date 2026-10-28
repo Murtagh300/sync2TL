@@ -4,7 +4,7 @@ import { dirname } from 'node:path'
 
 /**
  * The server's own data, in SQLite (built into Node): push subscriptions with the addresses
- * they watch, the last block the watcher read, and opt-in error reports. Migrations run in
+ * they watch, reminders they asked for, the last block the watcher read, and opt-in error reports. Migrations run in
  * order at start and are recorded, so an upgrade never runs one twice.
  */
 
@@ -32,7 +32,19 @@ const MIGRATIONS: string[] = [
         route TEXT NOT NULL,
         version TEXT NOT NULL,
         ua TEXT NOT NULL
-    )`
+    )`,
+    // reminders a device asked for (push/reminders.ts): gone with its subscription
+    `CREATE TABLE reminders (
+        endpoint TEXT NOT NULL REFERENCES subscriptions(endpoint) ON DELETE CASCADE,
+        id TEXT NOT NULL,
+        next INTEGER NOT NULL,
+        every TEXT NOT NULL,
+        title TEXT NOT NULL,
+        body TEXT NOT NULL,
+        url TEXT NOT NULL,
+        PRIMARY KEY (endpoint, id)
+    )`,
+    `CREATE INDEX reminders_next ON reminders(next)`
 ]
 
 export function openDb(path: string): DatabaseSync {

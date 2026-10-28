@@ -12,6 +12,7 @@ import { cleanReport } from './scrub.ts'
 import { openDb } from './db.ts'
 import { createStore, MAX_WATCHED, validateSubscribe, type Subscription } from './push/store.ts'
 import { createWatcher, tokenRegistry } from './push/watcher.ts'
+import { createReminders, validateReminders } from './push/reminders.ts'
 
 /**
  * BlackVault's server. Everything here is public data or data the wallet chose to send;
@@ -32,6 +33,7 @@ import { createWatcher, tokenRegistry } from './push/watcher.ts'
 const config = loadConfig()
 const db = openDb(config.dbPath)
 const store = createStore(db)
+const reminders = createReminders(db, store)
 const flags = createFlags(config.flagsFile)
 const health = createHealth({ nodes: config.mainnetNodes, bvmUrl: config.bvmUrl, betterswapUrl: config.betterswapUrl })
 const proxy = createProxy({ betterswap: config.betterswapUrl, bvm: config.bvmUrl })
@@ -56,6 +58,9 @@ if (config.vapid) {
         }
     }
     createWatcher({ nodes: config.mainnetNodes, store, send, tokens: tokenRegistry() })
+    // reminders due: checked every minute
+    const sender = send
+    setInterval(() => { reminders.tick(sender).catch(err => console.warn('[push] reminders:', err)) }, 60 * 1000).unref()
     console.log('[push] on')
 } else {
     console.log('[push] off: set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (npm run vapid makes a pair)')
@@ -108,6 +113,18 @@ router.post('/push/subscribe', async ctx => {
     if (store.watchedCount() + valid.addresses.length > MAX_WATCHED) throw new HttpError(503, 'push is full for now')
     store.subscribe(valid.sub, valid.addresses)
     json(ctx.res, 200, { ok: true, addresses: valid.addresses.length })
+})
+router.post('/push/reminders', async ctx => {
+    if (!send) throw new HttpError(503, 'push is not set up')
+    if (!writeLimit.take(ctx.ip)) throw new HttpError(429, 'slow down')
+    let valid
+    try {
+        valid = validateReminders(await readJson(ctx.req))
+    } catch (err) {
+        throw err instanceof HttpError ? err : new HttpError(400, (err as Error).message)
+    }
+    if (!reminders.replace(valid.endpoint, valid.reminders)) throw new HttpError(404, 'not subscribed')
+    json(ctx.res, 200, { ok: true, reminders: valid.reminders.length })
 })
 router.post('/push/unsubscribe', async ctx => {
     if (!writeLimit.take(ctx.ip)) throw new HttpError(429, 'slow down')

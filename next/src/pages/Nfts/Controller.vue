@@ -45,6 +45,7 @@
                     :wallet-id="String(wallet.id)"
                     :address-index="String(index)"
                     :gid="wallet.gid"
+                    :signable="canSign(wallet)"
                 />
                 </pull-refresh>
             </template>
@@ -56,6 +57,7 @@
     </div>
 </template>
 <script lang="ts">
+import { canSign } from 'src/utils/watch'
 import { defineComponent } from 'vue'
 import PullRefresh from 'components/PullRefresh.vue'
 import PageContent from 'components/PageContent.vue'
@@ -88,6 +90,7 @@ export default defineComponent({
         wallet() { this.index = 0 }
     },
     methods: {
+        canSign,
         refresh(done: () => void) {
             const grid = this.$refs.grid as { reload?: () => Promise<void> } | undefined
             void (grid?.reload?.() || Promise.resolve()).finally(done)

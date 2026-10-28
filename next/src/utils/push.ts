@@ -176,3 +176,15 @@ export async function disableOwnPush() {
         await sub.unsubscribe()
     }
 }
+
+/** a reminder the BlackVault server pushes on a schedule (a recurring buy); the text is the device's */
+export type OwnReminder = { id: string, next: number, every: 'day' | 'week' | 'month', title: string, body: string, url: string }
+
+/** replace this device's reminders on the server; nothing when its push isn't on */
+export async function syncOwnReminders(reminders: OwnReminder[]) {
+    if (!own || (await ownPushState()) !== 'on') return
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    if (!sub) return
+    await own.post('/push/reminders', { endpoint: sub.endpoint, reminders: reminders.slice(0, 20) })
+}

@@ -29,6 +29,7 @@
                     />
                     <span class="ellipsis">{{$t('sign.label_from_site', { host: originHost })}}</span>
                 </div>
+                <risk-card :labels="risks" />
                 <simulation-card
                     v-if="changes"
                     :changes="changes"
@@ -69,6 +70,17 @@
                             <div class="text-weight-bold">{{$t('sign.title_vtho_short')}}</div>
                             <div class="text-muted">{{$t('sign.msg_vtho_short', vthoShort)}}</div>
                         </div>
+                        <!-- no VTHO needed at all: VeChain's delegator takes the fee in VET -->
+                        <q-btn
+                            v-if="feeTokens"
+                            unelevated
+                            dense
+                            no-caps
+                            color="primary"
+                            class="q-px-sm q-mr-xs"
+                            :label="$t('sign.action_pay_in_vet')"
+                            @click="feeToken = 'vet'"
+                        />
                         <q-btn
                             v-if="!isDelegation"
                             outline
@@ -80,6 +92,25 @@
                             @click="getVtho()"
                         />
                     </div>
+                    <!-- paying in VET or B3TR, and the address has too little of it -->
+                    <div
+                        v-if="tokenShort"
+                        class="bvm-tile vtho-short row no-wrap items-center q-mb-sm"
+                    >
+                        <q-icon
+                            name="o_local_gas_station"
+                            color="warning"
+                            size="22px"
+                        />
+                        <div class="col q-mx-sm">
+                            <div class="text-weight-bold">{{$t('sign.title_token_short', { symbol: tokenShort.symbol })}}</div>
+                            <div class="text-muted">{{$t('sign.msg_token_short', tokenShort)}}</div>
+                        </div>
+                    </div>
+                    <div
+                        v-if="feeQuoteFailed"
+                        class="text-negative q-px-md q-mb-sm fee-note"
+                    >{{$t('sign.msg_fee_quote_failed')}}</div>
                     <!-- short of VTHO is said above already: the general warning only for anything else -->
                     <error-tip
                         v-if="warnings.length > (energyWarning ? 1 : 0)"
@@ -89,12 +120,37 @@
                         @click="showWarnings()"
                     />
 
-                    <gas-fee-bar :fee="fee ?? undefined" :isDelegation="isDelegation">
+                    <gas-fee-bar
+                        :fee="fee ?? undefined"
+                        :isDelegation="isDelegation"
+                        :tokenFee="tokenFee"
+                    >
                         <priority-selector
+                            v-if="payToken === 'vtho'"
                             v-model:coef="gasPriceCoef"
                             :calcFee="calcFee"
                         />
                     </gas-fee-bar>
+                    <!-- the fee in VTHO, or in VET or B3TR through VeChain's delegator (mainnet) -->
+                    <div
+                        v-if="feeTokens"
+                        class="row no-wrap items-center q-px-md q-mb-sm"
+                    >
+                        <div class="text-muted fee-note q-mr-sm">{{$t('sign.label_pay_fee_in')}}</div>
+                        <q-btn-toggle
+                            v-model="feeToken"
+                            class="col fee-toggle"
+                            spread
+                            dense
+                            no-caps
+                            unelevated
+                            color="transparent"
+                            text-color="grey-5"
+                            toggle-color="primary"
+                            toggle-text-color="dark"
+                            :options="[{ value: 'vtho', label: 'VTHO' }, { value: 'vet', label: 'VET' }, { value: 'b3tr', label: 'B3TR' }]"
+                        />
+                    </div>
                     <signer-selector
                         :signer="signer"
                         :groups="signerGroups"
@@ -148,12 +204,18 @@ import { network } from 'src/utils/network'
 import SimulationCard from './SimulationCard.vue'
 import { balanceChanges, type BalanceChanges } from 'src/utils/simulate'
 import type { BVM } from 'boot/services/bvm'
+import { B3TR } from 'src/utils/ecosystem'
+import { delegate, depositAccount, maxFeeWei, quoteFee, verifyDelegated, type FeeQuote, type FeeToken } from 'src/utils/fee-token'
+import vetIcon from 'src/assets/vet.svg'
+import RiskCard from './RiskCard.vue'
+import { ageInDays, contractBornAt, riskLabels, usedContracts, type RiskLabel } from 'src/utils/risk'
+import { contractName, isKnownSwapRouter } from 'src/utils/actions'
 
 export default defineComponent({
     extends: Common,
     // the Dialog plugin listens to these
     emits: ['ok', 'hide'],
-    components: { PageToolbar, PageContent, PageAction, SignerSelector, PrioritySelector, GasFeeBar, ClauseCard, ErrorTip, SimulationCard },
+    components: { PageToolbar, PageContent, PageAction, SignerSelector, PrioritySelector, GasFeeBar, ClauseCard, ErrorTip, SimulationCard, RiskCard },
     props: {
         req: { type: Object as () => M.TxRequest, required: true }
     },
@@ -165,7 +227,16 @@ export default defineComponent({
             delayedEstimation: null as EstimateGasResult | null,
             tokens: [] as M.TokenSpec[],
             energy: null as { balance: string, fee: string } | null,
-            collections: {} as Record<string, BVM.Collection>
+            collections: {} as Record<string, BVM.Collection>,
+            /** what pays the fee; VET and B3TR go through VeChain's delegator */
+            feeToken: (prefs.feeToken || 'vtho') as FeeToken,
+            feeQuote: null as FeeQuote | null,
+            feeQuoteFailed: false,
+            /** the signer's VET or B3TR (wei), for the fee token */
+            tokenBalance: null as bigint | null,
+            /** the clauses' targets that are contracts, with their age in days (null: unknown) */
+            contracts: {} as Record<string, number | null>,
+            usedBefore: new Set<string>()
         }
     },
     computed: {
@@ -234,6 +305,59 @@ export default defineComponent({
         isDelegation(): boolean {
             return !!this.req.options.delegator
         },
+        /** VET and B3TR can pay the fee: on mainnet, when the dApp doesn't pay it already */
+        feeTokens(): boolean {
+            return this.gid === genesises.main.id && !this.isDelegation
+        },
+        /** the token that actually pays: VTHO wherever the delegator can't be used */
+        payToken(): FeeToken {
+            return this.feeTokens ? this.feeToken : 'vtho'
+        },
+        tokenFee(): { symbol: 'VET' | 'B3TR', icon: string, cost: number } | null {
+            const t = this.payToken
+            if (t === 'vtho') return null
+            const q = this.feeQuote && this.feeQuote.token === t ? this.feeQuote : null
+            const icon = t === 'vet' ? vetIcon : (this.tokens.find(x => (x.address || '').toLowerCase() === B3TR)?.iconSrc || '')
+            return { symbol: t === 'vet' ? 'VET' : 'B3TR', icon, cost: q ? q.cost : 0 }
+        },
+        /** VET or B3TR the transaction itself sends, which the fee comes on top of (wei) */
+        tokenOut(): bigint {
+            if (this.payToken === 'vet') {
+                return this.req.message.reduce((sum, c) => sum + BigInt(new BigNumber(c.value || 0).toFixed(0)), 0n)
+            }
+            const spec = this.tokens.find(x => (x.address || '').toLowerCase() === B3TR)
+            if (!spec) return 0n
+            return this.req.message.reduce((sum, c) => {
+                const r = decodeAsTokenTransferClause(c, spec)
+                return sum + (r ? BigInt(r.amount) : 0n)
+            }, 0n)
+        },
+        /** the fee token, and the address has less than the fee plus what is sent */
+        tokenShort(): { symbol: string, need: string, have: string } | null {
+            const f = this.tokenFee
+            const bal = this.tokenBalance
+            if (!f || !f.cost || bal === null) return null
+            const need = this.tokenOut + BigInt(Math.ceil(f.cost * 1e9)) * 10n ** 9n
+            if (bal >= need) return null
+            const fmt = (wei: bigint) => new BigNumber(wei.toString()).div(1e18).toFormat(2)
+            return { symbol: f.symbol, need: fmt(need), have: fmt(bal) }
+        },
+        risks(): RiskLabel[] {
+            const tokens = new Set(this.tokens.map(t => (t.address || '').toLowerCase()))
+            const known = (a: string) => !!contractName(a) || isKnownSwapRouter(a) || tokens.has(a) || !!this.collections[a]
+            return riskLabels({
+                clauses: this.req.message,
+                changes: this.changes,
+                known,
+                isToken: a => tokens.has(a),
+                contracts: this.contracts,
+                used: this.usedBefore
+            })
+        },
+        /** what a fee quote depends on */
+        feeInputs(): string {
+            return [this.payToken, this.signer, this.estimation ? this.estimation.gas : 0].join('|')
+        },
         thor(): Connex.Thor { return this.$svc.bc(this.gid).thor },
         /** the site that asks (a dApp, over WalletConnect or a link) */
         originHost(): string {
@@ -287,7 +411,7 @@ export default defineComponent({
         async energy(): Promise<{ balance: string, fee: string } | null> {
             const est = this.estimation
             const fee = this.fee
-            if (!est || !fee || (this.req.options.delegator && !this.req.options.delegator.signer)) {
+            if (!est || !fee || (this.req.options.delegator && !this.req.options.delegator.signer) || this.payToken !== 'vtho') {
                 return null
             }
             const signer = this.signer
@@ -311,7 +435,86 @@ export default defineComponent({
             return { balance: energyBalance.toFixed(0), fee }
         }
     },
+    watch: {
+        // which targets are contracts, how old, and whether this signer used them before
+        signer: {
+            async handler(signer: string) {
+                if (!signer) return
+                try {
+                    const list = await this.$svc.activity.page(500, 0)
+                    this.usedBefore = usedContracts(list, signer)
+                } catch { }
+            },
+            immediate: true
+        },
+        feeToken(t: FeeToken) {
+            prefs.feeToken = t
+        },
+        // a new quote and balance for each token, signer and estimate
+        feeInputs: {
+            async handler() {
+                const t = this.payToken
+                const est = this.estimation
+                this.feeQuoteFailed = false
+                this.tokenBalance = null
+                if (t === 'vtho' || !est) {
+                    this.feeQuote = null
+                    return
+                }
+                const signer = this.signer
+                try {
+                    const [quote, balance] = await Promise.all([
+                        quoteFee(t, signer, this.req.message),
+                        this.balanceOf(t, signer)
+                    ])
+                    // still the same question
+                    if (this.payToken === t && this.signer === signer) {
+                        this.feeQuote = quote
+                        this.tokenBalance = balance
+                    }
+                } catch {
+                    if (this.payToken === t) {
+                        this.feeQuote = null
+                        this.feeQuoteFailed = true
+                    }
+                }
+            },
+            immediate: true
+        }
+    },
+    async created() {
+        const targets = [...new Set(this.req.message.map(c => (c.to || '').toLowerCase()).filter(Boolean))]
+        try {
+            const head = this.thor.status.head.number || (await this.thor.block().get())?.number || 0
+            const nodeUrl = this.$svc.bc(this.gid).nodeUrl
+            const found: Record<string, number | null> = {}
+            await Promise.all(targets.map(async to => {
+                const acc = await this.thor.account(to).get()
+                if (!acc.hasCode) return
+                found[to] = null
+                // only what the wallet doesn't know is worth the search
+                if (contractName(to) || isKnownSwapRouter(to)) return
+                try {
+                    const born = await contractBornAt(nodeUrl, to, head)
+                    found[to] = born === null ? null : ageInDays(born, head)
+                } catch { }
+            }))
+            this.contracts = found
+        } catch {
+            // offline: no labels
+        }
+    },
     methods: {
+        async balanceOf(t: Exclude<FeeToken, 'vtho'>, who: string): Promise<bigint> {
+            if (t === 'vet') {
+                return BigInt((await this.thor.account(who).get()).balance)
+            }
+            const out = await this.thor.account(B3TR).method({
+                type: 'function', name: 'balanceOf', constant: true, payable: false, stateMutability: 'view',
+                inputs: [{ type: 'address', name: 'owner' }], outputs: [{ type: 'uint256', name: 'balance' }]
+            }).call(who)
+            return BigInt((out.decoded as { balance?: string }).balance || 0)
+        },
         /** to the swap page, VET to VTHO for this address (the transaction is dropped) */
         getVtho() {
             const w = this.wallet
@@ -371,6 +574,19 @@ export default defineComponent({
                 }
             }
 
+            const dangers = this.risks.filter(r => r.level === 'danger')
+            if (dangers.length) {
+                try {
+                    await this.$dialog({
+                        component: WarningListDialog,
+                        title: this.$t('risk.title_danger').toString(),
+                        warnings: dangers.map(r => ({ name: this.$t(`risk.${r.key}`, r.params || {}).toString(), message: '' }))
+                    })
+                } catch {
+                    return
+                }
+            }
+
             if (est.reverted) {
                 await this.$dialog({
                     component: WarningListDialog,
@@ -403,7 +619,28 @@ export default defineComponent({
 
                 return this.$loading(async () => {
                     const delegator = this.req.options.delegator
-                    if (delegator) {
+                    const payToken = this.payToken
+                    if (payToken !== 'vtho') {
+                        // VeChain's delegator adds the clause that pays it and signs as gas payer; what
+                        // comes back is checked before the user signs it
+                        try {
+                            const quote = this.feeQuote && this.feeQuote.token === payToken ? this.feeQuote : await quoteFee(payToken, signer, this.req.message)
+                            const ours: Transaction.LegacyBody = { ...txBody, reserved: { features: 1 } }
+                            const [deposit, signed] = await Promise.all([
+                                depositAccount(payToken),
+                                delegate(payToken, new Transaction({ ...ours, gas: Math.max(est.gas, quote.gas) }), signer)
+                            ])
+                            verifyDelegated(ours, signed.tx.body, { token: payToken, deposit, maxFee: maxFeeWei(quote) })
+                            tx = new Transaction(signed.tx.body)
+                            delegatorSig = signed.signature
+                        } catch (err) {
+                            this.$q.notify({
+                                type: 'negative',
+                                message: this.$t('sign.msg_fee_token_failed').toString()
+                            })
+                            throw err
+                        }
+                    } else if (delegator) {
                         tx = new Transaction({ ...txBody, reserved: { features: 1 /* VIP191 bit */ } })
                         try {
                             const resp = await this.$axios.post(delegator.url, {
@@ -472,4 +709,14 @@ export default defineComponent({
 .vtho-short
   padding: 10px 12px
   font-size: 13px
+
+.fee-note
+  font-size: 13px
+
+.fee-toggle
+  border: 1px solid $hairline-2
+  border-radius: $radius
+  :deep(.q-btn)
+    min-height: 32px
+    font-weight: 700
 </style>

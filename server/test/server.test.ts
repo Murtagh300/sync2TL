@@ -12,6 +12,7 @@ import { createRelay, KEY } from '../src/relay.ts'
 import { openDb } from '../src/db.ts'
 import { createStore, validateSubscribe } from '../src/push/store.ts'
 import { formatAmount, messagesFor, type Arrival } from '../src/push/watcher.ts'
+import { createReminders, nextAfter, validateReminders } from '../src/push/reminders.ts'
 
 const A = '0x' + 'a'.repeat(40)
 const B = '0x' + 'b'.repeat(40)
@@ -205,4 +206,40 @@ test('the relay keeps each key once, wakes a waiting reader, and forgets after 1
     assert.equal(await relay.get(id), null)
     assert.equal(relay.size(), 0)
     assert.ok(KEY.test(`${id}.accepted`) && !KEY.test(`${id}.other`) && !KEY.test('../etc'))
+})
+
+test('reminders: only the wallet’s own pages, a bounded list, plain text', () => {
+    const ok = { id: 'abc12', next: 1000, every: 'week', title: 'Tijd voor B3TR', body: '100 VET → B3TR', url: '#/swap?from=VET&to=B3TR&amt=100&buy=abc12' }
+    assert.equal(validateReminders({ endpoint: 'e', reminders: [ok] }).reminders[0]!.url, ok.url)
+    assert.throws(() => validateReminders({ endpoint: 'e', reminders: [{ ...ok, url: 'https://evil.example' }] }))
+    assert.throws(() => validateReminders({ endpoint: 'e', reminders: [{ ...ok, url: '#/swap?x=<script>' }] }))
+    assert.throws(() => validateReminders({ endpoint: 'e', reminders: [{ ...ok, every: 'hour' }] }))
+    assert.throws(() => validateReminders({ endpoint: 'e', reminders: Array(21).fill(ok) }))
+    assert.equal(validateReminders({ endpoint: 'e', reminders: [{ ...ok, title: 'a\nb'.repeat(60) }] }).reminders[0]!.title, 'a b'.repeat(60).slice(0, 80).trim())
+})
+
+test('reminders: the next time skips what was missed', () => {
+    const day = 86400000
+    const start = Date.UTC(2026, 0, 1)
+    assert.equal(nextAfter(start, 'week', start), start + 7 * day)
+    assert.equal(nextAfter(start, 'week', start + 20 * day), start + 21 * day)
+    assert.equal(nextAfter(start, 'month', start), Date.UTC(2026, 1, 1))
+})
+
+test('reminders: due ones are pushed once and set to the next time; they go with the subscription', async () => {
+    const db = openDb(':memory:')
+    const store = createStore(db)
+    const reminders = createReminders(db, store)
+    const r = { id: 'b1', next: 1000, every: 'day' as const, title: 'Buy', body: 'x', url: '#/swap' }
+    assert.equal(reminders.replace(sub.subscription.endpoint, [r]), false)
+    store.subscribe({ ...sub.subscription, lang: 'nl' }, [A])
+    assert.equal(reminders.replace(sub.subscription.endpoint, [r]), true)
+    const sent: string[] = []
+    const send = async (_s: unknown, payload: string) => { sent.push(payload) }
+    assert.equal(await reminders.tick(send, 500), 0)
+    assert.equal(await reminders.tick(send, 2000), 1)
+    assert.equal(JSON.parse(sent[0]!).url, '#/swap')
+    assert.equal(await reminders.tick(send, 3000), 0)
+    store.unsubscribe(sub.subscription.endpoint)
+    assert.equal(await reminders.tick(send, 10 * 86400000), 0)
 })

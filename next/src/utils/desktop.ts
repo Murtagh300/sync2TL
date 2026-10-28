@@ -11,6 +11,8 @@ type Desktop = {
     getPrefs(): Promise<DesktopPrefs | null>
     setPrefs(prefs: Partial<Pick<DesktopPrefs, 'keepInTray' | 'openAtLogin'>>): Promise<void>
     setLabels(labels: Record<string, string>): void
+    /** from 2.3.0: a dApp in a window of its own */
+    openDapp?(url: string): void
 }
 
 /** the tray and starting with the computer (what this system has of them) */

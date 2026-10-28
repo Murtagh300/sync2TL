@@ -15,6 +15,15 @@
             <div class="text-muted first-funds-msg">{{$t('firstFunds.msg_short')}}</div>
         </div>
         <q-btn
+            outline
+            dense
+            no-caps
+            color="primary"
+            class="q-px-sm q-mr-xs first-funds-btn"
+            :label="$t('buyVet.action_buy')"
+            @click="buy()"
+        />
+        <q-btn
             unelevated
             dense
             no-caps
@@ -29,6 +38,7 @@
 import { defineComponent } from 'vue'
 import { genesises } from 'src/consts'
 import ReceiveDialog from 'pages/Address/ReceiveDialog.vue'
+import BuyVetDialog from 'pages/Address/BuyVetDialog.vue'
 
 export default defineComponent({
     props: {
@@ -53,6 +63,9 @@ export default defineComponent({
         // the receive sheet has the QR code, copying and the VeChain-only note
         receive() {
             this.$dialog({ component: ReceiveDialog, address: this.wallet.meta.addresses[0] || '' }).catch(() => { })
+        },
+        buy() {
+            this.$dialog({ component: BuyVetDialog, address: this.wallet.meta.addresses[0] || '' }).catch(() => { })
         }
     }
 })

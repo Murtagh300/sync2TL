@@ -47,7 +47,7 @@
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { openURL } from 'src/utils/open-url'
+import { openDapp } from 'src/utils/open-url'
 import bvmIcon from 'assets/bvm-icon.png'
 // the apps' own logos, shipped with the app: their sites' favicons often don't load (or show blank)
 import vetradeIcon from 'assets/dapps/vetrade.png'
@@ -86,7 +86,7 @@ export default defineComponent({
     },
     methods: {
         open(d: Dapp) {
-            openURL(d.url)
+            openDapp(d.url)
         },
         toggle(url: string) {
             this.favs = this.favs.includes(url) ? this.favs.filter(u => u !== url) : [...this.favs, url]
