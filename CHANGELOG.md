@@ -3,7 +3,13 @@
 What changed in BlackVault, newest first. The version is `next/package.json`; what users see after
 an update comes from `next/src/changelog.ts` (keep the two in step).
 
-## Unreleased
+## 2.3.0 — 2026-10-28
+
+**UI polish**
+- Home in one or two columns on a computer; slim tips; watch-only wallets marked; one wallet name.
+- NFTs: one portfolio value, card numbers never cut off, for-sale and floor tags, equal listing buttons.
+- Activity: a segmented filter and one Filter menu, token logos and NFT images, "Minted".
+- Sentence-case labels, at most 2 decimals from 1,000, notices above the tab bar, one button system.
 
 **What top wallets do, now in BlackVault**
 - The fee in VET or B3TR instead of VTHO, through VeChain's generic delegator (VIP-194, as VeWorld):

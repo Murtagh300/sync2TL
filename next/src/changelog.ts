@@ -12,6 +12,46 @@ export type Release = {
 }
 
 export const releases: Release[] = [{
+    version: '2.3.0',
+    date: '2026-10-28',
+    items: {
+        en: [
+            'Pay the fee in VET or B3TR instead of VTHO, and see a warning before signing for a brand-new contract or tokens sent where they are lost.',
+            'Buy VET with a card or iDEAL, and set buys on a schedule or at a price: BlackVault reminds you and fills in the swap.',
+            'Discover the X2Earn apps of this round and what each paid you; a public profile page with a Pay me button.',
+            'Your average buy price on the token chart, and a tax export of a year for Koinly and other tools.',
+            'A calmer look everywhere, home in one or two columns on a computer, and dApps in a window of their own in the desktop app.'
+        ],
+        nl: [
+            'Betaal de fee in VET of B3TR in plaats van VTHO, en zie een waarschuwing vóór het ondertekenen bij een gloednieuw contract of tokens die verloren gaan.',
+            'Koop VET met een kaart of iDEAL, en plan aankopen op een vast moment of bij een prijs: BlackVault herinnert je en vult de swap in.',
+            'Ontdek de X2Earn-apps van deze ronde en wat elk jou betaalde; een openbare profielpagina met een Betaal mij-knop.',
+            'Je gemiddelde aankoopprijs in de koersgrafiek, en een belastingexport van een jaar voor Koinly en andere tools.',
+            'Overal een rustiger uiterlijk, home in één of twee kolommen op een computer, en dApps in een eigen venster in de desktop-app.'
+        ],
+        de: [
+            'Zahle die Gebühr in VET oder B3TR statt VTHO, und sieh vor dem Unterschreiben eine Warnung bei einem brandneuen Vertrag oder Token, die verloren gehen.',
+            'Kaufe VET mit Karte oder iDEAL, und plane Käufe nach Zeit oder Preis: BlackVault erinnert dich und füllt den Swap aus.',
+            'Entdecke die X2Earn-Apps dieser Runde und was jede dir gezahlt hat; eine öffentliche Profilseite mit Bezahl-mich-Knopf.',
+            'Dein durchschnittlicher Kaufpreis im Kursdiagramm, und ein Steuerexport eines Jahres für Koinly und andere Tools.',
+            'Überall ein ruhigeres Aussehen, Home in einer oder zwei Spalten am Computer, und dApps in einem eigenen Fenster der Desktop-App.'
+        ],
+        fr: [
+            'Payez les frais en VET ou B3TR au lieu de VTHO, et voyez un avertissement avant de signer pour un contrat tout neuf ou des jetons qui seraient perdus.',
+            'Achetez du VET par carte ou iDEAL, et planifiez des achats à date fixe ou à un prix : BlackVault vous le rappelle et remplit le swap.',
+            'Découvrez les apps X2Earn de la manche et ce que chacune vous a payé ; une page de profil publique avec un bouton Me payer.',
+            'Votre prix d’achat moyen sur le graphique du jeton, et un export fiscal d’une année pour Koinly et d’autres outils.',
+            'Un look plus calme partout, l’accueil en une ou deux colonnes sur ordinateur, et les dApps dans leur propre fenêtre dans l’app de bureau.'
+        ],
+        zh: [
+            '可用 VET 或 B3TR 代替 VTHO 支付手续费；签名前遇到新合约或会丢失代币的操作时会给出警告。',
+            '可用银行卡或 iDEAL 购买 VET，并可按时间或价格计划买入：BlackVault 会提醒你并填好兑换。',
+            '发现本轮 X2Earn 应用及其向你支付的金额；公开主页带“向我付款”按钮。',
+            '代币走势图显示你的平均买入价；可导出一年的税务数据，适用于 Koinly 等工具。',
+            '整体界面更简洁，电脑上首页可选一栏或两栏，桌面应用中 dApp 在独立窗口打开。'
+        ]
+    }
+}, {
     version: '2.2.1',
     date: '2026-10-27',
     items: {
