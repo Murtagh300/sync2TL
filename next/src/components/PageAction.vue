@@ -9,6 +9,10 @@
 .bar > * {
     width: 42%;
 }
+/* the page's main action: the tallest button in the app */
+.bar > .q-btn {
+    min-height: 52px;
+}
 /* a single action takes the whole row */
 .bar > *:only-child {
     width: 100%;

@@ -78,6 +78,7 @@ export default {
         action_import: 'Ich habe schon eine Wallet'
     },
     index: {
+        msg_backup_short: 'Sichere diese Wallet: Ohne Wiederherstellungswörter lässt sie sich nicht wiederherstellen.',
         action_new_address: 'Adresse hinzufügen',
         action_backup: 'Sichern',
         action_rename: 'Umbenennen',
@@ -171,6 +172,9 @@ export default {
         action_receive: 'Empfangen'
     },
     nft: {
+        msg_watch_only: 'Nur ansehen: Diese Wallet kann nicht signieren, also nicht listen, senden oder kaufen.',
+        label_floor_short: 'Floor {price}',
+        label_for_sale: 'Zu verkaufen',
         label_search: 'Deine NFTs durchsuchen: Name, Kollektion oder #Nummer',
         msg_no_match: 'Kein NFT passt zu „{q}“',
         action_clear_search: 'Suche löschen',
@@ -238,6 +242,7 @@ export default {
         msg_not_owner: 'Diese Adresse besitzt dieses NFT nicht mehr.'
     },
     market: {
+        action_unlist_short: 'Zurückziehen',
         action_list: 'Zum Verkauf anbieten',
         action_reprice: 'Preis ändern',
         action_cancel_listing: 'Angebot beenden',
@@ -263,6 +268,7 @@ export default {
         msg_no_more: 'Das war alles'
     },
     send: {
+        msg_known_as: 'Bekannt als {name}',
         action_add_extras: 'Nachricht oder Notiz hinzufügen',
         action_receive: 'Empfangen',
         msg_empty: 'Auf dieser Adresse ist noch kein {sym}. Empfange zuerst etwas.',
@@ -368,6 +374,10 @@ export default {
         action_swap_anyway: 'Trotzdem tauschen'
     },
     home: {
+        layout_wide: 'Zwei Spalten',
+        layout_compact: 'Eine Spalte',
+        action_explorer: 'Explorer',
+        action_copy: 'Kopieren',
         label_all_wallets: 'Alle Wallets',
         label_wallet_count: '{n} Wallets',
         label_total: 'Gesamtwert',
@@ -649,6 +659,9 @@ export default {
         msg_how: 'Eine Transaktion, die VET oder VVET sendet und einen Token hereinbringt, ist ein Kauf, umgekehrt ein Verkauf, zum Durchschnittspreis. Mit anderen Tokens gekaufte Tokens zählen nicht. Geldbeträge zum heutigen VET-Kurs.'
     },
     activityFilter: {
+        label_token: 'Token',
+        label_period: 'Zeitraum',
+        action_filter: 'Nach Zeitraum und Token filtern',
         placeholder: 'Suchen: Name, Betrag, Notiz, 0x…',
         kind_all: 'Alle',
         kind_in: 'Eingang',
@@ -1110,6 +1123,7 @@ export default {
         msg_share_request: 'Bitte sende mir {amount} {symbol}'
     },
     activities: {
+        label_minted: 'Gemintet: {what}',
         title: 'Aktivität',
         title_signed_content: 'Was du signiert hast',
         label_sent_vet: '{amount} VET senden',
@@ -1255,9 +1269,8 @@ export default {
         msg_auth_failed: 'Nicht erkannt. Versuche es erneut.'
     },
     firstFunds: {
-        action_copy: 'Adresse kopieren',
-        action_receive: 'QR-Code zeigen',
-        msg: 'Sende VET oder Tokens von einer Börse (etwa Bitvavo, Binance oder Coinbase) oder einer anderen Wallet an deine Adresse. Wähle beim Abheben das VeChain-Netzwerk.',
+        msg_short: 'Von einer Börse oder Wallet, über das VeChain-Netzwerk.',
+        action_receive: 'Empfangen',
         title: 'Lege deine ersten VET darauf',
     },
     desktopApp: {

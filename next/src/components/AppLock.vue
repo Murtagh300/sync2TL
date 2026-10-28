@@ -7,7 +7,7 @@
             aria-modal="true"
         >
             <img
-                src="~assets/bvm-logo.png"
+                src="~assets/bvm-logo-small.png"
                 alt="BVM"
                 class="lock-logo"
             >

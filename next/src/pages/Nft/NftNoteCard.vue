@@ -21,19 +21,23 @@
             :placeholder="$t('nftNotes.placeholder')"
             @blur="save()"
         />
-        <div class="row q-gutter-xs q-mt-sm">
-            <q-chip
+        <!-- labels as roomy toggles: a check when on -->
+        <div class="note-labels q-mt-sm">
+            <button
                 v-for="l in labelOptions"
                 :key="l"
-                clickable
-                dense
-                :outline="!note.labels.includes(l)"
-                :color="note.labels.includes(l) ? 'primary' : undefined"
-                :text-color="note.labels.includes(l) ? 'dark' : undefined"
+                type="button"
+                class="note-label"
+                :class="{ 'note-label--on': note.labels.includes(l) }"
                 :aria-pressed="note.labels.includes(l)"
-                class="q-ma-none q-mr-xs"
                 @click="toggleLabel(l)"
-            >{{l}}</q-chip>
+            >
+                <q-icon
+                    v-if="note.labels.includes(l)"
+                    name="check"
+                    size="14px"
+                />{{l}}
+            </button>
         </div>
     </div>
 </template>
@@ -81,4 +85,31 @@ export default defineComponent({
 <style lang="sass" scoped>
 .nft-note :deep(.q-field__native)
   font-size: 14px
+
+.note-labels
+  display: flex
+  flex-wrap: wrap
+  gap: 8px
+
+.note-label
+  display: inline-flex
+  align-items: center
+  gap: 4px
+  min-height: 34px
+  padding: 0 14px
+  border-radius: 999px
+  border: 1px solid $hairline-2
+  background: rgba(255, 255, 255, 0.03)
+  color: $text-soft
+  font: inherit
+  font-size: 13px
+  font-weight: 700
+  cursor: pointer
+  &:hover
+    border-color: rgba(255, 255, 255, 0.28)
+
+.note-label--on
+  border-color: var(--q-primary)
+  background: color-mix(in srgb, var(--q-primary) 14%, transparent)
+  color: var(--q-primary)
 </style>

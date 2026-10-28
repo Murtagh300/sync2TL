@@ -1,7 +1,7 @@
 <template>
     <div class="fit column no-wrap">
         <page-toolbar
-            :title="nft ? nft.collection : $t('nft.label_nfts')"
+            :title="nft ? '' : $t('nft.label_nfts')"
             :gid="wallet?.gid"
         >
             <q-btn
@@ -172,23 +172,25 @@
                             v-else
                             class="row no-wrap q-gutter-x-sm"
                         >
+                            <!-- two equal buttons: same height, an icon each, one line each -->
                             <q-btn
-                                class="col"
+                                class="col pair-btn"
                                 unelevated
                                 no-caps
-                                size="lg"
+                                no-wrap
                                 color="primary"
                                 icon="o_edit"
                                 :label="$t('market.action_reprice')"
                                 @click="reprice()"
                             />
                             <q-btn
-                                class="col"
+                                class="col pair-btn"
                                 outline
                                 no-caps
-                                size="lg"
+                                no-wrap
                                 color="negative"
-                                :label="$t('market.action_cancel_listing')"
+                                icon="o_remove_shopping_cart"
+                                :label="$t('market.action_unlist_short')"
                                 @click="cancelListing()"
                             />
                         </div>
@@ -214,7 +216,7 @@
                         />
                     </template>
                     <q-btn
-                        v-if="isOwner"
+                        v-if="isOwner && signable"
                         :unelevated="!(isOwner && tradable)"
                         :outline="isOwner && tradable"
                         no-caps
@@ -226,7 +228,12 @@
                         @click="send()"
                     />
                     <div
-                        v-if="sendBlock"
+                        v-if="!signable"
+                        class="text-muted text-center"
+                        style="font-size: 13px"
+                    >{{$t('nft.msg_watch_only')}}</div>
+                    <div
+                        v-else-if="sendBlock"
                         class="text-muted text-center"
                         style="font-size: 13px"
                     >{{sendBlock}}</div>
@@ -337,6 +344,7 @@ import NftTraits from './NftTraits.vue'
 import NftDetails, { type NftPnl } from './NftDetails.vue'
 import { listingSuggestions } from 'src/utils/pricing'
 import { haptic, prefs } from 'src/utils/prefs'
+import { canSign } from 'src/utils/watch'
 import type { BVM } from 'boot/services/bvm'
 
 // one NFT of the address, from the BlackVeMarket index; it can be sent from here
@@ -399,8 +407,12 @@ export default defineComponent({
             // a listed NFT shows its seller; BlackVeMarket leaves the owner empty for some collections
             return (nft.owner || '').toLowerCase() === me || (!!nft.listed && (nft.seller || '').toLowerCase() === me)
         },
+        /** a watch-only wallet signs nothing: no buttons that would only fail */
+        signable(): boolean {
+            return canSign(this.wallet)
+        },
         tradable(): boolean {
-            return !!this.nft && canTrade(this.nft)
+            return !!this.nft && canTrade(this.nft) && this.signable
         },
         offers(): BVM.Offer[] {
             return (this.nft?.offers || []).filter(o => !!o && !!o.amount)
@@ -722,4 +734,8 @@ export default defineComponent({
   line-height: 1.55
   max-width: 60ch
 
+
+.pair-btn
+  min-height: 52px
+  font-size: 15px
 </style>

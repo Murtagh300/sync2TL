@@ -78,6 +78,7 @@ export default {
         action_import: 'J’ai déjà un portefeuille'
     },
     index: {
+        msg_backup_short: 'Sauvegardez ce portefeuille : sans ses mots de récupération, impossible de le restaurer.',
         action_new_address: 'Ajouter une adresse',
         action_backup: 'Sauvegarder',
         action_rename: 'Renommer',
@@ -171,6 +172,9 @@ export default {
         action_receive: 'Recevoir'
     },
     nft: {
+        msg_watch_only: 'Lecture seule : ce portefeuille ne peut pas signer, donc ni mettre en vente, ni envoyer, ni acheter.',
+        label_floor_short: 'Floor {price}',
+        label_for_sale: 'En vente',
         label_search: 'Chercher dans vos NFT : nom, collection ou #numéro',
         msg_no_match: 'Aucun NFT ne correspond à « {q} »',
         action_clear_search: 'Effacer la recherche',
@@ -238,6 +242,7 @@ export default {
         msg_not_owner: 'Cette adresse ne détient plus ce NFT.'
     },
     market: {
+        action_unlist_short: 'Retirer',
         action_list: 'Mettre en vente',
         action_reprice: 'Changer le prix',
         action_cancel_listing: 'Retirer de la vente',
@@ -263,6 +268,7 @@ export default {
         msg_no_more: 'C’est tout'
     },
     send: {
+        msg_known_as: 'Connu comme {name}',
         action_add_extras: 'Ajouter un message ou une note',
         action_receive: 'Recevoir',
         msg_empty: 'Il n\'y a pas encore de {sym} sur cette adresse. Recevez-en d\'abord.',
@@ -368,6 +374,10 @@ export default {
         action_swap_anyway: 'Échanger quand même'
     },
     home: {
+        layout_wide: 'Deux colonnes',
+        layout_compact: 'Une colonne',
+        action_explorer: 'Explorateur',
+        action_copy: 'Copier',
         label_all_wallets: 'Tous les portefeuilles',
         label_wallet_count: '{n} portefeuilles',
         label_total: 'Valeur totale',
@@ -649,6 +659,9 @@ export default {
         msg_how: 'Une transaction qui envoie du VET ou du VVET et fait entrer un token est un achat, l’inverse une vente, au coût moyen. Les tokens achetés avec d’autres tokens ne sont pas comptés. Montants au cours du VET du jour.'
     },
     activityFilter: {
+        label_token: 'Token',
+        label_period: 'Période',
+        action_filter: 'Filtrer par période et token',
         placeholder: 'Rechercher : nom, montant, note, 0x…',
         kind_all: 'Tout',
         kind_in: 'Entrées',
@@ -1110,6 +1123,7 @@ export default {
         msg_share_request: 'Merci de m’envoyer {amount} {symbol}'
     },
     activities: {
+        label_minted: 'Minté : {what}',
         title: 'Activité',
         title_signed_content: 'Ce que vous avez signé',
         label_sent_vet: 'Envoyer {amount} VET',
@@ -1255,9 +1269,8 @@ export default {
         msg_auth_failed: 'Non reconnu. Réessayez.'
     },
     firstFunds: {
-        action_copy: 'Copier l\'adresse',
-        action_receive: 'Afficher le QR code',
-        msg: 'Envoyez des VET ou des tokens à votre adresse depuis une plateforme (comme Bitvavo, Binance ou Coinbase) ou un autre portefeuille. Au retrait, choisissez le réseau VeChain.',
+        msg_short: 'Depuis une plateforme ou un portefeuille, sur le réseau VeChain.',
+        action_receive: 'Recevoir',
         title: 'Déposez vos premiers VET',
     },
     desktopApp: {

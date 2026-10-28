@@ -78,6 +78,7 @@ export default {
         action_import: '我已有钱包'
     },
     index: {
+        msg_backup_short: '请备份此钱包：没有助记词将无法恢复。',
         action_new_address: '新建地址',
         action_backup: '备份',
         action_rename: '重命名钱包',
@@ -170,6 +171,9 @@ export default {
         action_receive: '接收'
     },
     nft: {
+        msg_watch_only: '仅查看：此钱包无法签名，因此不能上架、发送或购买。',
+        label_floor_short: '地板价 {price}',
+        label_for_sale: '出售中',
         label_search: '搜索你的 NFT：名称、合集或 #编号',
         msg_no_match: '没有与“{q}”匹配的 NFT',
         action_clear_search: '清除搜索',
@@ -237,6 +241,7 @@ export default {
         msg_not_owner: '该地址已不再持有此 NFT。'
     },
     market: {
+        action_unlist_short: '下架',
         action_list: '挂售',
         action_reprice: '修改价格',
         action_cancel_listing: '取消挂售',
@@ -262,6 +267,7 @@ export default {
         msg_no_more: '- 完 - '
     },
     send: {
+        msg_known_as: '名称：{name}',
         action_add_extras: '添加消息或备注',
         action_receive: '接收',
         msg_empty: '此地址还没有 {sym}。请先接收一些。',
@@ -367,6 +373,10 @@ export default {
         action_swap_anyway: '仍然兑换'
     },
     home: {
+        layout_wide: '双栏',
+        layout_compact: '单栏',
+        action_explorer: '浏览器',
+        action_copy: '复制',
         label_all_wallets: '全部钱包',
         label_wallet_count: '{n} 个钱包',
         label_total: '总价值',
@@ -648,6 +658,9 @@ export default {
         msg_how: '发送 VET 或 VVET 并转入代币的交易视为买入，反之为卖出，按平均成本计算。用其他代币买入的不计入。金额按今日 VET 价格计算。'
     },
     activityFilter: {
+        label_token: '代币',
+        label_period: '时间',
+        action_filter: '按时间和代币筛选',
         placeholder: '搜索：名称、金额、备注、0x…',
         kind_all: '全部',
         kind_in: '收入',
@@ -1109,6 +1122,7 @@ export default {
         msg_share_request: '请向我转账 {amount} {symbol}'
     },
     activities: {
+        label_minted: '已铸造：{what}',
         title: '操作记录',
         title_signed_content: '已签内容',
         label_sent_vet: '发送 {amount} VET',
@@ -1254,9 +1268,8 @@ export default {
         msg_auth_failed: '身份验证失败,请重试'
     },
     firstFunds: {
-        action_copy: '复制地址',
-        action_receive: '显示二维码',
-        msg: '从交易所（如 Bitvavo、Binance 或 Coinbase）或其他钱包向你的地址发送 VET 或代币。提现时请选择 VeChain 网络。',
+        msg_short: '从交易所或钱包，通过 VeChain 网络转入。',
+        action_receive: '接收',
         title: '存入你的第一笔 VET',
     },
     desktopApp: {

@@ -78,6 +78,7 @@ export default {
         action_import: 'Ik heb al een wallet'
     },
     index: {
+        msg_backup_short: 'Maak een back-up: zonder herstelwoorden kun je deze wallet niet herstellen.',
         action_new_address: 'Adres toevoegen',
         action_backup: 'Back-up maken',
         action_rename: 'Naam wijzigen',
@@ -171,6 +172,9 @@ export default {
         action_receive: 'Ontvangen'
     },
     nft: {
+        msg_watch_only: 'Alleen kijken: deze wallet kan niet ondertekenen, dus niet listen, versturen of kopen.',
+        label_floor_short: 'Floor {price}',
+        label_for_sale: 'Te koop',
         label_search: 'Zoek in je NFT\'s: naam, collectie of #nummer',
         msg_no_match: 'Geen NFT gevonden voor “{q}”',
         action_clear_search: 'Zoekopdracht wissen',
@@ -238,6 +242,7 @@ export default {
         msg_not_owner: 'Dit adres heeft deze NFT niet meer.'
     },
     market: {
+        action_unlist_short: 'Uit verkoop',
         action_list: 'Te koop zetten',
         action_reprice: 'Prijs wijzigen',
         action_cancel_listing: 'Uit de verkoop halen',
@@ -263,6 +268,7 @@ export default {
         msg_no_more: 'Dat was alles'
     },
     send: {
+        msg_known_as: 'Bekend als {name}',
         action_add_extras: 'Bericht of notitie toevoegen',
         action_receive: 'Ontvangen',
         msg_empty: 'Er staat nog geen {sym} op dit adres. Ontvang eerst iets.',
@@ -368,6 +374,10 @@ export default {
         action_swap_anyway: 'Toch swappen'
     },
     home: {
+        layout_wide: 'Twee kolommen',
+        layout_compact: 'Eén kolom',
+        action_explorer: 'Verkenner',
+        action_copy: 'Kopiëren',
         label_all_wallets: 'Alle wallets',
         label_wallet_count: '{n} wallets',
         label_total: 'Totale waarde',
@@ -649,6 +659,9 @@ export default {
         msg_how: 'Een transactie die VET of VVET verstuurt en een token binnenbrengt is een aankoop, andersom een verkoop, tegen gemiddelde kostprijs. Tokens gekocht met andere tokens tellen niet mee. Bedragen tegen de VET-koers van vandaag.'
     },
     activityFilter: {
+        label_token: 'Token',
+        label_period: 'Periode',
+        action_filter: 'Filter op periode en token',
         placeholder: 'Zoeken: naam, bedrag, notitie, 0x…',
         kind_all: 'Alles',
         kind_in: 'Binnen',
@@ -1110,6 +1123,7 @@ export default {
         msg_share_request: 'Stuur me alsjeblieft {amount} {symbol}'
     },
     activities: {
+        label_minted: 'Gemint: {what}',
         title: 'Activiteit',
         title_signed_content: 'Wat je tekende',
         label_sent_vet: '{amount} VET verzenden',
@@ -1255,9 +1269,8 @@ export default {
         msg_auth_failed: 'Niet herkend. Probeer het opnieuw.'
     },
     firstFunds: {
-        action_copy: 'Adres kopiëren',
-        action_receive: 'QR-code tonen',
-        msg: 'Stuur VET of tokens naar je adres vanaf een exchange (zoals Bitvavo, Binance of Coinbase) of een andere wallet. Kies bij het opnemen het VeChain-netwerk.',
+        msg_short: 'Vanaf een exchange of wallet, via het VeChain-netwerk.',
+        action_receive: 'Ontvangen',
         title: 'Zet je eerste VET erop',
     },
     desktopApp: {

@@ -4,7 +4,7 @@
         v-if="wallet"
     >
         <page-toolbar
-            :title="$t('asset.title')"
+            :title="token ? token.name : $t('asset.title')"
             :gid="wallet.gid"
         />
         <page-content>
@@ -17,9 +17,19 @@
                     :token="token"
                     :balance="data"
                 >
-                    <div class="text-weight-bold">{{token.name}}</div>
-                    <div class="text-muted ellipsis" style="font-size: 12px">
-                        {{wallet.meta.name}} · <address-label :addr="address" />
+                    <div class="text-weight-bold">{{token.symbol}}</div>
+                    <!-- the wallet's name may shorten; the address never does -->
+                    <div
+                        class="text-muted row no-wrap items-center asset-owner"
+                    >
+                        <span class="ellipsis">{{wallet.meta.name}}</span>
+                        <span class="q-mx-xs">·</span>
+                        <address-label
+                            compact
+                            no-icon
+                            class="asset-address"
+                            :addr="address"
+                        />
                     </div>
                     <template #balance>
                         <div class="asset-balance bvm-display ellipsis">
@@ -28,9 +38,14 @@
                                 :decimals="token.decimals"
                             >--.--</amount-label>
                         </div>
-                        <div class="asset-symbol">{{token.symbol}}</div>
+                        <div class="asset-symbol">
+                            {{token.symbol}}<template v-if="unitPrice"> · <span class="bvm-amount">{{money(units(data) * unitPrice)}}</span></template>
+                        </div>
                     </template>
-                    <template #action>
+                    <template
+                        v-if="signable"
+                        #action
+                    >
                         <q-btn
                             unelevated
                             no-caps
@@ -82,6 +97,9 @@ import PriceChart, { type ChartMark } from './PriceChart.vue'
 import TokenInfo from './TokenInfo.vue'
 import { genesises } from 'src/consts'
 import type { TransferLogItem } from './models'
+import { BigNumber } from 'bignumber.js'
+import { money, prefs } from 'src/utils/prefs'
+import { canSign } from 'src/utils/watch'
 export default defineComponent({
     components: {
         TokenInfo,
@@ -99,6 +117,8 @@ export default defineComponent({
             showQR: false,
             mainGid: genesises.main.id,
             marks: [] as ChartMark[],
+            /** the price of one token in the chosen currency; 0 when unknown */
+            unitPrice: 0,
             // async computed (see src/shims-async-computed.d.ts)
             wallet: null as M.Wallet | null,
             token: null as M.TokenSpec | null
@@ -126,7 +146,24 @@ export default defineComponent({
             default: null
         }
     },
+    watch: {
+        token: {
+            async handler(t: M.TokenSpec | null) {
+                this.unitPrice = 0
+                if (!t || !this.$svc.bvm.supports(t.gid)) return
+                const [stats, fx] = await Promise.all([this.$svc.prices.stats([t.address]).catch(() => ({})), this.$svc.prices.fx(prefs.currency)])
+                const s = (stats as Record<string, { price: number }>)[(t.address || '0x0000000000000000000000000000000000000000').toLowerCase()]
+                this.unitPrice = s ? s.price * fx : 0
+            },
+            immediate: true
+        }
+    },
     methods: {
+        money,
+        /** a balance in whole tokens, for its value */
+        units(balance: string): number {
+            return this.token ? new BigNumber(balance || '0').div(new BigNumber(10).pow(this.token.decimals)).toNumber() : 0
+        },
         onLogs(logs: TransferLogItem[]) {
             this.marks = logs.map(l => ({ time: l.meta.blockTimestamp * 1000, direction: l.direction }))
         }
@@ -138,6 +175,10 @@ export default defineComponent({
         },
         address(): string {
             return this.wallet ? (this.wallet.meta.addresses[parseInt(this.addressIndex)] ?? '') : ''
+        },
+        /** a watch-only wallet can't send */
+        signable(): boolean {
+            return canSign(this.wallet)
         }
     }
 })
@@ -145,6 +186,13 @@ export default defineComponent({
 <style lang="sass" scoped>
 .asset-balance
   font-size: clamp(40px, 12vw, 56px)
+
+.asset-owner
+  font-size: 12px
+  min-width: 0
+
+.asset-address
+  flex: none
 
 .asset-symbol
   margin-top: 4px

@@ -196,6 +196,7 @@
                         :favorite="isFavoriteNft(nft)"
                         :hidden-tag="hiddenTag(nft)"
                         :label="labelOf(nft)"
+                        :floor="floorOf(nft)"
                     />
                 </a>
             </router-link>
@@ -311,7 +312,7 @@ import { address as addressUtil } from 'thor-devkit'
 import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
 import ListDialog, { type ListResult } from 'pages/Nft/ListDialog.vue'
 import { canTrade, listClauses, listingCurrencies, sendClauses, signMarketTx } from 'src/utils/market'
-import { toWei } from 'src/utils/format'
+import { fixed, toWei } from 'src/utils/format'
 import { readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 import { navigateWithHero } from 'src/utils/hero'
 import { loadNotes, noteOf, type NftNotes } from 'src/utils/nft-notes'
@@ -326,6 +327,9 @@ import { haptic } from 'src/utils/prefs'
 import SuccessDialog from 'components/SuccessDialog.vue'
 import RecipientCheckDialog from 'pages/Send/RecipientCheckDialog.vue'
 import { findLookalike, isKnownRecipient, rememberRecipient } from 'src/utils/recipient'
+
+// a floor as on the cards: whole numbers from 100 up, else two decimals
+const formatFloor = (v: number) => fixed(v, v >= 100 || Number.isInteger(v) ? 0 : 2)
 
 // one transaction carries at most this many NFTs, as on blackvemarket.com
 const MAX_BATCH = 30
@@ -476,6 +480,11 @@ export default defineComponent({
             const { prefs, favorite } = await toggleFavorite(this.$svc, nft)
             this.hiddenPrefs = prefs
             haptic(favorite ? 'success' : 'tap')
+        },
+        /** the collection's floor as text ("3 B3TR"), for a card that isn't for sale */
+        floorOf(nft: BVM.NFT): string {
+            const c = this.collections.find(x => x.slug === nft.collectionSlug)
+            return c && c.floorAmount != null && c.floorCurrency ? `${formatFloor(c.floorAmount)} ${c.floorCurrency}` : ''
         },
         labelOf(nft: BVM.NFT): string {
             const n = noteOf(this.notes, nft)
@@ -667,7 +676,7 @@ export default defineComponent({
 
 .chip
   flex: none
-  max-width: 200px
+  max-width: 280px
   gap: 6px
   padding: 6px 10px
   border-radius: 999px
@@ -687,8 +696,8 @@ export default defineComponent({
   background: color-mix(in srgb, var(--q-primary) 08%, transparent)
 
 .chip-image
-  width: 18px
-  height: 18px
+  width: 22px
+  height: 22px
   border-radius: 4px
   object-fit: cover
 

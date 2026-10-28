@@ -18,9 +18,11 @@
             class="col"
             innerClass="fit column"
         >
+            <!-- the label stays on top: the suggested name arrives a moment later -->
             <q-input
                 bottom-slots
                 outlined
+                stack-label
                 :label="$t('newWallet.label_wallet_name')"
                 v-model="name"
                 :error="!!error"

@@ -17,7 +17,7 @@
             >
                 <div class="row items-center no-wrap">
                     <img
-                        src="~assets/bvm-logo.png"
+                        src="~assets/bvm-logo-small.png"
                         alt="BVM"
                         class="wizard-logo"
                     >

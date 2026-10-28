@@ -11,7 +11,8 @@
         v-model.lazy="to"
         spellcheck="false"
         :loading="resolving"
-        :hint="resolvedFrom ? $t('send.msg_resolved', { name: resolvedFrom }) : undefined"
+        :hint="resolvedFrom ? $t('send.msg_resolved', { name: resolvedFrom }) : knownName ? $t('send.msg_known_as', { name: knownName }) : undefined"
+        :input-class="isAddress(to) ? 'to-address' : ''"
         :error="!!vetError || $attrs.error === true"
         :error-message="vetError || ($attrs['error-message'] as string)"
     >
@@ -72,7 +73,7 @@ import { AddressGroup } from './models'
 import AddressItem from './AddressItem.vue'
 import QrScannerDialog from 'pages/QrScannerDialog'
 import { QrScanner } from 'src/utils/qr-scanner'
-import { isVetName, resolveVetName } from 'src/utils/names'
+import { isVetName, nameOf, resolveVetName } from 'src/utils/names'
 import { parsePaymentRequest } from 'src/utils/payment-request'
 
 export default defineComponent({
@@ -122,6 +123,12 @@ export default defineComponent({
             this.$emit('update:address', v)
         }
     },
+    computed: {
+        /** the name this address goes by (a contact, a wallet, a .vet name) */
+        knownName(): string {
+            return this.isAddress(this.to) ? nameOf(this.to) : ''
+        }
+    },
     methods: {
         isAddress: address.test,
         async resolve(name: string) {
@@ -162,3 +169,10 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass">
+// a whole address fits the field: smaller, even-width digits
+.to-address
+  font-size: 12px !important
+  font-variant-numeric: tabular-nums
+  letter-spacing: -0.01em
+</style>

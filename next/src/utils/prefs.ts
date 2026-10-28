@@ -25,6 +25,8 @@ type Prefs = {
     autoLockMinutes: number
     /** text size, 1 = normal */
     textScale: number
+    /** home on a computer: two columns or one */
+    homeLayout: 'wide' | 'compact'
     highContrast: boolean
     /** an NFT image behind the home screen ('' for none) */
     homeBackground: string
@@ -41,7 +43,7 @@ type Prefs = {
 const KEY = 'bv-prefs'
 
 function load(): Prefs {
-    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true, errorReports: false }
+    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, homeLayout: 'wide', highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true, errorReports: false }
     try {
         return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') as Partial<Prefs> }
     } catch {

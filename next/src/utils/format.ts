@@ -94,11 +94,17 @@ export function formatAmount(val: BigNumber.Value, opts?: FormatAmountOptions): 
     }
 }
 
-/** an amount in a token's smallest unit as text: up to 4 decimals, trailing zeros dropped */
+/**
+ * An amount in a token's smallest unit as text: up to 4 decimals (2 from a thousand up, where more
+ * digits are noise: "18.734,92"), trailing zeros dropped.
+ */
 export function formatUnits(val: bigint | string, decimals: number, maxDecimals = 4): string {
     const bn = new BigNumber(val.toString()).div('1' + '0'.repeat(decimals))
     if (!bn.isFinite()) {
         return '?'
+    }
+    if (bn.abs().gte(1000)) {
+        maxDecimals = Math.min(maxDecimals, 2)
     }
     // tiny but not zero: show that it is not zero
     if (!bn.isZero() && bn.abs().lt(new BigNumber(10).pow(-maxDecimals))) {

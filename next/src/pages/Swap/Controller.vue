@@ -88,10 +88,11 @@
                     v-if="amountError"
                     class="text-negative swap-error"
                 >{{amountError}}</div>
+                <!-- always a line under the amount, so both boxes keep their height -->
                 <div
-                    v-else-if="payFiat"
+                    v-else
                     class="text-muted swap-fiat"
-                >{{payFiat}}</div>
+                >{{payFiat || money(0)}}</div>
             </div>
 
             <div class="row justify-center">
@@ -111,7 +112,11 @@
                     <span>{{$t('swap.label_receive')}}</span>
                 </div>
                 <div class="row no-wrap items-center">
-                    <div class="col bvm-display swap-amount swap-out ellipsis">
+                    <!-- grey until there is a quote, as the empty amount above -->
+                    <div
+                        class="col bvm-display swap-amount swap-out ellipsis"
+                        :class="{ 'swap-out--empty': !quoteResult && !quoting }"
+                    >
                         <q-spinner-dots
                             v-if="quoting"
                             size="24px"
@@ -123,10 +128,7 @@
                         :tokens="tokens"
                     />
                 </div>
-                <div
-                    v-if="receiveFiat"
-                    class="text-muted swap-fiat"
-                >{{receiveFiat}}</div>
+                <div class="text-muted swap-fiat">{{receiveFiat || money(0)}}</div>
             </div>
 
             <div
@@ -339,6 +341,7 @@ export default defineComponent({
         tokens() { this.loadBalance(); void this.loadPrices() }
     },
     methods: {
+        money,
         formatUnits,
         fiatOf(amount: bigint, spec: M.TokenSpec): string {
             const s = this.stats[(spec.address || '0x0000000000000000000000000000000000000000').toLowerCase()]
@@ -489,6 +492,9 @@ export default defineComponent({
 .swap-out
   min-height: 48px
   line-height: 48px
+
+.swap-out--empty
+  color: $text-muted
 
 .swap-error
   font-size: 12px

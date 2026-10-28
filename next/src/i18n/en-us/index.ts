@@ -78,6 +78,7 @@ export default {
         action_import: 'I already have a wallet'
     },
     index: {
+        msg_backup_short: 'Back up this wallet: without its recovery words it can\'t be restored.',
         action_new_address: 'Add address',
         action_backup: 'Back up',
         action_rename: 'Rename',
@@ -171,6 +172,9 @@ export default {
         action_receive: 'Receive'
     },
     nft: {
+        msg_watch_only: 'Watch-only: this wallet can\'t sign, so it can\'t list, send or buy.',
+        label_floor_short: 'Floor {price}',
+        label_for_sale: 'For sale',
         label_search: 'Search your NFTs: name, collection or #number',
         msg_no_match: 'No NFT matches “{q}”',
         action_clear_search: 'Clear search',
@@ -238,6 +242,7 @@ export default {
         msg_not_owner: 'This address no longer holds this NFT.'
     },
     market: {
+        action_unlist_short: 'Unlist',
         action_list: 'List for sale',
         action_reprice: 'Change price',
         action_cancel_listing: 'Cancel listing',
@@ -263,6 +268,7 @@ export default {
         msg_no_more: 'That is all'
     },
     send: {
+        msg_known_as: 'Known as {name}',
         action_add_extras: 'Add a message or note',
         action_receive: 'Receive',
         msg_empty: 'There is no {sym} on this address yet. Receive some first.',
@@ -368,6 +374,10 @@ export default {
         action_swap_anyway: 'Swap anyway'
     },
     home: {
+        layout_wide: 'Two columns',
+        layout_compact: 'One column',
+        action_explorer: 'Explorer',
+        action_copy: 'Copy',
         label_all_wallets: 'All wallets',
         label_wallet_count: '{n} wallets',
         label_total: 'Total value',
@@ -649,6 +659,9 @@ export default {
         msg_how: 'A transaction that sends VET or VVET and brings a token in is a buy, the other way round a sale, at average cost. Tokens bought with other tokens are not counted. Money amounts at today\'s VET price.'
     },
     activityFilter: {
+        label_token: 'Token',
+        label_period: 'Period',
+        action_filter: 'Filter by period and token',
         placeholder: 'Search: name, amount, note, 0x…',
         kind_all: 'All',
         kind_in: 'In',
@@ -1110,6 +1123,7 @@ export default {
         msg_share_request: 'Please send me {amount} {symbol}'
     },
     activities: {
+        label_minted: 'Minted: {what}',
         title: 'Activity',
         title_signed_content: 'What you signed',
         label_sent_vet: 'Send {amount} VET',
@@ -1255,9 +1269,8 @@ export default {
         msg_auth_failed: 'Not recognized. Try again.'
     },
     firstFunds: {
-        action_copy: 'Copy address',
-        action_receive: 'Show QR code',
-        msg: 'Send VET or tokens to your address from an exchange (such as Bitvavo, Binance or Coinbase) or another wallet. When you withdraw, choose the VeChain network.',
+        msg_short: 'From an exchange or wallet, on the VeChain network.',
+        action_receive: 'Receive',
         title: 'Put your first VET on it',
     },
     desktopApp: {

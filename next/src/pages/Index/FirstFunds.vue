@@ -1,46 +1,33 @@
 <template>
-    <!-- a wallet with nothing on it yet: how to get the first VET there -->
+    <!-- a wallet with nothing on it yet: one slim row on how to get the first VET there -->
     <div
         v-if="empty"
-        class="bvm-tile first-funds q-pa-md q-mt-lg"
+        class="bvm-tile first-funds row no-wrap items-center"
     >
-        <div class="row no-wrap items-center q-mb-sm">
-            <q-icon
-                name="o_south_west"
-                size="22px"
-                color="primary"
-                class="q-mr-sm"
-            />
-            <div class="text-weight-bold first-funds-title">{{$t('firstFunds.title')}}</div>
+        <q-icon
+            name="o_south_west"
+            size="20px"
+            color="primary"
+            class="q-mr-sm"
+        />
+        <div class="col">
+            <div class="first-funds-title">{{$t('firstFunds.title')}}</div>
+            <div class="text-muted first-funds-msg">{{$t('firstFunds.msg_short')}}</div>
         </div>
-        <p class="text-soft q-mb-md first-funds-msg">{{$t('firstFunds.msg')}}</p>
-        <div class="row no-wrap q-gutter-x-sm">
-            <q-btn
-                class="col"
-                unelevated
-                no-caps
-                color="primary"
-                icon="o_qr_code_2"
-                :label="$t('firstFunds.action_receive')"
-                @click="receive()"
-            />
-            <q-btn
-                class="col"
-                outline
-                no-caps
-                color="primary"
-                icon="o_content_copy"
-                :label="$t('firstFunds.action_copy')"
-                @click="copy()"
-            />
-        </div>
+        <q-btn
+            unelevated
+            dense
+            no-caps
+            color="primary"
+            class="q-px-md first-funds-btn"
+            :label="$t('firstFunds.action_receive')"
+            @click="receive()"
+        />
     </div>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { address as addr } from 'thor-devkit'
 import { genesises } from 'src/consts'
-import { copyText } from 'src/utils/clipboard'
 import ReceiveDialog from 'pages/Address/ReceiveDialog.vue'
 
 export default defineComponent({
@@ -62,31 +49,28 @@ export default defineComponent({
             // offline: say nothing
         }
     },
-    computed: {
-        first(): string {
-            return this.wallet.meta.addresses[0] || ''
-        }
-    },
     methods: {
+        // the receive sheet has the QR code, copying and the VeChain-only note
         receive() {
-            this.$dialog({ component: ReceiveDialog, address: this.first }).catch(() => { })
-        },
-        copy() {
-            copyText(addr.toChecksumed(this.first))
-                .then(() => this.$q.notify(this.$t('common.copied')))
-                .catch(console.error)
+            this.$dialog({ component: ReceiveDialog, address: this.wallet.meta.addresses[0] || '' }).catch(() => { })
         }
     }
 })
 </script>
 <style lang="sass" scoped>
 .first-funds
+  padding: 8px 8px 8px 14px
   border-color: color-mix(in srgb, var(--q-primary) 35%, transparent)
 
 .first-funds-title
-  font-size: 16px
+  font-size: 13px
+  font-weight: 800
+  line-height: 1.3
 
 .first-funds-msg
-  font-size: 13px
-  line-height: 1.45
+  font-size: 12px
+  line-height: 1.3
+
+.first-funds-btn
+  min-height: 32px
 </style>

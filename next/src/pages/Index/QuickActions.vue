@@ -23,8 +23,11 @@ import ReceiveDialog from 'pages/Address/ReceiveDialog.vue'
 import QrScannerDialog from 'pages/QrScannerDialog'
 import { parsePaymentRequest } from 'src/utils/payment-request'
 import { haptic } from 'src/utils/prefs'
+import { copyText } from 'src/utils/clipboard'
+import { openURL } from 'src/utils/open-url'
+import { address } from 'thor-devkit'
 
-type Key = 'send' | 'receive' | 'swap' | 'scan'
+type Key = 'send' | 'receive' | 'swap' | 'scan' | 'copy' | 'activity' | 'explorer'
 
 // the four things people do most, one tap from home
 export default defineComponent({
@@ -33,9 +36,14 @@ export default defineComponent({
     },
     computed: {
         actions(): { key: Key, icon: string, label: string }[] {
-            // a watch-only wallet can't send or swap: receiving is what is left
+            // a watch-only wallet can't send or swap: what fits looking on
             if (this.wallet.meta.type === 'watch') {
-                return [{ key: 'receive', icon: 'o_south_west', label: this.$t('address.action_receive') }]
+                return [
+                    { key: 'receive', icon: 'o_south_west', label: this.$t('address.action_receive') },
+                    { key: 'copy', icon: 'o_content_copy', label: this.$t('home.action_copy') },
+                    { key: 'activity', icon: 'o_receipt_long', label: this.$t('tabs.activity') },
+                    { key: 'explorer', icon: 'o_travel_explore', label: this.$t('home.action_explorer') }
+                ]
             }
             return [
                 { key: 'send', icon: 'o_north_east', label: this.$t('send.action_send') },
@@ -70,6 +78,17 @@ export default defineComponent({
                     break
                 case 'swap':
                     void this.$router.push({ name: 'swap', query: { wid, i: '0' } })
+                    break
+                case 'copy':
+                    copyText(address.toChecksumed(this.wallet.meta.addresses[0]!))
+                        .then(() => this.$q.notify(this.$t('common.copied')))
+                        .catch(() => { })
+                    break
+                case 'activity':
+                    void this.$router.push({ name: 'activities' })
+                    break
+                case 'explorer':
+                    openURL(`https://vechainstats.com/account/${this.wallet.meta.addresses[0]}/`)
                     break
                 case 'scan':
                     try {

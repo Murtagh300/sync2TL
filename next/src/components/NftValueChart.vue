@@ -23,6 +23,8 @@ import { dailyFloors, type FloorPoint } from 'src/utils/floors'
 import type { BVM } from 'boot/services/bvm'
 
 const DAYS = 30
+// fewer days of real floors than this: no chart
+const MIN_DAYS = 7
 
 export default defineComponent({
     components: { Sparkline },
@@ -63,8 +65,11 @@ export default defineComponent({
             const now = Date.now()
             const histories = await Promise.all(top.map(c => this.$svc.bvm.floorHistory(c.slug).catch(() => [] as FloorPoint[])))
             const days = Array.from({ length: DAYS + 1 }, (_, i) => 0 * i)
+            // the longest real history among them: a line drawn from a few days only shows cliffs
+            let covered = 0
             top.forEach((c, k) => {
                 const daily = dailyFloors(histories[k]!.filter(p => p.currency === currency), DAYS, now)
+                covered = Math.max(covered, daily.length)
                 // a collection without history: today's floor on every day
                 const values = daily.length ? daily.map(p => p.value) : []
                 for (let d = 0; d <= DAYS; d++) {
@@ -74,7 +79,7 @@ export default defineComponent({
                 }
             })
             this.currency = currency
-            this.series = days
+            this.series = covered >= MIN_DAYS ? days : []
         }
     }
 })

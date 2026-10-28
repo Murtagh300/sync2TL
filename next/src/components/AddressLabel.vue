@@ -15,7 +15,7 @@
             >{{name}}</span>
             <!-- anyone can register a look-alike .vet name: keep the address beside it -->
             <span
-                v-if="name && isVetName"
+                v-if="name && isVetName && !compact"
                 class="address-short"
             >{{shortString}}</span>
             <template v-if="!name">{{displayString}}</template>
@@ -36,7 +36,9 @@ export default defineComponent({
         /** show the address even when it has a name */
         noName: Boolean,
         /** leave out the identicon (where an avatar of the address is already shown) */
-        noIcon: Boolean
+        noIcon: Boolean,
+        /** a name alone, without the short address beside it (narrow rows; the identicon still tells) */
+        compact: Boolean
     },
     computed: {
         checksumed(): string {

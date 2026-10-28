@@ -5,7 +5,29 @@
         @click="$emit('open')"
     >
         <q-item-section avatar>
+            <!-- the token's logo or the NFT's picture, with a small arrow for in or out -->
             <div
+                v-if="row.image && !broken"
+                class="row-image"
+            >
+                <img
+                    :src="row.image"
+                    alt=""
+                    loading="lazy"
+                    @error="broken = true"
+                >
+                <span
+                    class="row-badge flex flex-center"
+                    :class="`row-icon--${row.tone}`"
+                >
+                    <q-icon
+                        :name="row.icon"
+                        size="11px"
+                    />
+                </span>
+            </div>
+            <div
+                v-else
                 class="row-icon flex flex-center"
                 :class="`row-icon--${row.tone}`"
             >
@@ -20,11 +42,23 @@
                 lines="1"
                 class="row-title"
             >{{row.title}}</q-item-label>
+            <!-- who (shortened when long) and when (always whole) -->
             <q-item-label
                 caption
-                lines="1"
+                class="row no-wrap items-center row-meta"
             >
-                <template v-if="row.counterparty">{{row.counterpartyLabel}} <address-label :addr="row.counterparty" /> · </template>{{time}}
+                <span
+                    v-if="row.counterparty"
+                    class="row-who ellipsis"
+                >{{row.counterpartyLabel}} <address-label
+                    compact
+                    :addr="row.counterparty"
+                /></span>
+                <span
+                    v-if="row.counterparty"
+                    class="q-mx-xs"
+                >·</span>
+                <span class="row-time">{{time}}</span>
             </q-item-label>
             <q-item-label
                 v-if="row.note"
@@ -66,6 +100,8 @@ export type ActivityRow = {
     note?: string
     status?: 'pending' | 'failed' | 'expired'
     statusLabel?: string
+    /** the token's logo or the NFT's picture */
+    image?: string
     /** what moved, for the export: an amount of a token (VET: '') */
     asset?: { amount: number, token: string }
     txId?: string
@@ -78,7 +114,7 @@ export default defineComponent({
         row: { type: Object as () => ActivityRow, required: true }
     },
     emits: ['open'],
-    data: () => ({ prefs }),
+    data: () => ({ prefs, broken: false }),
     computed: {
         time(): string {
             return new Date(this.row.time).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
@@ -107,6 +143,41 @@ export default defineComponent({
 
 .row-title
   font-weight: 800
+  // a title that starts lower-case ("een NFT …") still reads as a sentence
+  &::first-letter
+    text-transform: uppercase
+
+.row-image
+  position: relative
+  width: 40px
+  height: 40px
+  img
+    width: 40px
+    height: 40px
+    border-radius: 12px
+    object-fit: cover
+    background: rgba(255, 255, 255, 0.05)
+
+.row-badge
+  position: absolute
+  right: -3px
+  bottom: -3px
+  width: 18px
+  height: 18px
+  border-radius: 50%
+  border: 2px solid $dark-page
+  background: $surface-2
+
+.row-meta
+  min-width: 0
+
+.row-who
+  min-width: 0
+  :deep(.address)
+    display: inline
+
+.row-time
+  flex: none
 
 .row-note
   font-style: italic

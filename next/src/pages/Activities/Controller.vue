@@ -59,70 +59,83 @@
                     <q-icon name="o_search" />
                 </template>
             </q-input>
-            <div class="row no-wrap q-gutter-x-xs q-mt-xs chips">
-                <q-chip
-                    v-for="k in (['all', 'in', 'out', 'fail'] as const)"
-                    :key="k"
-                    clickable
-                    dense
-                    :outline="filter.kind !== k"
-                    :color="filter.kind === k ? 'primary' : undefined"
-                    :text-color="filter.kind === k ? 'dark' : undefined"
-                    class="q-ma-none q-mr-xs"
-                    @click="filter.kind = k"
-                >{{$t(`activityFilter.kind_${k}`)}}</q-chip>
-                <q-chip
-                    clickable
-                    dense
+            <!-- what kind as one bar; when and which token behind one Filter button -->
+            <div class="row no-wrap items-center q-mt-sm filter-row">
+                <q-btn-toggle
+                    v-model="filter.kind"
+                    class="col kind-toggle"
+                    spread
+                    no-caps
+                    unelevated
+                    color="transparent"
+                    text-color="grey-5"
+                    toggle-color="primary"
+                    toggle-text-color="dark"
+                    :options="(['all', 'in', 'out', 'fail'] as const).map(k => ({ value: k, label: $t(`activityFilter.kind_${k}`) }))"
+                />
+                <q-btn
                     outline
-                    icon="o_event"
-                    class="q-ma-none q-mr-xs"
+                    no-caps
+                    color="primary"
+                    icon="o_tune"
+                    class="q-ml-sm filter-btn"
+                    :aria-label="$t('activityFilter.action_filter')"
                 >
-                    {{$t(`activityFilter.period_${filter.period}`)}}
-                    <q-menu auto-close>
-                        <q-list dense>
+                    <q-badge
+                        v-if="filter.period !== 'all' || filter.token !== null"
+                        floating
+                        rounded
+                        color="primary"
+                        class="filter-dot"
+                    />
+                    <q-menu
+                        anchor="bottom right"
+                        self="top right"
+                    >
+                        <q-list style="min-width: 220px">
+                            <q-item-label header>{{$t('activityFilter.label_period')}}</q-item-label>
                             <q-item
                                 v-for="p in (['all', 'month', '30d', 'year'] as const)"
                                 :key="p"
+                                v-close-popup
                                 clickable
                                 :active="filter.period === p"
                                 @click="filter.period = p"
                             >
                                 <q-item-section>{{$t(`activityFilter.period_${p}`)}}</q-item-section>
+                                <q-item-section
+                                    v-if="filter.period === p"
+                                    side
+                                ><q-icon
+                                    name="check"
+                                    color="primary"
+                                /></q-item-section>
                             </q-item>
+                            <template v-if="tokenOptions.length > 1">
+                                <q-separator />
+                                <q-item-label header>{{$t('activityFilter.label_token')}}</q-item-label>
+                                <q-item
+                                    v-close-popup
+                                    clickable
+                                    :active="filter.token === null"
+                                    @click="filter.token = null"
+                                >
+                                    <q-item-section>{{$t('activityFilter.any_token')}}</q-item-section>
+                                </q-item>
+                                <q-item
+                                    v-for="t in tokenOptions"
+                                    :key="t"
+                                    v-close-popup
+                                    clickable
+                                    :active="filter.token === t"
+                                    @click="filter.token = t"
+                                >
+                                    <q-item-section>{{tokenLabel(t)}}</q-item-section>
+                                </q-item>
+                            </template>
                         </q-list>
                     </q-menu>
-                </q-chip>
-                <q-chip
-                    v-if="tokenOptions.length > 1"
-                    clickable
-                    dense
-                    outline
-                    icon="o_toll"
-                    class="q-ma-none q-mr-xs"
-                >
-                    {{filter.token === null ? $t('activityFilter.any_token') : tokenLabel(filter.token)}}
-                    <q-menu auto-close>
-                        <q-list dense>
-                            <q-item
-                                clickable
-                                :active="filter.token === null"
-                                @click="filter.token = null"
-                            >
-                                <q-item-section>{{$t('activityFilter.any_token')}}</q-item-section>
-                            </q-item>
-                            <q-item
-                                v-for="t in tokenOptions"
-                                :key="t"
-                                clickable
-                                :active="filter.token === t"
-                                @click="filter.token = t"
-                            >
-                                <q-item-section>{{tokenLabel(t)}}</q-item-section>
-                            </q-item>
-                        </q-list>
-                    </q-menu>
-                </q-chip>
+                </q-btn>
             </div>
         </div>
         <page-content class="col">
@@ -441,6 +454,7 @@ export default defineComponent({
                     return {
                         ...base,
                         asset: { amount: -units(BigInt(c.value), 18), token: '' },
+                        image: this.token(a.gid, '')?.iconSrc,
                         icon: 'o_north_east',
                         tone: out,
                         amount: `−${amount} VET`,
@@ -452,12 +466,12 @@ export default defineComponent({
                 for (const spec of this.tokens.filter(t => t.gid === a.gid)) {
                     const t = decodeAsTokenTransferClause(clause, spec)
                     if (t) {
-                        return { ...base, icon: 'o_north_east', tone: out, amount: `−${formatUnits(t.amount, spec.decimals)} ${spec.symbol}`, counterparty: t.to, counterpartyLabel: this.$t('activities.label_to'), asset: { amount: -units(t.amount, spec.decimals), token: spec.address } }
+                        return { ...base, icon: 'o_north_east', image: spec.iconSrc, tone: out, amount: `−${formatUnits(t.amount, spec.decimals)} ${spec.symbol}`, counterparty: t.to, counterpartyLabel: this.$t('activities.label_to'), asset: { amount: -units(t.amount, spec.decimals), token: spec.address } }
                     }
                 }
                 const nft = decodeAsNftTransferClause(clause)
                 if (nft) {
-                    return { ...base, icon: 'o_image', tone: out, counterparty: nft.to, counterpartyLabel: this.$t('activities.label_to') }
+                    return { ...base, icon: 'o_north_east', image: this.collections[(c.to || '').toLowerCase()]?.coverImage, tone: out, counterparty: nft.to, counterpartyLabel: this.$t('activities.label_to') }
                 }
                 for (const cl of tx.body.clauses) {
                     const action = decodeAction({ to: cl.to, value: cl.value, data: cl.data })
@@ -499,15 +513,21 @@ export default defineComponent({
                 note: txNote(i.txId)
             }
             if (i.kind === 'vet') {
-                return { ...base, title: this.$t('activities.label_received', { what: 'VET' }), amount: `+${formatUnits(BigInt(i.amount || 0), 18)} VET`, asset: { amount: units(i.amount || '0', 18), token: '' } }
+                return { ...base, image: this.token(i.gid, '')?.iconSrc, title: this.$t('activities.label_received', { what: 'VET' }), amount: `+${formatUnits(BigInt(i.amount || 0), 18)} VET`, asset: { amount: units(i.amount || '0', 18), token: '' } }
             }
             if (i.kind === 'nft') {
-                const name = this.collections[i.contract!]?.name || this.$t('action.an_nft')
-                return { ...base, icon: 'o_image', title: this.$t('activities.label_received', { what: `${name} #${i.tokenId}` }), amount: '+1 NFT' }
+                const coll = this.collections[(i.contract || '').toLowerCase()]
+                const what = `${coll?.name || 'NFT'} #${i.tokenId}`
+                // from the zero address: made just now, not sent by anyone
+                if ((i.from || '').toLowerCase() === ZERO) {
+                    return { ...base, icon: 'o_auto_awesome', image: coll?.coverImage, title: this.$t('activities.label_minted', { what }), counterparty: undefined, amount: '+1 NFT' }
+                }
+                return { ...base, image: coll?.coverImage, title: this.$t('activities.label_received', { what }), amount: '+1 NFT' }
             }
             const spec = this.token(i.gid, i.contract)
             return {
                 ...base,
+                image: spec?.iconSrc,
                 title: this.$t('activities.label_received', { what: spec?.symbol || this.$t('activities.label_a_token') }),
                 amount: spec ? `+${formatUnits(BigInt(i.amount || 0), spec.decimals)} ${spec.symbol}` : undefined,
                 asset: spec ? { amount: units(i.amount || '0', spec.decimals), token: spec.address } : undefined
@@ -520,9 +540,24 @@ export default defineComponent({
 .filters
   border-bottom: 1px solid $hairline
 
-.chips
-  overflow-x: auto
-  scrollbar-width: none
+// the kinds as one segmented bar
+.kind-toggle
+  border: 1px solid $hairline-2
+  border-radius: $radius
+  :deep(.q-btn)
+    min-height: 36px
+    font-weight: 700
+
+.filter-btn
+  min-height: 38px !important
+  padding: 0 10px
+
+.filter-dot
+  min-height: 9px
+  min-width: 9px
+  padding: 0
+  top: 2px
+  right: 2px
 
 .group-label
   padding: 16px 16px 4px

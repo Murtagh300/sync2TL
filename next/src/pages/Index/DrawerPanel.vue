@@ -6,7 +6,7 @@
         <!-- drawer content header -->
         <div class="drawer-head row items-center no-wrap">
             <img
-                src="~assets/bvm-logo.png"
+                src="~assets/bvm-logo-small.png"
                 alt="BVM"
                 class="drawer-logo"
             >

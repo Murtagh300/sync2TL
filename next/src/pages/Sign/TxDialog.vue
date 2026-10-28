@@ -13,8 +13,9 @@
                 :gid="gid"
                 @action="hide()"
             />
+            <!-- one flow: what happens, then the warnings, fee and signer right under it -->
             <page-content
-                class="col q-pa-sm bg-page"
+                class="q-pa-sm bg-page"
                 innerClass="q-gutter-y-sm"
             >
                 <div
@@ -45,7 +46,10 @@
                     @click="onClickClause(i, c)"
                 />
             </page-content>
-            <page-content size="xs">
+            <page-content
+                size="xs"
+                class="col"
+            >
                 <error-tip
                     v-if="criticalError"
                     :error="criticalError"
@@ -76,8 +80,9 @@
                             @click="getVtho()"
                         />
                     </div>
+                    <!-- short of VTHO is said above already: the general warning only for anything else -->
                     <error-tip
-                        v-if="warnings.length > 0"
+                        v-if="warnings.length > (energyWarning ? 1 : 0)"
                         type="warning"
                         :error="{name: $t('sign.label_transaction_warning'), message: ''}"
                         clickable

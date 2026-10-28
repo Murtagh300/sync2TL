@@ -33,7 +33,14 @@
             />
         </q-img>
         <div class="nft-body">
-            <div class="nft-name ellipsis">{{nft.name}}</div>
+            <!-- the number never falls off: "Bubbly Caps S… #295" -->
+            <div class="nft-name row no-wrap">
+                <span class="ellipsis">{{title.base}}</span>
+                <span
+                    v-if="title.num"
+                    class="nft-num"
+                >{{title.num}}</span>
+            </div>
             <div
                 v-if="hiddenTag"
                 class="nft-hidden-tag"
@@ -48,10 +55,18 @@
                     size="11px"
                 /> {{label}}
             </div>
+            <!-- for sale: the price, said so; otherwise the collection's floor, in grey -->
             <div
                 v-if="nft.listed && nft.displayPrice"
-                class="nft-price bvm-amount"
-            >{{nft.displayPrice}} {{nft.currency}}</div>
+                class="nft-price row no-wrap items-center"
+            >
+                <span class="nft-sale-tag">{{$t('nft.label_for_sale')}}</span>
+                <span class="bvm-amount ellipsis">{{nft.displayPrice}} {{nft.currency}}</span>
+            </div>
+            <div
+                v-else-if="floor"
+                class="nft-floor ellipsis"
+            >{{$t('nft.label_floor_short', { price: floor })}}</div>
         </div>
     </div>
 </template>
@@ -69,7 +84,16 @@ export default defineComponent({
         /** why a hidden NFT shows (when hidden ones are shown); '' otherwise */
         hiddenTag: { type: String, default: '' },
         /** the first label of its note */
-        label: { type: String, default: '' }
+        label: { type: String, default: '' },
+        /** its collection's floor as text, '' when unknown */
+        floor: { type: String, default: '' }
+    },
+    computed: {
+        /** the name split from its number, so the number can stay whole */
+        title(): { base: string, num: string } {
+            const m = /^(.*?)\s*(#\s?\d+)$/.exec(this.nft.name || '')
+            return m && m[1] ? { base: m[1], num: m[2]!.replace(/\s/, '') } : { base: this.nft.name, num: '' }
+        }
     }
 })
 </script>
@@ -138,8 +162,27 @@ export default defineComponent({
   font-weight: 700
   color: var(--q-primary)
 
+.nft-num
+  flex: none
+  margin-left: 4px
+
 .nft-price
+  gap: 6px
   margin-top: 6px
   font-size: 13px
   color: var(--q-primary)
+
+.nft-sale-tag
+  flex: none
+  padding: 1px 6px
+  border-radius: 4px
+  background: color-mix(in srgb, var(--q-primary) 14%, transparent)
+  font-size: 10px
+  font-weight: 800
+
+.nft-floor
+  margin-top: 6px
+  font-size: 12px
+  font-weight: 700
+  color: $text-muted
 </style>

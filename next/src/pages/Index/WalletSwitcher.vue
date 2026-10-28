@@ -24,7 +24,18 @@
             style="min-width: 0"
         >
             <span class="bv-sr-only">{{$t('home.action_switch')}}: </span>
-            <div class="switcher-name ellipsis">{{all ? $t('home.label_all_wallets') : wallet ? wallet.meta.name : 'BlackVault'}}</div>
+            <div class="switcher-name row no-wrap items-center">
+                <span class="ellipsis">{{all ? $t('home.label_all_wallets') : wallet ? wallet.meta.name : 'BlackVault'}}</span>
+                <!-- a wallet that only watches says so where its name is -->
+                <span
+                    v-if="!all && wallet?.meta.type === 'watch'"
+                    class="watch-badge q-ml-sm"
+                ><q-icon
+                    name="o_visibility"
+                    size="12px"
+                    class="q-mr-xs"
+                />{{$t('watch.label')}}</span>
+            </div>
             <div
                 v-if="all"
                 class="switcher-sub ellipsis text-muted"
@@ -33,9 +44,8 @@
                 v-else-if="wallet"
                 class="switcher-sub ellipsis text-muted"
             >
-                <template v-if="profile && profile.displayName">@{{profile.displayName}}</template>
+                <!-- the same name as on the address card: the .vet name, else the short address -->
                 <address-label
-                    v-else
                     no-icon
                     :addr="wallet.meta.addresses[0]"
                 />
@@ -44,13 +54,27 @@
         <q-icon
             name="expand_more"
             size="20px"
-            class="q-ml-xs text-muted"
+            class="q-ml-xs text-muted switcher-chevron"
+            :class="{ 'switcher-chevron--open': open }"
         />
+        <!-- the page dims behind the open menu -->
+        <teleport to="body">
+            <transition name="switcher-dim">
+                <div
+                    v-if="open"
+                    class="switcher-dim"
+                />
+            </transition>
+        </teleport>
         <q-menu
             anchor="bottom left"
             self="top left"
-            :offset="[0, 6]"
+            :offset="[0, 8]"
             class="switcher-menu"
+            transition-show="jump-down"
+            transition-hide="jump-up"
+            @show="open = true"
+            @hide="open = false"
         >
             <q-list style="min-width: 260px">
                 <q-item
@@ -139,7 +163,8 @@ export default defineComponent({
     emits: ['select'],
     data: () => ({
         // async computed (see src/shims-async-computed.d.ts)
-        profile: null as BVM.Profile | null
+        profile: null as BVM.Profile | null,
+        open: false
     }),
     asyncComputed: {
         async profile(): Promise<BVM.Profile | null> {
@@ -152,7 +177,39 @@ export default defineComponent({
     }
 })
 </script>
+<style lang="sass">
+// the dimmed page lives outside the component (teleported)
+.switcher-dim
+  position: fixed
+  inset: 0
+  z-index: 5999
+  background: rgba(0, 0, 0, 0.45)
+  pointer-events: none
+
+.switcher-dim-enter-active, .switcher-dim-leave-active
+  transition: opacity 0.18s
+
+.switcher-dim-enter-from, .switcher-dim-leave-to
+  opacity: 0
+</style>
 <style lang="sass" scoped>
+.switcher-chevron
+  transition: transform 0.18s
+
+.switcher-chevron--open
+  transform: rotate(180deg)
+
+.watch-badge
+  display: inline-flex
+  align-items: center
+  flex: none
+  padding: 1px 7px
+  border-radius: 999px
+  border: 1px solid $hairline-2
+  color: $text-muted
+  font-size: 11px
+  font-weight: 700
+
 .wallet-switcher
   padding: 4px 8px
   max-width: 70vw

@@ -8,10 +8,13 @@
             v-if="vertical"
             class="side-brand row items-center no-wrap"
         >
+            <!-- a fixed box, so the name never jumps while the logo loads -->
             <img
-                src="~assets/bvm-logo.png"
+                src="~assets/bvm-logo-small.png"
                 alt="BVM"
                 class="side-logo"
+                width="66"
+                height="22"
             >
             <span class="side-product">BlackVault</span>
         </div>

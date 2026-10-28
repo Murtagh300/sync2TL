@@ -16,6 +16,19 @@
                     @select="onSelectWallet($event)"
                 />
                 <q-space />
+                <!-- a computer: one column or two -->
+                <q-btn-toggle
+                    v-if="$q.screen.gt.sm && wallet"
+                    v-model="prefs.homeLayout"
+                    flat
+                    dense
+                    toggle-color="primary"
+                    class="layout-toggle q-mr-sm"
+                    :options="[
+                        { value: 'compact', icon: 'o_view_agenda', attrs: { 'aria-label': $t('home.layout_compact') } },
+                        { value: 'wide', icon: 'o_view_column', attrs: { 'aria-label': $t('home.layout_wide') } }
+                    ]"
+                />
                 <q-btn
                     flat
                     round
@@ -72,7 +85,10 @@
                 class="col home-scroll overflow-auto"
                 @refresh="refresh"
             >
-                <div class="home-page q-mx-auto q-px-md q-pb-lg">
+                <div
+                    class="home-page q-mx-auto q-px-md q-pb-lg"
+                    :class="{ 'home-page--wide': wide }"
+                >
                     <!-- tips -->
                     <upgrade-tip v-if="$state.app.updateAvailable" />
                     <backup-tip
@@ -88,56 +104,65 @@
                             :wallet="wallet"
                             class="q-mb-md"
                         />
-                        <!-- the blocks in the user's order (WidgetsDialog) -->
-                        <template
-                            v-for="wd in shownWidgets"
-                            :key="wd.key"
-                        >
-                            <price-ticker
-                                v-if="wd.key === 'ticker'"
-                                :wallet="wallet"
-                                class="q-mb-md"
-                            />
-                            <template v-else-if="wd.key === 'portfolio'">
-                                <portfolio-card
-                                    ref="portfolio"
-                                    :key="all ? 'all' : wallet.id"
-                                    :wallet="wallet"
-                                    :wallets="all ? wallets : [wallet]"
-                                    :scope="all ? 'all' : String(wallet.id)"
-                                    class="cursor-pointer"
-                                    @click="$router.push({ name: 'portfolio' })"
-                                />
-                                <balance-pulse
-                                    :wallet-id="wallet.id"
-                                    @changed="onBalanceChanged()"
-                                />
-                            </template>
-                            <quick-actions
-                                v-else-if="wd.key === 'actions'"
-                                :wallet="wallet"
-                                class="q-mt-lg"
-                            />
-                            <template v-else-if="wd.key === 'addresses'">
+                        <!-- on a wide screen two columns (the total and actions left, the rest right), or one -->
+                        <div :class="{ 'home-columns': wide }">
+                            <div
+                                v-for="(col, ci) in columns"
+                                :key="ci"
+                                class="home-column"
+                            >
+                                <!-- the blocks in the user's order (WidgetsDialog) -->
                                 <template
-                                    v-for="w in (all ? wallets : [wallet])"
-                                    :key="'list-' + w.id"
+                                    v-for="wd in col"
+                                    :key="wd.key"
                                 >
-                                    <div class="bvm-label q-mt-xl q-mb-xs">{{all ? w.meta.name : $t('home.label_addresses', { n: w.meta.addresses.length })}}</div>
-                                    <address-card-list
-                                        :wallet="w"
-                                        class="address-list"
+                                    <price-ticker
+                                        v-if="wd.key === 'ticker'"
+                                        :wallet="wallet"
+                                        class="q-mb-md"
+                                    />
+                                    <template v-else-if="wd.key === 'portfolio'">
+                                        <portfolio-card
+                                            ref="portfolio"
+                                            :key="all ? 'all' : wallet.id"
+                                            :wallet="wallet"
+                                            :wallets="all ? wallets : [wallet]"
+                                            :scope="all ? 'all' : String(wallet.id)"
+                                            class="cursor-pointer"
+                                            @click="$router.push({ name: 'portfolio' })"
+                                        />
+                                        <balance-pulse
+                                            :wallet-id="wallet.id"
+                                            @changed="onBalanceChanged()"
+                                        />
+                                    </template>
+                                    <quick-actions
+                                        v-else-if="wd.key === 'actions'"
+                                        :wallet="wallet"
+                                        class="q-mt-lg"
+                                    />
+                                    <template v-else-if="wd.key === 'addresses'">
+                                        <template
+                                            v-for="w in (all ? wallets : [wallet])"
+                                            :key="'list-' + w.id"
+                                        >
+                                            <div class="bvm-label q-mt-xl q-mb-xs">{{all ? w.meta.name : $t('home.label_addresses', { n: w.meta.addresses.length })}}</div>
+                                            <address-card-list
+                                                :wallet="w"
+                                                class="address-list"
+                                            />
+                                        </template>
+                                    </template>
+                                    <home-widgets
+                                        v-else
+                                        :key="wd.key + (all ? 'all' : wallet.id)"
+                                        :kind="wd.key"
+                                        :wallet="wallet"
+                                        :wallets="all ? wallets : [wallet]"
                                     />
                                 </template>
-                            </template>
-                            <home-widgets
-                                v-else
-                                :key="wd.key + (all ? 'all' : wallet.id)"
-                                :kind="wd.key"
-                                :wallet="wallet"
-                                :wallets="all ? wallets : [wallet]"
-                            />
-                        </template>
+                            </div>
+                        </div>
                         <div class="text-center q-mt-xl">
                             <q-btn
                                 flat
@@ -219,6 +244,16 @@ export default defineComponent({
         },
         unread(): number {
             return unreadCount.value
+        },
+        /** two columns: a computer, and the user wants them */
+        wide(): boolean {
+            return this.$q.screen.gt.sm && prefs.homeLayout !== 'compact'
+        },
+        /** the blocks per column: the total, actions and ticker left; tokens, lists and addresses right */
+        columns(): Widget[][] {
+            if (!this.wide) return [this.shownWidgets]
+            const left = ['ticker', 'portfolio', 'actions']
+            return [this.shownWidgets.filter(w => left.includes(w.key)), this.shownWidgets.filter(w => !left.includes(w.key))]
         }
     },
     asyncComputed: {
@@ -255,12 +290,17 @@ export default defineComponent({
         editWidgets() {
             this.$dialog({ component: WidgetsDialog }).catch(() => { })
         },
+        /** the portfolio card (a ref in a v-for is a list) */
+        portfolio(): { refresh?: () => void } | undefined {
+            const r = this.$refs.portfolio as { refresh?: () => void } | { refresh?: () => void }[] | undefined
+            return Array.isArray(r) ? r[0] : r
+        },
         onBalanceChanged() {
             // the chain needs a moment to serve the new balance
-            setTimeout(() => (this.$refs.portfolio as { refresh?: () => void } | undefined)?.refresh?.(), 3000)
+            setTimeout(() => this.portfolio()?.refresh?.(), 3000)
         },
         refresh(done: () => void) {
-            (this.$refs.portfolio as { refresh?: () => void } | undefined)?.refresh?.()
+            this.portfolio()?.refresh?.()
             void this.$asyncComputed.wallets?.update()
             setTimeout(done, 600)
         }
@@ -295,6 +335,22 @@ export default defineComponent({
 
 .home-page
   max-width: 560px
+
+.home-page--wide
+  max-width: 1180px
+
+// two columns side by side; each keeps its own flow, so no gaps between rows
+.home-columns
+  display: grid
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr)
+  gap: 32px
+  align-items: start
+  .home-column:last-child > :first-child
+    margin-top: 0 !important
+
+.layout-toggle
+  border: 1px solid $hairline
+  border-radius: $radius
 
 .home-empty
   padding: 18vh 8px 0

@@ -101,3 +101,11 @@ describe('setNumberLocale', () => {
         }
     })
 })
+
+describe('formatUnits', () => {
+    it('keeps two decimals from a thousand up, four below', () => {
+        expect(formatUnits(18734917900000000000000n, 18)).toBe('18,734.91')
+        expect(formatUnits(29847200000000000000n, 18)).toBe('29.8472')
+        expect(formatUnits(1500000000000000000n, 18)).toBe('1.5')
+    })
+})
