@@ -50,6 +50,8 @@ export const routeFeature: Record<string, Feature> = {
     consolidate: 'consolidate',
     stargate: 'stargate',
     vebetter: 'vebetter',
+    vote: 'vebetter',
+    leaderboard: 'vebetter',
     launchpad: 'launchpad',
     launch: 'launchpad'
 }

@@ -30,12 +30,19 @@ import Payout from 'pages/Payout'
 import Overview from 'pages/Overview'
 import Pnl from 'pages/Pnl'
 import { Listings, OfferInbox } from 'pages/Market'
-import { Discover, Stargate, VeBetter } from 'pages/Ecosystem'
+import { Discover, Leaderboard, Stargate, VeBetter, Vote } from 'pages/Ecosystem'
 import WalletConnect from 'pages/WalletConnect'
 import SwitchGuide from 'pages/SwitchGuide'
 import { Dust, Consolidate } from 'pages/Tidy'
 import Liquidity from 'pages/Liquidity'
 import Emergency from 'pages/Emergency'
+import Panic from 'pages/Panic'
+import VetName from 'pages/Names'
+import Pos from 'pages/Pos'
+import Yield from 'pages/Yield'
+import Practice from 'pages/Practice'
+import Chat from 'pages/Chat'
+import { Subscribe, Subscriptions } from 'pages/Subscriptions'
 import Security, { Dapps } from 'pages/Security'
 import Profile from 'pages/Profile'
 
@@ -91,6 +98,38 @@ const routes: RouteRecordRaw[] = [
             path: 'emergency',
             name: 'emergency',
             component: Emergency
+        }, {
+            path: 'panic',
+            name: 'panic',
+            component: Panic
+        }, {
+            path: 'vet-name',
+            name: 'vet-name',
+            component: VetName
+        }, {
+            path: 'pos',
+            name: 'pos',
+            component: Pos
+        }, {
+            path: 'yield',
+            name: 'yield',
+            component: Yield
+        }, {
+            path: 'practice',
+            name: 'practice',
+            component: Practice
+        }, {
+            path: 'chat',
+            name: 'chat',
+            component: Chat
+        }, {
+            path: 'subscriptions',
+            name: 'subscriptions',
+            component: Subscriptions
+        }, {
+            path: 'subscribe',
+            name: 'subscribe',
+            component: Subscribe
         }, {
             path: 'payments',
             name: 'payments',
@@ -151,6 +190,14 @@ const routes: RouteRecordRaw[] = [
             path: 'discover',
             name: 'discover',
             component: Discover
+        }, {
+            path: 'vote',
+            name: 'vote',
+            component: Vote
+        }, {
+            path: 'leaderboard',
+            name: 'leaderboard',
+            component: Leaderboard
         }, {
             path: 'listings',
             name: 'listings',

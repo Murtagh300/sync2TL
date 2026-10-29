@@ -3,6 +3,36 @@
 What changed in BlackVault, newest first. The version is `next/package.json`; what users see after
 an update comes from `next/src/changelog.ts` (keep the two in step).
 
+## Unreleased
+
+**Safety**
+- Phishing check before connecting or signing: MetaMask's list and ours (on the BlackVault server), and
+  sites that copy a VeChain project's name ("vebeterdao.org") or borrow it in their address.
+- Panic button: revoke every approval and move everything to a safe place set beforehand, one
+  transaction per address. Consolidate shares its sweep code.
+- Swap: a token without a market price gets a warning, and price impact from the pool's depth.
+
+**Trading and VeBetterDAO**
+- Swaps ask VeTrade and BetterSwap's aggregator at once and take the better quote.
+- Vote in the allocation round from the wallet (castVote), with a VePassport check before signing.
+- X2Earn leaderboard (7 and 30 days), indexed by the server.
+- Register a .vet name: commit, wait, register in VET, with the address record and primary name.
+
+**Payments**
+- Till: type a price in euros, show a QR code, see it paid (the amount carries its own last digits).
+- Receipts as PDF (the print dialog) for any transaction and every till payment.
+- Subscriptions with the token standard alone: subscribe = first period plus an allowance for 12;
+  the seller collects everyone who is due in one transaction; cancel = allowance 0.
+
+**Insight and help**
+- What you earn: liquidity (value, APY, a year's expected income), StarGate and X2Earn in one place.
+- Liquidity positions against holding (impermanent loss), from the chain's mint and liquidity events.
+- Practice with test money: a testnet wallet, the faucet and a first payment, step by step.
+- Spanish, Italian, Japanese and Korean.
+
+**Messages**
+- End-to-end encrypted chat between addresses, through the BlackVault server, with push for new messages.
+
 ## 2.3.0 — 2026-10-28
 
 **UI polish**

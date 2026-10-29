@@ -1,6 +1,7 @@
 import { createClient } from './net'
 import { betterswapUrl } from './endpoints'
 import { fn } from './actions'
+import { v2Basis, v3Basis, vsHodl } from './il'
 
 /**
  * Liquidity the wallet provides on VeChain DEXes:
@@ -49,6 +50,12 @@ export type Position = {
     /** V3: whether the price is inside the position's range */
     inRange?: boolean
     url: string
+    /** where the position lives, to read what went in (il.ts) */
+    source?: { kind: 'v2', pool: string, owner: string, balance: bigint } | { kind: 'v3', manager: string, tokenId: string }
+    /** token0 in token1 at the pool's price */
+    price0in1?: number
+    /** against holding what went in, in %; null when it can't be told, undefined while unknown */
+    vsHodl?: number | null
 }
 
 const balanceOf = fn('balanceOf', [['address', 'owner']], [['uint256', 'balance']])
@@ -126,7 +133,9 @@ export async function findPositions(thor: Connex.Thor, owner: string): Promise<P
             amount1: share * Number(p.reserve1?.formatted || 0),
             usd: share * (p.totalUsdValue || 0),
             apy: p.apy ?? null,
-            url: `https://www.betterswap.io/pools/betterswap/${p.poolAddress}`
+            url: `https://www.betterswap.io/pools/betterswap/${p.poolAddress}`,
+            source: { kind: 'v2', pool: p.poolAddress, owner, balance: BigInt(raw) },
+            price0in1: Number(p.reserve0?.formatted) > 0 ? Number(p.reserve1?.formatted || 0) / Number(p.reserve0!.formatted) : undefined
         })
     })
 
@@ -158,16 +167,34 @@ export async function findPositions(thor: Connex.Thor, owner: string): Promise<P
                 amount1: 0,
                 usd: null,
                 apy: pool?.apy ?? null,
-                url: dex === 'VeTrade V3' ? 'https://vetrade.vet/pools' : `https://www.betterswap.io/pools/betterswap-v3/${pool?.poolAddress || ''}`
+                url: dex === 'VeTrade V3' ? 'https://vetrade.vet/pools' : `https://www.betterswap.io/pools/betterswap-v3/${pool?.poolAddress || ''}`,
+                source: { kind: 'v3', manager, tokenId: ids[i]! }
             }
             if (pool?.sqrtPriceX96) {
                 const { a0, a1, inRange } = v3Amounts(Number(d.liquidity), pool.sqrtPriceX96, Number(d.tickLower), Number(d.tickUpper))
                 position.amount0 = a0 / 10 ** pool.token0.decimals
                 position.amount1 = a1 / 10 ** pool.token1.decimals
                 position.inRange = inRange
+                const sqrtP = Number(BigInt(pool.sqrtPriceX96)) / 2 ** 96
+                position.price0in1 = sqrtP * sqrtP * 10 ** (pool.token0.decimals - pool.token1.decimals)
             }
             out.push(position)
         })
     }
     return out
+}
+
+/** the position against holding what went in (il.ts); null when that can't be read */
+export async function compareToHodl(thor: Connex.Thor, p: Position): Promise<number | null> {
+    if (!p.source || !p.price0in1) return null
+    const basis = p.source.kind === 'v2'
+        ? await v2Basis(thor, p.source.pool, p.source.owner, p.source.balance)
+        : await v3Basis(thor, p.source.manager, p.source.tokenId)
+    if (!basis || basis.units === 0n) return null
+    const units = (v: bigint, d: number) => Number(v) / 10 ** d
+    return vsHodl(
+        { a0: p.amount0, a1: p.amount1 },
+        { a0: units(basis.amount0, p.token0.decimals), a1: units(basis.amount1, p.token1.decimals) },
+        p.price0in1
+    )
 }

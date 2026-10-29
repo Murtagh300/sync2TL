@@ -83,7 +83,7 @@ export const abis = {
 
 export const urls = {
     get explorerMain() {
-        return 'http://explore.vechain.org/'
+        return 'https://explore.vechain.org/'
     },
     get explorerTest() {
         return 'https://explore-testnet.vechain.org/'

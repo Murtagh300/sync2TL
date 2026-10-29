@@ -40,12 +40,14 @@ type Prefs = {
     errorReports: boolean
     /** what pays transaction fees: VTHO, or VET or B3TR through VeChain's delegator (utils/fee-token.ts) */
     feeToken: 'vtho' | 'vet' | 'b3tr'
+    /** where the panic button sends everything (pages/Panic); '' for none: then it only revokes */
+    safeAddress: string
 }
 
 const KEY = 'bv-prefs'
 
 function load(): Prefs {
-    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, homeLayout: 'wide', highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true, errorReports: false, feeToken: 'vtho' }
+    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, homeLayout: 'wide', highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true, errorReports: false, feeToken: 'vtho', safeAddress: '' }
     try {
         return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') as Partial<Prefs> }
     } catch {

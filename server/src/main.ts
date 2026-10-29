@@ -13,6 +13,9 @@ import { openDb } from './db.ts'
 import { createStore, MAX_WATCHED, validateSubscribe, type Subscription } from './push/store.ts'
 import { createWatcher, tokenRegistry } from './push/watcher.ts'
 import { createReminders, validateReminders } from './push/reminders.ts'
+import { createPhishing, HOST } from './phishing.ts'
+import { createX2Index } from './x2earn.ts'
+import { createChat } from './chat.ts'
 
 /**
  * BlackVault's server. Everything here is public data or data the wallet chose to send;
@@ -22,6 +25,12 @@ import { createReminders, validateReminders } from './push/reminders.ts'
  *   GET  /api/bvm/*          gateway (listed paths only, cached)
  *   GET  /health, /status    what the wallet depends on
  *   GET  /config             remote config (feature switches, a notice)
+ *   GET  /phishing?host=     whether a site is a known phishing site
+ *   GET  /x2earn/leaderboard?days=7|30&address=   X2Earn's top earners, and where an address stands
+ *   POST /chat/key           publish a chat key (a certificate signed by the address)
+ *   GET  /chat/keys/:address the chat keys of an address
+ *   POST /chat/send          an encrypted message, signed with the sender's chat key
+ *   POST /chat/inbox         an address's messages since an id, signed with its chat key
  *   GET  /push/key           the VAPID public key
  *   POST /push/subscribe     { subscription, addresses, lang }
  *   POST /push/unsubscribe   { endpoint }
@@ -40,10 +49,14 @@ const proxy = createProxy({ betterswap: config.betterswapUrl, bvm: config.bvmUrl
 const gatewayLimit = new RateLimiter(config.rateLimit.gateway)
 const writeLimit = new RateLimiter(config.rateLimit.writes)
 const relay = createRelay()
+const phishing = createPhishing()
+phishing.start()
+const x2 = createX2Index({ db, nodes: config.mainnetNodes })
+x2.start()
 // a sign request is a handful of calls; a waiting wallet asks again every 20 seconds
 const relayLimit = new RateLimiter(120)
 
-// push: on when VAPID keys are set
+// push: on when VAPID keys are set (declared first: chat pushes new messages)
 let send: ((sub: Subscription, payload: string) => Promise<void>) | null = null
 if (config.vapid) {
     webpush.setVapidDetails(config.vapid.subject, config.vapid.publicKey, config.vapid.privateKey)
@@ -65,6 +78,23 @@ if (config.vapid) {
 } else {
     console.log('[push] off: set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (npm run vapid makes a pair)')
 }
+
+// a push for a new chat message, in the recipient's language; the text stays encrypted
+const CHAT_PUSH: Record<string, string> = {
+    en: 'New message', nl: 'Nieuw bericht', de: 'Neue Nachricht', fr: 'Nouveau message', zh: '新消息',
+    es: 'Mensaje nuevo', it: 'Nuovo messaggio', ja: '新しいメッセージ', ko: '새 메시지'
+}
+const chat = createChat(db, {
+    onMessage: m => {
+        const sender = send
+        if (!sender) return
+        for (const sub of store.forAddress(m.to)) {
+            const payload = JSON.stringify({ title: CHAT_PUSH[sub.lang] || CHAT_PUSH.en, body: 'BlackVault', url: `#/chat?with=${m.from}`, tag: `chat:${m.from}` })
+            sender(sub, payload).catch(err => console.warn('[push] chat:', (err as Error).message))
+        }
+    }
+})
+setInterval(() => chat.prune(), 3600 * 1000).unref()
 
 const insertReport = db.prepare('INSERT INTO reports (at, message, stack, route, version, ua) VALUES (?, ?, ?, ?, ?, ?)')
 const trimReports = db.prepare('DELETE FROM reports WHERE id <= (SELECT id FROM reports ORDER BY id DESC LIMIT 1 OFFSET 10000)')
@@ -94,6 +124,55 @@ router.get('/status', async ctx => {
     ctx.res.end(statusPage(h))
 })
 router.get('/config', ctx => json(ctx.res, 200, flags(), { 'Cache-Control': 'public, max-age=60' }))
+
+router.get('/phishing', ctx => {
+    if (!gatewayLimit.take(`ph:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    const host = (ctx.url.searchParams.get('host') || '').toLowerCase()
+    if (!HOST.test(host)) throw new HttpError(400, 'not a host name')
+    // not stored or logged: only the answer goes back
+    json(ctx.res, 200, { listed: phishing.check(host) }, { 'Cache-Control': 'public, max-age=3600' })
+})
+
+router.get('/x2earn/leaderboard', ctx => {
+    if (!gatewayLimit.take(`x2:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    const days = ctx.url.searchParams.get('days') === '30' ? 30 : 7
+    const address = ctx.url.searchParams.get('address') || ''
+    if (address && !/^0x[0-9a-fA-F]{40}$/.test(address)) throw new HttpError(400, 'not an address')
+    json(ctx.res, 200, x2.board(days, address), { 'Cache-Control': address ? 'private, max-age=300' : 'public, max-age=300' })
+})
+
+router.post('/chat/key', async ctx => {
+    if (!writeLimit.take(`chat:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    try {
+        json(ctx.res, 200, chat.publish(await readJson(ctx.req, 4096)))
+    } catch (err) {
+        throw err instanceof HttpError ? err : new HttpError(400, (err as Error).message)
+    }
+})
+router.get('/chat/keys/:address', ctx => {
+    if (!gatewayLimit.take(`chat:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    const a = String(ctx.params.address || '').toLowerCase()
+    if (!/^0x[0-9a-f]{40}$/.test(a)) throw new HttpError(400, 'not an address')
+    json(ctx.res, 200, { keys: chat.keys(a) }, { 'Cache-Control': 'no-store' })
+})
+router.post('/chat/send', async ctx => {
+    // chat is talk, not bulk: its own, looser limit next to the other writes
+    if (!relayLimit.take(`chat:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    try {
+        const m = chat.send(await readJson(ctx.req, 16 * 1024))
+        json(ctx.res, 200, { id: m.id })
+    } catch (err) {
+        throw err instanceof HttpError ? err : new HttpError(400, (err as Error).message)
+    }
+})
+router.post('/chat/inbox', async ctx => {
+    if (!relayLimit.take(`inbox:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    try {
+        json(ctx.res, 200, { messages: chat.read(await readJson(ctx.req, 4096)) }, { 'Cache-Control': 'no-store' })
+    } catch (err) {
+        throw err instanceof HttpError ? err : new HttpError(400, (err as Error).message)
+    }
+})
 
 router.get('/push/key', ctx => {
     if (!config.vapid) throw new HttpError(503, 'push is not set up')

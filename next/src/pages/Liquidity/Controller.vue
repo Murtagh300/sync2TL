@@ -77,6 +77,10 @@
                                 v-if="p.amount0 || p.amount1"
                                 caption
                             >{{fmt(p.amount0)}} {{p.token0.symbol}} + {{fmt(p.amount1)}} {{p.token1.symbol}}</q-item-label>
+                            <q-item-label
+                                v-if="p.vsHodl != null"
+                                caption
+                            >{{$t('liquidity.label_vs_hodl')}} <span :class="p.vsHodl >= 0 ? 'text-primary' : 'text-warning'">{{signed(p.vsHodl)}}</span></q-item-label>
                         </q-item-section>
                         <q-item-section side>
                             <div
@@ -91,6 +95,10 @@
                         </q-item-section>
                     </q-item>
                 </q-list>
+                <p
+                    v-if="positions.some(p => p.vsHodl != null)"
+                    class="text-caption text-muted q-mt-md"
+                >{{$t('liquidity.msg_vs_hodl')}}</p>
             </template>
         </page-content>
     </div>
@@ -100,7 +108,7 @@ import { defineComponent } from 'vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import EmptyState from 'components/EmptyState.vue'
-import { findPositions, type Position } from 'src/utils/liquidity'
+import { compareToHodl, findPositions, type Position } from 'src/utils/liquidity'
 import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { money, prefs } from 'src/utils/prefs'
 import { numberLocale } from 'src/utils/format'
@@ -127,6 +135,9 @@ export default defineComponent({
     methods: {
         money,
         openURL,
+        signed(v: number) {
+            return `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toLocaleString(numberLocale(), { maximumFractionDigits: 1 })}%`
+        },
         fmt(v: number) {
             return v.toLocaleString(numberLocale(), { maximumFractionDigits: v >= 100 ? 0 : 4 })
         },
@@ -155,6 +166,10 @@ export default defineComponent({
                     }
                 }
                 this.positions = list.sort((a, b) => (b.usd || 0) - (a.usd || 0))
+                // against holding: read per position, shown as each comes in
+                for (const p of this.positions) {
+                    compareToHodl(thor, p).then(v => { p.vsHodl = v }).catch(() => { p.vsHodl = null })
+                }
             } catch (err) {
                 console.warn('liquidity:', err)
                 this.error = true

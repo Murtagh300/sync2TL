@@ -4,7 +4,8 @@ import { dirname } from 'node:path'
 
 /**
  * The server's own data, in SQLite (built into Node): push subscriptions with the addresses
- * they watch, reminders they asked for, the last block the watcher read, and opt-in error reports. Migrations run in
+ * they watch, reminders they asked for, the last block the watcher read, X2Earn rewards per day for
+ * the leaderboard, and opt-in error reports. Migrations run in
  * order at start and are recorded, so an upgrade never runs one twice.
  */
 
@@ -44,7 +45,31 @@ const MIGRATIONS: string[] = [
         url TEXT NOT NULL,
         PRIMARY KEY (endpoint, id)
     )`,
-    `CREATE INDEX reminders_next ON reminders(next)`
+    `CREATE INDEX reminders_next ON reminders(next)`,
+    // X2Earn rewards per address per day, for the leaderboard (x2earn.ts); public chain data
+    `CREATE TABLE x2_daily (
+        day TEXT NOT NULL,
+        address TEXT NOT NULL,
+        b3tr REAL NOT NULL,
+        actions INTEGER NOT NULL,
+        PRIMARY KEY (day, address)
+    )`,
+    // encrypted chat (chat.ts): public chat keys per address, and ciphertext only
+    `CREATE TABLE chat_keys (
+        address TEXT NOT NULL,
+        pubkey TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        PRIMARY KEY (address, pubkey)
+    )`,
+    `CREATE TABLE chat_messages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        from_addr TEXT NOT NULL,
+        to_addr TEXT NOT NULL,
+        blob TEXT NOT NULL,
+        at INTEGER NOT NULL
+    )`,
+    `CREATE INDEX chat_to ON chat_messages(to_addr, id)`,
+    `CREATE INDEX chat_from ON chat_messages(from_addr, id)`
 ]
 
 export function openDb(path: string): DatabaseSync {

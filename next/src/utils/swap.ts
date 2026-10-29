@@ -2,8 +2,8 @@ import { fns, isKnownSwapRouter, ZERO_ADDRESS } from './actions'
 import { balanceChanges } from './simulate'
 
 /**
- * Swaps: the best route from VeTrade's quote service (it aggregates the VeChain DEXes
- * through BetterSwap), and BetterSwap's on-chain aggregator when that service is down.
+ * Swaps: the best route of VeTrade's quote service (it aggregates the VeChain DEXes) and
+ * BetterSwap's on-chain aggregator, asked side by side.
  * Clauses from the service are checked before they reach the sign dialog: they may only
  * use known routers, and a dry run must pay this account at least the minimum out.
  */
@@ -140,6 +140,26 @@ export function priceImpact(amountIn: bigint, decimalsIn: number, priceIn: numbe
     return Math.max(0, (1 - valueOut / valueIn) * 100)
 }
 
+/**
+ * price impact without market prices: how much worse this amount trades than a tiny amount on
+ * BetterSwap's aggregator. A thin pool shows up here even for a token nobody prices.
+ */
+export async function depthImpact(thor: Connex.Thor, fromToken: string | null | undefined, toToken: string | null | undefined, amountIn: bigint, amountOut: bigint): Promise<number | null> {
+    const from = tokenAddress(fromToken)
+    const to = tokenAddress(toToken)
+    const small = amountIn / 1000n > 0n ? amountIn / 1000n : 1n
+    const path = [from === ZERO_ADDRESS ? VVET : from, to === ZERO_ADDRESS ? VVET : to]
+    const [out] = await thor.explain([{ to: AGGREGATOR, value: 0, data: fns.getAmountsOut.encode(small.toString(), path) }]).execute()
+    if (!out || out.reverted) return null
+    const amounts: string[] = fns.getAmountsOut.decode(out.data).amounts
+    const smallOut = BigInt(amounts[amounts.length - 1] || 0)
+    if (smallOut === 0n || amountIn === 0n) return null
+    // rates as numbers: the ratio is all that matters
+    const rate = Number(amountOut) / Number(amountIn)
+    const smallRate = Number(smallOut) / Number(small)
+    return Math.max(0, (1 - rate / smallRate) * 100)
+}
+
 export type Pair = { from: string, to: string }
 const PAIRS_KEY = 'bv-swap-pairs'
 
@@ -159,7 +179,10 @@ export function rememberPair(p: Pair) {
     } catch { }
 }
 
-/** the best quote: VeTrade's service, or BetterSwap on-chain when it fails */
+/**
+ * the best quote: VeTrade's service and BetterSwap's on-chain aggregator are asked at once, and
+ * the one that pays more wins (VeTrade often splits a route; BetterSwap sometimes has the deeper pool)
+ */
 export async function quote(
     thor: Connex.Thor,
     fromToken: string | null | undefined,
@@ -171,13 +194,21 @@ export async function quote(
 ): Promise<Quote> {
     const from = tokenAddress(fromToken)
     const to = tokenAddress(toToken)
-    try {
-        return await vetradeQuote(thor, from, to, amountIn, slippageBps, account, signal)
-    } catch (err) {
-        if (signal?.aborted) {
-            throw err
-        }
-        console.warn('VeTrade quote:', err)
-        return aggregatorQuote(thor, from, to, amountIn, slippageBps, account)
+    const [vetrade, betterswap] = await Promise.allSettled([
+        vetradeQuote(thor, from, to, amountIn, slippageBps, account, signal),
+        aggregatorQuote(thor, from, to, amountIn, slippageBps, account)
+    ])
+    if (signal?.aborted) {
+        throw new Error('aborted')
     }
+    if (vetrade.status === 'rejected') console.warn('VeTrade quote:', vetrade.reason)
+    return bestQuote(vetrade.status === 'fulfilled' ? vetrade.value : null, betterswap.status === 'fulfilled' ? betterswap.value : null)
+}
+
+/** the quote that pays more; VeTrade on a tie (its routes are checked in a dry run) */
+export function bestQuote(a: Quote | null, b: Quote | null): Quote {
+    if (a && b) return b.amountOut > a.amountOut ? b : a
+    const q = a || b
+    if (!q) throw new Error('no route')
+    return q
 }

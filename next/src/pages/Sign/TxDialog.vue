@@ -209,7 +209,10 @@ import { delegate, depositAccount, maxFeeWei, quoteFee, verifyDelegated, type Fe
 import vetIcon from 'src/assets/vet.svg'
 import RiskCard from './RiskCard.vue'
 import { ageInDays, contractBornAt, riskLabels, usedContracts, type RiskLabel } from 'src/utils/risk'
+import { siteLabels } from 'src/utils/phishing'
 import { contractName, isKnownSwapRouter } from 'src/utils/actions'
+
+const level = (l: RiskLabel['level']) => l === 'danger' ? 2 : l === 'warn' ? 1 : 0
 
 export default defineComponent({
     extends: Common,
@@ -236,7 +239,9 @@ export default defineComponent({
             tokenBalance: null as bigint | null,
             /** the clauses' targets that are contracts, with their age in days (null: unknown) */
             contracts: {} as Record<string, number | null>,
-            usedBefore: new Set<string>()
+            usedBefore: new Set<string>(),
+            /** what is known about the site that asks: a phishing list, a borrowed name */
+            siteRisks: [] as RiskLabel[]
         }
     },
     computed: {
@@ -345,14 +350,14 @@ export default defineComponent({
         risks(): RiskLabel[] {
             const tokens = new Set(this.tokens.map(t => (t.address || '').toLowerCase()))
             const known = (a: string) => !!contractName(a) || isKnownSwapRouter(a) || tokens.has(a) || !!this.collections[a]
-            return riskLabels({
+            return [...this.siteRisks, ...riskLabels({
                 clauses: this.req.message,
                 changes: this.changes,
                 known,
                 isToken: a => tokens.has(a),
                 contracts: this.contracts,
                 used: this.usedBefore
-            })
+            })].sort((a, b) => level(b.level) - level(a.level))
         },
         /** what a fee quote depends on */
         feeInputs(): string {
@@ -483,6 +488,7 @@ export default defineComponent({
         }
     },
     async created() {
+        void siteLabels(this.req.origin).then(l => { this.siteRisks = l })
         const targets = [...new Set(this.req.message.map(c => (c.to || '').toLowerCase()).filter(Boolean))]
         try {
             const head = this.thor.status.head.number || (await this.thor.block().get())?.number || 0

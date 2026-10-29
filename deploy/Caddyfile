@@ -30,8 +30,8 @@ www.{$WALLET_DOMAIN} {
 		-Server
 	}
 
-	# the server: gateway, push, health, config, error reports
-	@server path /api/* /push/* /relay/* /health /status /config /errors
+	# the server: gateway, push, chat, the X2Earn leaderboard, the phishing list, health, config, error reports
+	@server path /api/* /push/* /relay/* /chat/* /x2earn/* /phishing /health /status /config /errors
 	handle @server {
 		reverse_proxy server:8787 {
 			header_up X-Forwarded-For {remote_host}

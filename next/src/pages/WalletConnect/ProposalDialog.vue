@@ -34,6 +34,10 @@
                     />
                     {{$t(`wc.verify_${level}`)}}
                 </div>
+                <risk-card
+                    :labels="siteRisks"
+                    class="q-mt-md text-left"
+                />
                 <p class="text-soft q-mt-md q-mb-none">{{$t('wc.msg_connect')}}</p>
             </q-card-section>
             <q-card-section class="q-pt-none">
@@ -95,9 +99,13 @@ import { defineComponent } from 'vue'
 import { QDialog } from 'quasar'
 import type { WcProposal } from 'src/utils/walletconnect'
 import { canSign } from 'src/utils/watch'
+import RiskCard from 'pages/Sign/RiskCard.vue'
+import { siteLabels } from 'src/utils/phishing'
+import type { RiskLabel } from 'src/utils/risk'
 
 // a dApp asks to connect over WalletConnect: which address it may see and ask to sign
 export default defineComponent({
+    components: { RiskCard },
     // the Dialog plugin listens to these
     emits: ['ok', 'hide'],
     props: {
@@ -107,7 +115,8 @@ export default defineComponent({
         return {
             gid: vm.proposal.gids[0]!,
             address: '',
-            wallets: [] as M.Wallet[]
+            wallets: [] as M.Wallet[],
+            siteRisks: [] as RiskLabel[]
         }
     },
     computed: {
@@ -119,7 +128,7 @@ export default defineComponent({
             }
         },
         level(): 'ok' | 'unknown' | 'bad' {
-            if (this.proposal.isScam || this.proposal.validation === 'INVALID') return 'bad'
+            if (this.proposal.isScam || this.proposal.validation === 'INVALID' || this.siteRisks.some(r => r.level === 'danger')) return 'bad'
             return this.proposal.validation === 'VALID' ? 'ok' : 'unknown'
         },
         addresses(): { label: string, value: string }[] {
@@ -137,6 +146,7 @@ export default defineComponent({
         }
     },
     async created() {
+        void siteLabels(this.proposal.url).then(l => { this.siteRisks = l })
         this.wallets = await this.$svc.wallet.all()
     },
     methods: {

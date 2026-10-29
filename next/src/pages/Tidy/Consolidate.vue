@@ -91,11 +91,7 @@ import SuccessDialog from 'components/SuccessDialog.vue'
 import { visibleTokens } from 'src/utils/tokens'
 import { selectedWallet } from 'src/utils/selection'
 import { canSign } from 'src/utils/watch'
-import { formatUnits } from 'src/utils/format'
-import { fns } from 'src/utils/actions'
-
-/** VTHO left behind on each address: its own transaction pays its fee */
-const RESERVE_VTHO = 10
+import { RESERVE_VTHO, sweepClauses } from 'src/utils/sweep'
 
 type Source = { index: number, address: string, parts: string[], clauses: { to: string, value: string, data: string }[], sent: boolean }
 
@@ -146,29 +142,7 @@ export default defineComponent({
                     if (index === this.target) return source
                     const specs = await visibleTokens(this.$svc, w.gid, address)
                     const balances = await Promise.all(specs.map(s => bc.balanceOf(address, s).then(b => BigInt(new BigNumber(b).toFixed(0))).catch(() => 0n)))
-                    let vet = 0n
-                    let vtho = 0n
-                    specs.forEach((spec, k) => {
-                        const b = balances[k]!
-                        if (b <= 0n) return
-                        if (spec.symbol === 'VET') vet = b
-                        else if (spec.symbol === 'VTHO') vtho = b
-                        else {
-                            source.clauses.push({ to: spec.address, value: '0', data: fns.transfer.encode(to, b.toString()) })
-                            source.parts.push(`${formatUnits(b, spec.decimals, 2)} ${spec.symbol}`)
-                        }
-                    })
-                    if (vet > 0n) {
-                        source.clauses.push({ to, value: vet.toString(), data: '0x' })
-                        source.parts.unshift(`${formatUnits(vet, 18, 2)} VET`)
-                    }
-                    const reserve = BigInt(RESERVE_VTHO) * 10n ** 18n
-                    const vthoSpec = specs.find(s => s.symbol === 'VTHO')
-                    if (vthoSpec && vtho > reserve) {
-                        source.clauses.push({ to: vthoSpec.address, value: '0', data: fns.transfer.encode(to, (vtho - reserve).toString()) })
-                        source.parts.push(`${formatUnits(vtho - reserve, 18, 2)} VTHO`)
-                    }
-                    return source
+                    return { ...source, ...sweepClauses(specs, balances, to) }
                 }))
                 this.sources = this.sources.filter(s => s.index !== this.target)
             } finally {

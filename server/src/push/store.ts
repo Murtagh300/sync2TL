@@ -10,7 +10,7 @@ export type Subscription = { endpoint: string, keys: { p256dh: string, auth: str
 export const MAX_ADDRESSES = 20
 /** all subscriptions together: the watcher reads these every 10 seconds */
 export const MAX_WATCHED = 50000
-export const LANGS = ['en', 'nl', 'de', 'fr', 'zh']
+export const LANGS = ['en', 'nl', 'de', 'fr', 'zh', 'es', 'it', 'ja', 'ko']
 
 /**
  * The push services browsers use. The server only ever posts to these: a subscription can't make

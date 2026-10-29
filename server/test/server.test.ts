@@ -13,6 +13,10 @@ import { openDb } from '../src/db.ts'
 import { createStore, validateSubscribe } from '../src/push/store.ts'
 import { formatAmount, messagesFor, type Arrival } from '../src/push/watcher.ts'
 import { createReminders, nextAfter, validateReminders } from '../src/push/reminders.ts'
+import { createPhishing, domainsOf, HOST, isListed, parseLists } from '../src/phishing.ts'
+import { createX2Index, parseReward, REWARD_DISTRIBUTED, REWARDS_POOL } from '../src/x2earn.ts'
+import { chatHash, createChat } from '../src/chat.ts'
+import { address as addr, blake2b256, Certificate, secp256k1 } from 'thor-devkit'
 
 const A = '0x' + 'a'.repeat(40)
 const B = '0x' + 'b'.repeat(40)
@@ -242,4 +246,94 @@ test('reminders: due ones are pushed once and set to the next time; they go with
     assert.equal(await reminders.tick(send, 3000), 0)
     store.unsubscribe(sub.subscription.endpoint)
     assert.equal(await reminders.tick(send, 10 * 86400000), 0)
+})
+
+test('phishing: a listed domain covers its subdomains, an allowed one wins', () => {
+    assert.deepEqual(domainsOf('a.b.example.com'), ['a.b.example.com', 'b.example.com', 'example.com'])
+    const lists = { blocked: new Set(['evil.com', 'pages.dev']), allowed: new Set(['good.pages.dev']) }
+    assert.equal(isListed(lists, 'login.evil.com'), true)
+    assert.equal(isListed(lists, 'notevil.com'), false)
+    assert.equal(isListed(lists, 'good.pages.dev'), false)
+    assert.equal(isListed(lists, 'x.pages.dev'), true)
+    assert.equal(HOST.test('vebetterdao.org'), true)
+    assert.equal(HOST.test('localhost:8080'), false)
+    assert.throws(() => parseLists({ blacklist: ['a.com'] }), /too short/)
+})
+
+test('phishing: a failed load keeps the last good list', async () => {
+    const big = { blacklist: Array.from({ length: 1000 }, (_, i) => `scam${i}.com`), whitelist: [] }
+    let fail = false
+    const fake = (async () => fail ? new Response('down', { status: 500 }) : Response.json(big)) as typeof fetch
+    const p = createPhishing({ fetch: fake })
+    await p.load()
+    assert.equal(p.check('scam7.com'), true)
+    assert.equal(p.check('vechain.co.com'), true)
+    fail = true
+    await p.load()
+    assert.equal(p.check('scam7.com'), true)
+})
+
+test('x2earn: rewards add up per address and day, and rank over the last days', async () => {
+    const db = openDb(':memory:')
+    const day = Date.UTC(2026, 9, 28, 12)
+    const word = (v: bigint) => v.toString(16).padStart(64, '0')
+    const log = (to: string, b3tr: number, at: number) => ({
+        topics: [REWARD_DISTRIBUTED, '0x' + '1'.repeat(64), '0x' + to.slice(2).padStart(64, '0'), '0x' + '2'.repeat(64)],
+        data: '0x' + word(BigInt(b3tr) * 10n ** 18n) + word(64n) + word(0n),
+        meta: { blockTimestamp: Math.floor(at / 1000) }
+    })
+    assert.deepEqual(parseReward(log(A, 5, day)), { day: '2026-10-28', receiver: A, b3tr: 5 })
+    const logs = [log(A, 5, day), log(A, 3, day), log(B, 10, day), log(B, 1, day - 20 * 86400 * 1000)]
+    let served = false
+    const fake = (async (url: string | URL, init?: RequestInit) => {
+        if (String(url).endsWith('/blocks/best')) return Response.json({ number: 100 })
+        const body = JSON.parse(String(init?.body)) as { criteriaSet: { address: string }[], options: { offset: number } }
+        assert.equal(body.criteriaSet[0]!.address, REWARDS_POOL)
+        const page = served || body.options.offset > 0 ? [] : logs
+        served = true
+        return Response.json(page)
+    }) as typeof fetch
+    const x2 = createX2Index({ db, nodes: ['https://node'], fetch: fake, now: () => day })
+    await x2.tick()
+    const week = x2.board(7, B)
+    assert.deepEqual(week.top.map(r => [r.address, r.b3tr, r.actions]), [[B, 10, 1], [A, 8, 2]])
+    assert.equal(week.you?.rank, 1)
+    assert.equal(x2.board(30, B).top[0]!.b3tr, 11)
+    assert.equal(x2.board(7, '0x' + 'c'.repeat(40)).you, null)
+})
+
+test('chat: keys need a certificate from the address; only signed sends and reads go through', () => {
+    const db = openDb(':memory:')
+    const t = 1_800_000_000_000
+    const pushed: string[] = []
+    const chat = createChat(db, { now: () => t, onMessage: m => pushed.push(m.to) })
+    const person = () => {
+        const wallet = secp256k1.generatePrivateKey()
+        const chatKey = secp256k1.generatePrivateKey()
+        const address = addr.fromPublicKey(secp256k1.derivePublicKey(wallet)).toLowerCase()
+        const pub = '0x' + secp256k1.derivePublicKey(chatKey).toString('hex')
+        const cert: Certificate = { purpose: 'identification', payload: { type: 'text', content: `BlackVault chat key ${pub.slice(2)}` }, domain: 'wallet', timestamp: Math.floor(t / 1000), signer: address }
+        cert.signature = '0x' + secp256k1.sign(blake2b256(Certificate.encode(cert)), wallet).toString('hex')
+        const sign = (text: string) => '0x' + secp256k1.sign(chatHash(text), chatKey).toString('hex')
+        return { address, pub, cert, sign }
+    }
+    const a = person()
+    const b = person()
+    assert.deepEqual(chat.publish(a.cert), { address: a.address, key: a.pub })
+    // someone else's signature on a's key: refused
+    assert.throws(() => chat.publish({ ...a.cert, signer: b.address }), /bad signature/)
+    assert.throws(() => chat.publish({ ...a.cert, timestamp: a.cert.timestamp - 3600 }), /too old/)
+    const msg = (from: typeof a, to: typeof b, blob = '0xabcd') => ({ from: from.address, to: to.address, blob, at: t, sig: from.sign(`send|${from.address}|${to.address}|${t}|${blob}`) })
+    assert.throws(() => chat.send(msg(a, b)), /no chat key/)
+    chat.publish(b.cert)
+    const sent = chat.send(msg(a, b))
+    assert.equal(sent.id, 1)
+    assert.deepEqual(pushed, [b.address])
+    // signed by b but claiming to be from a
+    assert.throws(() => chat.send({ ...msg(b, a), from: a.address, to: b.address }), /not signed/)
+    const inbox = (who: typeof a, since = 0) => chat.read({ address: who.address, since, at: t, sig: who.sign(`inbox|${who.address}|${t}`) })
+    assert.equal(inbox(b)[0]!.from, a.address)
+    assert.equal(inbox(a).length, 1)
+    assert.equal(inbox(b, 1).length, 0)
+    assert.throws(() => chat.read({ address: b.address, since: 0, at: t, sig: a.sign(`inbox|${b.address}|${t}`) }), /not signed/)
 })

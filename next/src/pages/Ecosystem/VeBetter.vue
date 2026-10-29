@@ -6,7 +6,7 @@
                 round
                 icon="o_open_in_new"
                 :aria-label="$t('a11y.open_external')"
-                @click="openURL('https://governance.vebetterdao.org')"
+                @click="$router.push({ name: 'vote' })"
             />
         </page-toolbar>
         <page-content

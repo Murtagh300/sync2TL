@@ -1,6 +1,14 @@
 <template>
     <div class="fit column no-wrap">
-        <page-toolbar :title="$t('discover.title')" />
+        <page-toolbar :title="$t('discover.title')">
+            <q-btn
+                flat
+                round
+                icon="o_leaderboard"
+                :aria-label="$t('leaderboard.action_open')"
+                :to="{ name: 'leaderboard' }"
+            />
+        </page-toolbar>
         <page-content
             class="col"
             padding

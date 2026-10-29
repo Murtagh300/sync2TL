@@ -49,8 +49,8 @@ export function isMessageData(data: string | null | undefined) {
 }
 
 /** the message as clause data, readable by each of these public keys */
-export async function encryptMessage(text: string, readers: Buffer[]): Promise<string> {
-    const plain = Buffer.from(text.slice(0, MAX_MESSAGE), 'utf8')
+export async function encryptMessage(text: string, readers: Buffer[], max = MAX_MESSAGE): Promise<string> {
+    const plain = Buffer.from(text.slice(0, max), 'utf8')
     const ephemeral = secp256k1.generatePrivateKey()
     const ephemeralPub = secp256k1.derivePublicKey(ephemeral)
     const contentKey = random(32)

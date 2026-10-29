@@ -51,6 +51,16 @@
                     </q-item-section>
                 </q-item>
             </q-list>
+            <q-btn
+                outline
+                no-caps
+                color="negative"
+                icon="o_emergency"
+                class="full-width q-mt-lg"
+                :label="$t('panic.action_open')"
+                :to="{ name: 'panic' }"
+            />
+            <p class="text-caption text-muted q-mt-xs text-center">{{$t('panic.msg_open')}}</p>
         </page-content>
     </div>
 </template>

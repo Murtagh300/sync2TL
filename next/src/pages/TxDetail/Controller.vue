@@ -169,6 +169,14 @@
                         @click="saveContact()"
                     />
                     <q-btn
+                        v-if="state === 'done'"
+                        flat
+                        no-caps
+                        icon="o_receipt_long"
+                        :label="$t('receipt.action')"
+                        @click="printBon()"
+                    />
+                    <q-btn
                         v-if="explorer"
                         flat
                         no-caps
@@ -203,6 +211,7 @@ import type { Contact } from 'src/utils/names'
 import type { BVM } from 'boot/services/bvm'
 import type { RouteLocationRaw } from 'vue-router'
 import { BigNumber } from 'bignumber.js'
+import { printReceipt } from 'src/utils/receipt'
 
 /** an amount as the send form takes it: digits and a dot */
 const plain = (v: bigint | string, decimals: number) => new BigNumber(v.toString()).div(new BigNumber(10).pow(decimals)).toFixed()
@@ -346,6 +355,35 @@ export default defineComponent({
         }
     },
     methods: {
+        /** what moved, as "+12.5 B3TR" lines, for the receipt */
+        movedLines(): string[] {
+            const c = this.changes
+            if (!c) return []
+            const out: string[] = []
+            const sign = (v: bigint) => v > 0n ? '+' : '−'
+            if (c.vet !== 0n) out.push(`${sign(c.vet)}${formatUnits(c.vet < 0n ? -c.vet : c.vet, 18)} VET`)
+            for (const [token, v] of Object.entries(c.tokens)) {
+                const spec = this.tokens.find(t => (t.address || '').toLowerCase() === token)
+                if (!spec || v === 0n) continue
+                out.push(`${sign(v)}${formatUnits(v < 0n ? -v : v, spec.decimals)} ${spec.symbol}`)
+            }
+            return out
+        },
+        printBon() {
+            const tx = this.tx
+            if (!tx) return
+            const at = tx.meta?.blockTimestamp ? new Date(tx.meta.blockTimestamp * 1000).toLocaleString(this.$i18n.locale) : ''
+            const lines = [
+                { label: this.$t('receipt.label_date'), value: at },
+                ...this.movedLines().map(v => ({ label: this.$t('receipt.label_amount'), value: v })),
+                { label: this.$t('txDetail.label_from'), value: tx.origin },
+                ...(this.counterparty || this.firstTo ? [{ label: this.$t('txDetail.label_to'), value: this.counterparty || this.firstTo }] : []),
+                ...(this.fee ? [{ label: this.$t('sign.label_estimate_fee'), value: `${this.fee} VTHO` }] : []),
+                ...(this.note ? [{ label: this.$t('receipt.label_note'), value: this.note }] : []),
+                { label: this.$t('txDetail.label_id'), value: this.txId }
+            ]
+            printReceipt({ title: this.title, lines, link: this.explorer, footer: this.$t('receipt.footer') }, this.$i18n.locale)
+        },
         openURL,
         copy() {
             copyText(this.txId).then(() => this.$q.notify(this.$t('common.copied'))).catch(() => { })

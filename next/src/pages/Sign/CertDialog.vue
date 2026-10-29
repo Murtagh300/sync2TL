@@ -14,6 +14,10 @@
                 @action="hide()"
             />
             <page-content class="col q-pa-sm bg-page">
+                <risk-card
+                    :labels="siteRisks"
+                    class="q-mb-sm"
+                />
                 <div class="text-uppercase">{{req.message.purpose}}</div>
                 <q-card
                     flat
@@ -70,14 +74,25 @@ import PageAction from 'src/components/PageAction.vue'
 import SignerSelector from './SignerSelector.vue'
 import { Certificate, blake2b256 } from 'thor-devkit'
 import ErrorTip from './ErrorTip.vue'
+import RiskCard from './RiskCard.vue'
+import WarningListDialog from './WarningListDialog.vue'
+import { siteLabels } from 'src/utils/phishing'
+import type { RiskLabel } from 'src/utils/risk'
 
 export default defineComponent({
     extends: Common,
     // the Dialog plugin listens to these
     emits: ['ok', 'hide'],
-    components: { PageToolbar, PageContent, PageAction, SignerSelector, ErrorTip },
+    components: { PageToolbar, PageContent, PageAction, SignerSelector, ErrorTip, RiskCard },
     props: {
         req: { type: Object as () => M.CertRequest, required: true }
+    },
+    data: () => ({
+        /** a phishing site often asks to sign in first */
+        siteRisks: [] as RiskLabel[]
+    }),
+    created() {
+        void siteLabels(this.req.origin || (this.req.domain ? `https://${this.req.domain}` : '')).then(l => { this.siteRisks = l })
     },
     computed: {
         criticalError(): Error | null {
@@ -102,6 +117,19 @@ export default defineComponent({
             const wallet = this.wallet
             if (!wallet) {
                 return
+            }
+
+            const dangers = this.siteRisks.filter(r => r.level === 'danger')
+            if (dangers.length) {
+                try {
+                    await this.$dialog({
+                        component: WarningListDialog,
+                        title: this.$t('risk.title_danger').toString(),
+                        warnings: dangers.map(r => ({ name: this.$t(`risk.${r.key}`, r.params || {}).toString(), message: '' }))
+                    })
+                } catch {
+                    return
+                }
             }
 
             const req = this.req

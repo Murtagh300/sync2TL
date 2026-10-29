@@ -42,7 +42,8 @@ the device. The server makes the wallet faster, steadier and able to notify.
 
 ## The server (`server/`)
 
-Node 24 running TypeScript directly (type stripping, no build step). One runtime dependency: `web-push`.
+Node 24 running TypeScript directly (type stripping, no build step). Runtime dependencies: `web-push`, and
+`thor-devkit` to check VeChain signatures (chat keys).
 Storage: `node:sqlite` with recorded migrations (`src/db.ts`).
 
 | Route | What |
@@ -54,12 +55,16 @@ Storage: `node:sqlite` with recorded migrations (`src/db.ts`).
 | `GET /push/key`, `POST /push/subscribe`, `POST /push/unsubscribe` | push for incoming transfers |
 | `POST /push/reminders` | a subscribed device's reminders (recurring buys), pushed when due |
 | `POST /errors`, `GET /errors` | opt-in, scrubbed error reports; reading needs `ADMIN_TOKEN` |
+| `GET /phishing?host=` | whether a site is on MetaMask's phishing list or ours (`src/phishing.ts`), reloaded every 6 hours |
+| `GET /x2earn/leaderboard?days=7\|30&address=` | X2Earn rewards per address per day, indexed from the chain for 35 days (`src/x2earn.ts`) |
+| `POST /chat/key`, `GET /chat/keys/:address`, `POST /chat/send`, `POST /chat/inbox` | encrypted chat: chat keys published with a certificate from the address, ciphertext only, signed sends and reads, kept 90 days (`src/chat.ts`) |
 
 - **Push watcher** (`src/push/watcher.ts`): every 10 s it reads the transfer and token-transfer logs for the
   watched addresses (at most an hour of blocks per round, so it catches up after an outage), and sends one
   notification per subscriber per transaction. Tokens outside the VeChain token registry are ignored (spam).
 - **What the server knows**: push endpoints and the addresses to watch, and error reports with addresses,
-  amounts, names and URLs removed (`src/scrub.ts`). No keys, no balances, no IP addresses in logs.
+  amounts, names and URLs removed (`src/scrub.ts`); for chat, public chat keys and who sent ciphertext to
+  whom, never the text. No keys, no balances, no IP addresses in logs. Phishing lookups aren't stored.
 
 Settings are environment variables (`src/config.ts`): `PORT`, `ALLOWED_ORIGINS`, `TRUST_PROXY`, `DB_PATH`,
 `FLAGS_FILE`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `ADMIN_TOKEN`, `BETTERSWAP_URL`,

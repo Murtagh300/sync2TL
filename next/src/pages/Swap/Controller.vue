@@ -159,6 +159,16 @@
                     <span class="text-right">{{routeText}} · {{slippageBps / 100}}%</span>
                 </div>
                 <div
+                    v-if="noMarketPrice"
+                    class="bvm-tile impact-warning q-mt-sm text-warning"
+                >
+                    <q-icon
+                        name="o_help_outline"
+                        size="18px"
+                        class="q-mr-xs"
+                    />{{$t('swap.msg_no_price', { symbol: marketPriceMissing })}}
+                </div>
+                <div
                     v-if="priceImpact !== null && priceImpact >= 3"
                     class="bvm-tile impact-warning q-mt-sm"
                     :class="impactClass"
@@ -197,7 +207,7 @@ import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import PageAction from 'components/PageAction.vue'
 import TokenPick from './TokenPick.vue'
-import { quote, type Quote, priceImpact, rememberPair, recentPairs, type Pair } from 'src/utils/swap'
+import { depthImpact, quote, type Quote, priceImpact, rememberPair, recentPairs, type Pair } from 'src/utils/swap'
 import { contractName, fns } from 'src/utils/actions'
 import { formatUnits, toWei } from 'src/utils/format'
 import { BigNumber } from 'bignumber.js'
@@ -231,6 +241,8 @@ export default defineComponent({
         slippageBps: 100,
         quoting: false,
         quoteResult: null as Quote | null,
+        /** price impact from the pool's depth, for when a side has no market price */
+        poolImpact: null as number | null,
         quoteError: '',
         fromBalance: null as bigint | null,
         controller: null as AbortController | null,
@@ -303,8 +315,21 @@ export default defineComponent({
         receiveFiat(): string {
             return this.quoteResult && this.toToken ? this.fiatOf(this.quoteResult.amountOut, this.toToken) : ''
         },
-        /** how much worse than the market price, in %: null without prices for both sides */
+        /** how much worse than the market price, or else than a tiny trade on the pool, in % */
         priceImpact(): number | null {
+            return this.marketImpact ?? this.poolImpact
+        },
+        /** the side without a market price */
+        marketPriceMissing(): string {
+            const has = (t: M.TokenSpec | undefined | null) => !!t && !!this.stats[(t.address || '0x0000000000000000000000000000000000000000').toLowerCase()]?.price
+            return !has(this.fromToken) ? this.fromSymbol : this.toSymbol
+        },
+        /** a side has no market price: the price impact comes from the pool alone */
+        noMarketPrice(): boolean {
+            return !!this.quoteResult && this.marketImpact === null
+        },
+        /** how much worse than the market price, in %: null without prices for both sides */
+        marketImpact(): number | null {
             const q = this.quoteResult
             if (!q || !this.amountWei || !this.fromToken || !this.toToken) {
                 return null
@@ -426,6 +451,13 @@ export default defineComponent({
                     amountWei, this.slippageBps, this.address, controller.signal)
                 if (!controller.signal.aborted) {
                     this.quoteResult = q
+                    this.poolImpact = null
+                    if (this.marketImpact === null) {
+                        const thor = this.$svc.bc(w.gid).thor
+                        void depthImpact(thor, this.fromToken?.address, this.toToken?.address, amountWei, q.amountOut)
+                            .then(p => { if (this.quoteResult === q) this.poolImpact = p })
+                            .catch(() => { })
+                    }
                 }
             } catch {
                 if (!controller.signal.aborted) {

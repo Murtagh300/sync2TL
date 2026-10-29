@@ -188,10 +188,17 @@ export default defineComponent({
                     items: [
                         { icon: 'o_add_card', title: t('buyVet.title'), click: () => this.buyVet() },
                         { icon: 'o_request_quote', title: t('payments.title'), to: { name: 'payments' } },
+                        { icon: 'o_point_of_sale', title: t('pos.title'), to: { name: 'pos' } },
+                        { icon: 'o_autorenew', title: t('subs.title'), to: { name: 'subscriptions' } },
+                        { icon: 'o_forum', title: t('chat.title'), to: { name: 'chat' } },
                         { icon: 'o_groups', title: t('payout.title'), to: { name: 'payout' } },
                         { icon: 'o_hub', title: t('stargate.title'), to: { name: 'stargate' } },
                         { icon: 'o_eco', title: t('vebetter.title'), to: { name: 'vebetter' } },
                         { icon: 'o_explore', title: t('discover.title'), to: { name: 'discover' } },
+                        { icon: 'o_how_to_vote', title: t('vote.action_open'), to: { name: 'vote' } },
+                        { icon: 'o_leaderboard', title: t('leaderboard.action_open'), to: { name: 'leaderboard' } },
+                        { icon: 'o_badge', title: t('vetname.title'), to: { name: 'vet-name' } },
+                        { icon: 'o_savings', title: t('yield.title'), to: { name: 'yield' } },
                         { icon: 'o_water_drop', title: t('liquidity.title'), to: { name: 'liquidity' } },
                         { icon: 'o_cleaning_services', title: t('dust.title'), to: { name: 'dust' } },
                         { icon: 'o_call_merge', title: t('consolidate.title'), to: { name: 'consolidate' } }
@@ -212,7 +219,8 @@ export default defineComponent({
                         { icon: 'o_apps', title: t('dapps.title'), to: { name: 'dapps' } },
                         { icon: 'o_link', title: t('wc.title'), to: { name: 'walletconnect' } },
                         { icon: 'o_contacts', title: t('contacts.title'), to: { name: 'contacts' } },
-                        { icon: 'o_family_restroom', title: t('emergency.title'), to: { name: 'emergency' } }
+                        { icon: 'o_family_restroom', title: t('emergency.title'), to: { name: 'emergency' } },
+                        { icon: 'o_emergency', title: t('panic.title'), to: { name: 'panic' } }
                     ]
                 },
                 {
@@ -221,6 +229,7 @@ export default defineComponent({
                         { icon: 'o_search', title: t('search.title'), to: { name: 'search' } },
                         { icon: 'o_new_releases', title: t('whatsNew.title'), click: () => this.whatsNew() },
                         { icon: 'o_school', title: t('tour.action_again'), click: () => this.replayTour() },
+                        { icon: 'o_sports_esports', title: t('practice.title'), to: { name: 'practice' } },
                         { icon: 'o_settings', title: t('settings.title'), to: { name: 'settings' } }
                     ]
                 }

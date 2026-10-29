@@ -23,6 +23,10 @@ import 'dayjs/locale/zh-cn'
 import 'dayjs/locale/nl'
 import 'dayjs/locale/de'
 import 'dayjs/locale/fr'
+import 'dayjs/locale/es'
+import 'dayjs/locale/it'
+import 'dayjs/locale/ja'
+import 'dayjs/locale/ko'
 import { nodeHealth, startNodeHealth } from 'src/utils/node-health'
 
 /**
@@ -69,7 +73,11 @@ export default defineComponent({
                 : wanted.startsWith('zh') ? 'zh-cn'
                     : wanted.startsWith('nl') ? 'nl-nl'
                         : wanted.startsWith('de') ? 'de-de'
-                            : wanted.startsWith('fr') ? 'fr-fr' : 'en-us'
+                            : wanted.startsWith('fr') ? 'fr-fr'
+                                : wanted.startsWith('es') ? 'es-es'
+                                    : wanted.startsWith('it') ? 'it-it'
+                                        : wanted.startsWith('ja') ? 'ja-jp'
+                                            : wanted.startsWith('ko') ? 'ko-kr' : 'en-us'
             this.$i18n.locale = lang
             setNumberLocale(lang)
             desktop?.setLabels({
@@ -83,7 +91,7 @@ export default defineComponent({
             // should set to default first
             dayjs.locale('en')
             // dayjs names these by language only
-            dayjs.locale(({ 'nl-nl': 'nl', 'de-de': 'de', 'fr-fr': 'fr' } as Record<string, string>)[lang] || lang)
+            dayjs.locale(({ 'nl-nl': 'nl', 'de-de': 'de', 'fr-fr': 'fr', 'es-es': 'es', 'it-it': 'it', 'ja-jp': 'ja', 'ko-kr': 'ko' } as Record<string, string>)[lang] || lang)
         }
     },
     methods: {

@@ -70,7 +70,11 @@ const TEXT: Record<string, { received: string, nft: string }> = {
     nl: { received: '{what} ontvangen', nft: 'een NFT' },
     de: { received: '{what} empfangen', nft: 'ein NFT' },
     fr: { received: '{what} reçu', nft: 'un NFT' },
-    zh: { received: '收到 {what}', nft: '一个 NFT' }
+    zh: { received: '收到 {what}', nft: '一个 NFT' },
+    es: { received: 'Recibido {what}', nft: 'un NFT' },
+    it: { received: 'Ricevuto {what}', nft: 'un NFT' },
+    ja: { received: '{what} を受け取りました', nft: 'NFT' },
+    ko: { received: '{what} 받음', nft: 'NFT' }
 }
 
 export function formatAmount(amount: bigint, decimals: number): string {
