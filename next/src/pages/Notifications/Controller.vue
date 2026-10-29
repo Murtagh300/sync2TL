@@ -57,48 +57,30 @@
                 />
             </div>
             <!-- what leaves your addresses: a key used somewhere else shows up at once -->
-            <div
-                v-if="ownAvailable && ownState === 'on'"
-                class="bvm-tile q-pa-md q-mb-md row no-wrap items-center"
-            >
-                <q-icon
-                    name="o_shield"
-                    size="24px"
-                    color="primary"
-                />
-                <div class="col q-mx-md">
-                    <div class="text-weight-bold">{{$t('service.label_push_outgoing')}}</div>
-                    <div class="text-muted push-hint">{{$t('service.msg_push_outgoing')}}</div>
+            <template v-if="ownAvailable && ownState === 'on'">
+                <div
+                    v-for="o in pushOpts"
+                    :key="o.key"
+                    class="bvm-tile q-pa-md q-mb-md row no-wrap items-center"
+                >
+                    <q-icon
+                        :name="o.icon"
+                        size="24px"
+                        color="primary"
+                    />
+                    <div class="col q-mx-md">
+                        <div class="text-weight-bold">{{$t(`service.label_push_${o.key}`)}}</div>
+                        <div class="text-muted push-hint">{{$t(`service.msg_push_${o.key}`)}}</div>
+                    </div>
+                    <q-toggle
+                        :model-value="prefs[o.pref]"
+                        :disable="busy"
+                        color="primary"
+                        :aria-label="$t(`service.label_push_${o.key}`)"
+                        @update:model-value="togglePushOption(o.pref, $event)"
+                    />
                 </div>
-                <q-toggle
-                    :model-value="prefs.pushOutgoing"
-                    :disable="busy"
-                    color="primary"
-                    :aria-label="$t('service.label_push_outgoing')"
-                    @update:model-value="toggleOutgoing"
-                />
-            </div>
-            <div
-                v-if="ownAvailable && ownState === 'on'"
-                class="bvm-tile q-pa-md q-mb-md row no-wrap items-center"
-            >
-                <q-icon
-                    name="o_how_to_vote"
-                    size="24px"
-                    color="primary"
-                />
-                <div class="col q-mx-md">
-                    <div class="text-weight-bold">{{$t('service.label_push_rounds')}}</div>
-                    <div class="text-muted push-hint">{{$t('service.msg_push_rounds')}}</div>
-                </div>
-                <q-toggle
-                    :model-value="prefs.pushRounds"
-                    :disable="busy"
-                    color="primary"
-                    :aria-label="$t('service.label_push_rounds')"
-                    @update:model-value="toggleRounds"
-                />
-            </div>
+            </template>
 
             <div
                 v-if="!list.length"
@@ -151,7 +133,19 @@ import { defineComponent } from 'vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import { clearNotifications, markAllRead, notifications, type AppNotification, type NotificationKind } from 'src/utils/notifications'
-import { bvmSession, bvmSignIn, disablePush, enablePush, pushEnabled, pushSupported, signInMessage, ownPushAvailable, ownPushState, enableOwnPush, disableOwnPush, type OwnPushState } from 'src/utils/push'
+import { bvmSession, bvmSignIn, disablePush, enablePush, pushEnabled, pushSupported, signInMessage, ownPushAvailable, ownPushState, enableOwnPush, disableOwnPush, pushOptions, pushValidators, setPushValidators, type OwnPushState } from 'src/utils/push'
+import { stakePositions } from 'src/utils/ecosystem'
+import { delegationsOf } from 'src/utils/validators'
+
+type PushPref = 'pushOutgoing' | 'pushRounds' | 'pushRewards' | 'pushValidators' | 'pushTokens'
+
+const PUSH_OPTS: { key: string, pref: PushPref, icon: string }[] = [
+    { key: 'outgoing', pref: 'pushOutgoing', icon: 'o_shield' },
+    { key: 'rounds', pref: 'pushRounds', icon: 'o_how_to_vote' },
+    { key: 'rewards', pref: 'pushRewards', icon: 'o_redeem' },
+    { key: 'validators', pref: 'pushValidators', icon: 'o_dns' },
+    { key: 'tokens', pref: 'pushTokens', icon: 'o_fiber_new' }
+]
 import { syncBuyReminders } from 'src/utils/buy-reminders'
 import { syncPriceAlerts } from 'src/utils/alerts'
 import { featureOn } from 'src/utils/remote-config'
@@ -166,6 +160,7 @@ export default defineComponent({
     data: () => ({
         notifications,
         prefs,
+        pushOpts: PUSH_OPTS,
         pushOn: false,
         ownAvailable: false,
         ownState: 'off' as OwnPushState,
@@ -266,11 +261,15 @@ export default defineComponent({
                 this.busy = false
             }
         },
-        async toggleOutgoing(on: boolean) {
+        /** one of the extra pushes on or off: the server gets the whole set again */
+        async togglePushOption(pref: PushPref, on: boolean) {
             this.busy = true
             try {
-                await enableOwnPush(this.watchAddresses, this.$i18n.locale, { outgoing: on, rounds: prefs.pushRounds })
-                prefs.pushOutgoing = on
+                if (pref === 'pushValidators' && on) {
+                    setPushValidators(await this.myValidators())
+                }
+                await enableOwnPush(this.watchAddresses, this.$i18n.locale, { ...pushOptions(), ...this.optionFor(pref, on) })
+                prefs[pref] = on
             } catch (err) {
                 console.warn('push:', err)
                 this.$q.notify(this.$t('notifications.msg_push_failed'))
@@ -278,23 +277,29 @@ export default defineComponent({
                 this.busy = false
             }
         },
-        async toggleRounds(on: boolean) {
-            this.busy = true
-            try {
-                await enableOwnPush(this.watchAddresses, this.$i18n.locale, { outgoing: prefs.pushOutgoing, rounds: on })
-                prefs.pushRounds = on
-            } catch (err) {
-                console.warn('push:', err)
-                this.$q.notify(this.$t('notifications.msg_push_failed'))
-            } finally {
-                this.busy = false
+        optionFor(pref: PushPref, on: boolean) {
+            switch (pref) {
+                case 'pushOutgoing': return { outgoing: on }
+                case 'pushRounds': return { rounds: on }
+                case 'pushRewards': return { rewards: on }
+                case 'pushTokens': return { tokens: on }
+                default: return { validators: on ? pushValidators() : [] }
             }
+        },
+        /** the validators the StarGate NFTs of the watched addresses are with */
+        async myValidators(): Promise<string[]> {
+            const thor = this.$svc.bc(genesises.main.id).thor
+            const ids: string[] = []
+            for (const a of this.watchAddresses) {
+                ids.push(...(await stakePositions(thor, a).catch(() => [])).map(p => p.tokenId))
+            }
+            return (await delegationsOf(thor, ids.slice(0, 60)).catch(() => [])).filter(d => d.status === 1 || d.status === 2).map(d => d.validator)
         },
         async toggleOwnPush(on: boolean) {
             this.busy = true
             try {
                 if (on) {
-                    await enableOwnPush(this.watchAddresses, this.$i18n.locale, { outgoing: prefs.pushOutgoing, rounds: prefs.pushRounds })
+                    await enableOwnPush(this.watchAddresses, this.$i18n.locale)
                     // recurring buys come by push too from now on
                     void syncBuyReminders(this.$t.bind(this))
                     void syncPriceAlerts(this.$svc, (key, params) => this.$t(key, params ?? {})).catch(() => { })

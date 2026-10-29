@@ -141,11 +141,13 @@
                                             @changed="onBalanceChanged()"
                                         />
                                     </template>
-                                    <quick-actions
-                                        v-else-if="wd.key === 'actions'"
-                                        :wallet="wallet"
-                                        class="q-mt-lg"
-                                    />
+                                    <template v-else-if="wd.key === 'actions'">
+                                        <quick-actions
+                                            :wallet="wallet"
+                                            class="q-mt-lg"
+                                        />
+                                        <resend-row :wallet="wallet" />
+                                    </template>
                                     <template v-else-if="wd.key === 'addresses'">
                                         <template
                                             v-for="w in (all ? wallets : [wallet])"
@@ -214,6 +216,7 @@ import OptionMenu from './OptionMenu.vue'
 import WalletSwitcher from './WalletSwitcher.vue'
 import PortfolioCard from './PortfolioCard.vue'
 import QuickActions from './QuickActions.vue'
+import ResendRow from './ResendRow.vue'
 import BalancePulse from './BalancePulse.vue'
 import HomeWidgets from './HomeWidgets.vue'
 import HomeTour from './HomeTour.vue'
@@ -228,7 +231,7 @@ import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { haptic } from 'src/utils/prefs'
 
 export default defineComponent({
-    components: { PullRefresh, PriceTicker, BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, BalancePulse, HomeWidgets, HomeTour, FirstFunds, SimpleHome },
+    components: { PullRefresh, PriceTicker, BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, ResendRow, BalancePulse, HomeWidgets, HomeTour, FirstFunds, SimpleHome },
     data: () => {
         return {
             nodeHealth,

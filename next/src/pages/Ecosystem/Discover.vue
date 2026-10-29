@@ -67,16 +67,58 @@
                     </q-list>
                 </template>
                 <div class="bvm-label q-pb-sm">{{$t('discover.label_round')}}</div>
+                <q-input
+                    v-model="query"
+                    outlined
+                    dense
+                    clearable
+                    class="q-mb-sm"
+                    :placeholder="$t('discover.placeholder_search')"
+                    :aria-label="$t('discover.placeholder_search')"
+                >
+                    <template #prepend>
+                        <q-icon name="o_search" />
+                    </template>
+                </q-input>
+                <div class="filter-row row no-wrap q-mb-sm">
+                    <q-chip
+                        v-for="k in impactKinds"
+                        :key="k"
+                        clickable
+                        :outline="impact !== k"
+                        :color="impact === k ? 'primary' : undefined"
+                        :text-color="impact === k ? 'dark' : undefined"
+                        class="q-ml-none"
+                        :icon="IMPACT_ICONS[k]"
+                        :label="$t(`impact.k_${k}`)"
+                        @click="impact = impact === k ? '' : k"
+                    />
+                </div>
+                <q-btn-toggle
+                    v-model="sort"
+                    dense
+                    no-caps
+                    unelevated
+                    toggle-color="primary"
+                    color="dark"
+                    class="q-mb-sm"
+                    :options="[{ label: $t('discover.sort_votes'), value: 'votes' }, { label: $t('discover.sort_reward'), value: 'reward' }]"
+                />
                 <q-list
                     role="list"
                     class="bvm-list"
                 >
                     <app-row
-                        v-for="a in others"
+                        v-for="a in filtered"
                         :key="a.id"
                         :app="a"
+                        :stat="stats[a.id]"
                     />
                 </q-list>
+                <p
+                    v-if="!filtered.length"
+                    class="text-soft text-center q-mt-md"
+                >{{$t('discover.msg_no_match')}}</p>
                 <p class="text-caption text-muted q-mt-md">{{$t('discover.msg_how')}}</p>
             </template>
         </page-content>
@@ -88,7 +130,19 @@ import { QAvatar, QBtn, QIcon, QItem, QItemLabel, QItemSection } from 'quasar'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import EmptyState from 'components/EmptyState.vue'
-import { earnedByApp, roundApps, type X2App } from 'src/utils/x2earn'
+import { appStats, earnedByApp, roundApps, type AppStat, type X2App } from 'src/utils/x2earn'
+import type { ImpactKey } from 'src/utils/impact'
+
+const IMPACT_ICONS: Partial<Record<ImpactKey, string>> = {
+    carbon: 'o_co2',
+    water: 'o_water_drop',
+    plastic: 'o_recycling',
+    energy: 'o_bolt',
+    waste_mass: 'o_delete_outline',
+    trees_planted: 'o_park',
+    calories_burned: 'o_directions_run',
+    education_time: 'o_school'
+}
 import { B3TR } from 'src/utils/ecosystem'
 import { selectedWallet } from 'src/utils/selection'
 import { formatUnits } from 'src/utils/format'
@@ -101,7 +155,8 @@ import { i18n } from 'src/boot/i18n'
 const AppRow = defineComponent({
     props: {
         app: { type: Object as () => X2App, required: true },
-        earned: { type: Object as () => bigint, default: undefined }
+        earned: { type: Object as () => bigint, default: undefined },
+        stat: { type: Object as () => AppStat, default: undefined }
     },
     setup(props) {
         const t = (k: string, p?: Record<string, unknown>) => i18n.global.t(k, p || {})
@@ -110,12 +165,14 @@ const AppRow = defineComponent({
             const caption = props.earned !== undefined
                 ? t('discover.label_earned_app', { amount: formatUnits(props.earned, 18) })
                 : a.description
+            const perAction = props.stat && props.stat.perAction >= 0.01 ? t('discover.label_per_action', { amount: props.stat.perAction.toLocaleString(undefined, { maximumFractionDigits: 2 }) }) : ''
             return h(QItem, { clickable: !!a.url, onClick: () => a.url && openDapp(a.url) }, () => [
                 h(QItemSection, { avatar: true }, () => h(QAvatar, { rounded: true, size: '40px', class: 'app-logo' }, () =>
                     a.logo ? h('img', { src: a.logo, alt: '', loading: 'lazy' }) : h(QIcon, { name: 'o_eco' }))),
                 h(QItemSection, { style: 'min-width: 0' }, () => [
                     h(QItemLabel, { class: 'ellipsis' }, () => a.name),
-                    caption ? h(QItemLabel, { caption: true, lines: 2 }, () => caption) : null
+                    caption ? h(QItemLabel, { caption: true, lines: 2 }, () => caption) : null,
+                    perAction ? h(QItemLabel, { caption: true, class: 'text-primary' }, () => perAction) : null
                 ]),
                 a.url ? h(QItemSection, { side: true }, () => h(QBtn, { flat: true, round: true, dense: true, icon: 'o_open_in_new', 'aria-label': t('a11y.open_external'), onClick: (e: Event) => { e.stopPropagation(); openDapp(a.url) } })) : null
             ])
@@ -130,7 +187,12 @@ export default defineComponent({
         error: false,
         apps: [] as X2App[],
         earned: {} as Record<string, bigint>,
-        b3trFiat: 0
+        b3trFiat: 0,
+        stats: {} as Record<string, AppStat>,
+        query: '' as string | null,
+        impact: '' as ImpactKey | '',
+        sort: 'votes' as 'votes' | 'reward',
+        IMPACT_ICONS
     }),
     computed: {
         /** apps that paid this wallet, the most first */
@@ -139,6 +201,20 @@ export default defineComponent({
         },
         others(): X2App[] {
             return this.apps.filter(a => !this.earned[a.id])
+        },
+        /** the kinds of impact some app states, in a fixed order */
+        impactKinds(): ImpactKey[] {
+            const seen = new Set(Object.values(this.stats).flatMap(s => s.impact))
+            return (Object.keys(IMPACT_ICONS) as ImpactKey[]).filter(k => seen.has(k))
+        },
+        filtered(): X2App[] {
+            const q = (this.query || '').trim().toLowerCase()
+            const list = this.others.filter(a =>
+                (!q || a.name.toLowerCase().includes(q) || a.description.toLowerCase().includes(q)) &&
+                (!this.impact || this.stats[a.id]?.impact.includes(this.impact)))
+            return this.sort === 'reward'
+                ? [...list].sort((a, b) => (this.stats[b.id]?.perAction || 0) - (this.stats[a.id]?.perAction || 0))
+                : list
         },
         earnedTotal(): bigint {
             return Object.values(this.earned).reduce((s, v) => s + v, 0n)
@@ -167,6 +243,7 @@ export default defineComponent({
                 this.apps = apps
                 this.earned = earned
                 void this.loadPrice()
+                appStats(thor).then(s => { this.stats = s }).catch(() => { })
             } catch (err) {
                 console.warn('discover:', err)
                 this.error = true
@@ -193,6 +270,10 @@ export default defineComponent({
 
 .earned-value
   font-size: 22px
+
+.filter-row
+  overflow-x: auto
+  scrollbar-width: none
 
 :deep(.app-logo)
   background: rgba(255, 255, 255, 0.05)

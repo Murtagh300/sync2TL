@@ -30,7 +30,10 @@ import Payout from 'pages/Payout'
 import Overview from 'pages/Overview'
 import Pnl from 'pages/Pnl'
 import { Listings, OfferInbox } from 'pages/Market'
-import { Discover, Leaderboard, Stargate, VeBetter, Vote, Validators, VthoTank, Impact, Proposals } from 'pages/Ecosystem'
+import { Discover, Leaderboard, Stargate, VeBetter, Vote, Validators, VthoTank, Impact, Proposals, VoterRewards } from 'pages/Ecosystem'
+import SendQueue from 'pages/SendQueue'
+import YearReview from 'pages/YearReview'
+import Help from 'pages/Help'
 import WalletConnect from 'pages/WalletConnect'
 import SwitchGuide from 'pages/SwitchGuide'
 import { Dust, Consolidate } from 'pages/Tidy'
@@ -88,6 +91,23 @@ const routes: RouteRecordRaw[] = [
             path: 'send',
             name: 'send',
             component: Send
+        }, {
+            // payments put aside, sent together (utils/send-queue.ts)
+            path: 'send-queue',
+            name: 'send-queue',
+            component: SendQueue
+        }, {
+            path: 'voter-rewards',
+            name: 'voter-rewards',
+            component: VoterRewards
+        }, {
+            path: 'year-review',
+            name: 'year-review',
+            component: YearReview
+        }, {
+            path: 'help',
+            name: 'help',
+            component: Help
         }, {
             path: 'nfts',
             name: 'nfts',

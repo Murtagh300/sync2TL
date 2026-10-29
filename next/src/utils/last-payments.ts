@@ -27,3 +27,13 @@ export function lastPayment(address: string): LastPayment | null {
 
 /** groups suggested when a contact has none yet; any other name can be typed */
 export const SUGGESTED_GROUPS = ['family', 'friends', 'team', 'exchange', 'business']
+
+/** the latest payments, newest first: "send again" on the home screen */
+export function recentPayments(n = 3, except: string[] = []): (LastPayment & { address: string })[] {
+    const skip = new Set(except.map(a => a.toLowerCase()))
+    return Object.entries(read())
+        .filter(([a]) => !skip.has(a))
+        .sort((a, b) => b[1].time - a[1].time)
+        .slice(0, n)
+        .map(([address, p]) => ({ address, ...p }))
+}

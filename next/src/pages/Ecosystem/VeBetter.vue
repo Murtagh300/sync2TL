@@ -4,6 +4,13 @@
             <q-btn
                 flat
                 round
+                icon="o_redeem"
+                :aria-label="$t('voterRewards.title')"
+                :to="{ name: 'voter-rewards' }"
+            />
+            <q-btn
+                flat
+                round
                 icon="o_open_in_new"
                 :aria-label="$t('a11y.open_external')"
                 @click="$router.push({ name: 'vote' })"

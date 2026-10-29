@@ -12,6 +12,8 @@ export type ShareCard = {
     image?: string
     /** a QR code for this text (an address or a link) */
     qr?: string
+    /** numbers in tiles, two to a row (a year in review) */
+    stats?: { label: string, value: string }[]
     accent?: string
 }
 
@@ -59,6 +61,7 @@ export async function renderShareCard(card: ShareCard): Promise<Blob> {
 
     const font = getComputedStyle(document.body).fontFamily || 'system-ui, sans-serif'
     let y = 90
+    let titled = false
     if (card.image) {
         try {
             const img = await load(cdn(card.image))
@@ -72,6 +75,41 @@ export async function renderShareCard(card: ShareCard): Promise<Blob> {
         } catch {
             y += 40
         }
+    } else if (card.stats?.length) {
+        const tile = { w: 440, h: 190, gap: 40 }
+        const left = (W - tile.w * 2 - tile.gap) / 2
+        const rows = Math.ceil(Math.min(card.stats.length, 8) / 2)
+        // the title and the tiles together, in the middle above the brand line
+        y = Math.max(90, (H - 120 - (170 + rows * (tile.h + tile.gap))) / 2)
+        // the title first: the numbers are about it
+        ctx.fillStyle = '#ffffff'
+        ctx.font = `900 72px ${font}`
+        ctx.textAlign = 'center'
+        ctx.fillText(card.title.slice(0, 28), W / 2, y + 40)
+        if (card.subtitle) {
+            ctx.fillStyle = '#9aa39f'
+            ctx.font = `600 36px ${font}`
+            ctx.fillText(card.subtitle.slice(0, 48), W / 2, y + 100)
+        }
+        y += 170
+        card.stats.slice(0, 8).forEach((s, i) => {
+            const x = left + (i % 2) * (tile.w + tile.gap)
+            const ty = y + Math.floor(i / 2) * (tile.h + tile.gap)
+            ctx.save()
+            roundRect(ctx, x, ty, tile.w, tile.h, 32)
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.06)'
+            ctx.fill()
+            ctx.restore()
+            ctx.textAlign = 'left'
+            ctx.fillStyle = accent
+            ctx.font = `900 64px ${font}`
+            ctx.fillText(s.value.slice(0, 12), x + 36, ty + 98)
+            ctx.fillStyle = '#9aa39f'
+            ctx.font = `600 30px ${font}`
+            ctx.fillText(s.label.slice(0, 26), x + 36, ty + 150)
+        })
+        y += Math.ceil(Math.min(card.stats.length, 8) / 2) * (tile.h + tile.gap) + 70
+        titled = true
     } else if (card.qr) {
         const svg = new QRCode({ content: card.qr, padding: 2, width: 640, height: 640, color: '#000', background: '#fff', join: true }).svg()
         const img = await load(`data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`)
@@ -84,14 +122,16 @@ export async function renderShareCard(card: ShareCard): Promise<Blob> {
         y += 820
     }
 
-    ctx.fillStyle = '#ffffff'
-    ctx.font = `900 64px ${font}`
     ctx.textAlign = 'center'
-    ctx.fillText(card.title.slice(0, 32), W / 2, y)
-    if (card.subtitle) {
-        ctx.fillStyle = '#9aa39f'
-        ctx.font = `600 38px ${font}`
-        ctx.fillText(card.subtitle.slice(0, 48), W / 2, y + 62)
+    if (!titled) {
+        ctx.fillStyle = '#ffffff'
+        ctx.font = `900 64px ${font}`
+        ctx.fillText(card.title.slice(0, 32), W / 2, y)
+        if (card.subtitle) {
+            ctx.fillStyle = '#9aa39f'
+            ctx.font = `600 38px ${font}`
+            ctx.fillText(card.subtitle.slice(0, 48), W / 2, y + 62)
+        }
     }
     // the brand at the bottom
     ctx.fillStyle = accent

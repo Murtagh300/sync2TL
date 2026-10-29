@@ -1,8 +1,9 @@
 // Token prices from BetterSwap (USD, with 1h/24h change and hourly history), turned into
 // euros with BlackVeMarket's rates. Mainnet only.
 import { createClient } from 'src/utils/net'
-import { betterswapUrl, bvmPublicUrl } from 'src/utils/endpoints'
+import { betterswapUrl, bvmPublicUrl, serverUrl } from 'src/utils/endpoints'
 import { loadPools } from 'src/utils/liquidity'
+import { perDollar, type Currency } from 'src/utils/fiat'
 
 export namespace Prices {
     export type Stat = {
@@ -22,7 +23,7 @@ export namespace Prices {
         volume24h: number
         liquidity: number
     }
-    export type Currency = 'EUR' | 'USD'
+    export type Currency = import('src/utils/fiat').Currency
     /** a token that trades a lot on VeChain's DEXes */
     export type Popular = { address: string, symbol: string, name: string, image: string, price: number, change24h: number, volume24h: number }
 }
@@ -47,6 +48,24 @@ type Rates = { usd: Record<string, number>, eur: Record<string, number> }
 const statCache = new Map<string, { at: number, stat: Prices.Stat | null }>()
 const historyCache = new Map<string, { at: number, points: Prices.Point[] }>()
 let ratesCache: { at: number, rates: Rates } | null = null
+let ecbCache: { at: number, rates: Promise<Record<string, number>> } | null = null
+
+/**
+ * the ECB's daily rates (units per euro): from the BlackVault server, else Frankfurter (which
+ * republishes them with CORS headers); kept six hours
+ */
+function ecbRates(): Promise<Record<string, number>> {
+    if (!ecbCache || ecbCache.at < Date.now() - 6 * 3600 * 1000) {
+        const viaServer = serverUrl !== null
+            ? fetch(`${serverUrl}/fx`).then(r => (r.ok ? r.json() as Promise<{ rates: Record<string, number> }> : Promise.reject(new Error(String(r.status))))).then(r => r.rates)
+            : Promise.reject(new Error('no server'))
+        const rates = viaServer.catch(() => fetch('https://api.frankfurter.dev/v1/latest?base=EUR')
+            .then(r => r.json() as Promise<{ rates: Record<string, number> }>).then(r => r.rates))
+        ecbCache = { at: Date.now(), rates }
+        rates.catch(() => { ecbCache = null })
+    }
+    return ecbCache.rates
+}
 
 type BetterSwapToken = {
     address: string, symbol: string, name: string, image: string, description: string, circulatingSupply: number, totalSupply: number, maxSupply: number | null,
@@ -81,10 +100,17 @@ async function rates(): Promise<Rates> {
 
 export function build() {
     return {
-        /** euros per dollar (1 when asked for USD) */
-        async fx(currency: Prices.Currency): Promise<number> {
+        /** units of the currency per dollar (1 when asked for USD) */
+        async fx(currency: Currency): Promise<number> {
             if (currency === 'USD') {
                 return 1
+            }
+            if (currency !== 'EUR') {
+                try {
+                    return perDollar(await ecbRates(), currency) || 1
+                } catch {
+                    return 1
+                }
             }
             try {
                 const r = await rates()

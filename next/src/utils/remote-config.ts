@@ -55,6 +55,7 @@ export const routeFeature: Record<string, Feature> = {
     validators: 'stargate',
     impact: 'vebetter',
     proposals: 'vebetter',
+    'voter-rewards': 'vebetter',
     launchpad: 'launchpad',
     launch: 'launchpad'
 }

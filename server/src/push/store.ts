@@ -7,11 +7,16 @@ import type { DatabaseSync } from 'node:sqlite'
 
 /**
  * outgoing: also a push for transfers out of the addresses and new approvals they give;
- * rounds: a push when a VeBetterDAO round starts
+ * rounds: a push when a VeBetterDAO round starts; rewards: when a voting reward can be claimed;
+ * tokens: when a token is added to VeChain's token registry; validators: the validators to watch
  */
-export type Subscription = { endpoint: string, keys: { p256dh: string, auth: string }, lang: string, outgoing?: boolean, rounds?: boolean }
+export type Subscription = {
+    endpoint: string, keys: { p256dh: string, auth: string }, lang: string,
+    outgoing?: boolean, rounds?: boolean, rewards?: boolean, tokens?: boolean, validators?: string[]
+}
 
 export const MAX_ADDRESSES = 20
+export const MAX_VALIDATORS = 20
 /** all subscriptions together: the watcher reads these every 10 seconds */
 export const MAX_WATCHED = 50000
 export const LANGS = ['en', 'nl', 'de', 'fr', 'zh', 'es', 'it', 'ja', 'ko', 'pt', 'tr', 'vi', 'ru', 'pl', 'id']
@@ -53,13 +58,22 @@ export function validateSubscribe(raw: unknown): { sub: Subscription, addresses:
     if (!addresses.length) throw new Error('no valid addresses')
     if (addresses.length > MAX_ADDRESSES) throw new Error(`at most ${MAX_ADDRESSES} addresses`)
     const lang = typeof r.lang === 'string' && LANGS.includes(r.lang.slice(0, 2)) ? r.lang.slice(0, 2) : 'en'
-    return { sub: { endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, lang, outgoing: r.outgoing === true, rounds: r.rounds === true }, addresses }
+    const vlist = Array.isArray(r.validators) ? r.validators : []
+    const validators = [...new Set(vlist.filter((a): a is string => typeof a === 'string' && /^0x[0-9a-fA-F]{40}$/.test(a)).map(a => a.toLowerCase()))]
+    if (validators.length > MAX_VALIDATORS) throw new Error(`at most ${MAX_VALIDATORS} validators`)
+    return {
+        sub: { endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, lang, outgoing: r.outgoing === true, rounds: r.rounds === true, rewards: r.rewards === true, tokens: r.tokens === true, validators },
+        addresses
+    }
 }
 
 export function createStore(db: DatabaseSync) {
-    const upsert = db.prepare(`INSERT INTO subscriptions (endpoint, keys, addresses, lang, outgoing, rounds, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-        ON CONFLICT(endpoint) DO UPDATE SET keys = excluded.keys, addresses = excluded.addresses, lang = excluded.lang, outgoing = excluded.outgoing, rounds = excluded.rounds, updated_at = excluded.updated_at`)
+    const upsert = db.prepare(`INSERT INTO subscriptions (endpoint, keys, addresses, lang, outgoing, rounds, rewards, tokens, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(endpoint) DO UPDATE SET keys = excluded.keys, addresses = excluded.addresses, lang = excluded.lang, outgoing = excluded.outgoing,
+            rounds = excluded.rounds, rewards = excluded.rewards, tokens = excluded.tokens, updated_at = excluded.updated_at`)
+    const clearValidators = db.prepare('DELETE FROM push_validators WHERE endpoint = ?')
+    const addValidator = db.prepare('INSERT OR IGNORE INTO push_validators (endpoint, validator) VALUES (?, ?)')
     const clearWatched = db.prepare('DELETE FROM watched WHERE endpoint = ?')
     const watch = db.prepare('INSERT OR IGNORE INTO watched (address, endpoint) VALUES (?, ?)')
     const remove = db.prepare('DELETE FROM subscriptions WHERE endpoint = ?')
@@ -78,9 +92,11 @@ export function createStore(db: DatabaseSync) {
             const now = Date.now()
             db.exec('BEGIN')
             try {
-                upsert.run(sub.endpoint, JSON.stringify(sub.keys), JSON.stringify(addresses), sub.lang, sub.outgoing ? 1 : 0, sub.rounds ? 1 : 0, now, now)
+                upsert.run(sub.endpoint, JSON.stringify(sub.keys), JSON.stringify(addresses), sub.lang, sub.outgoing ? 1 : 0, sub.rounds ? 1 : 0, sub.rewards ? 1 : 0, sub.tokens ? 1 : 0, now, now)
                 clearWatched.run(sub.endpoint)
                 for (const a of addresses) watch.run(a, sub.endpoint)
+                clearValidators.run(sub.endpoint)
+                for (const v of sub.validators || []) addValidator.run(sub.endpoint, v)
                 db.exec('COMMIT')
             } catch (err) {
                 db.exec('ROLLBACK')

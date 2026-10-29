@@ -1,5 +1,6 @@
 import { reactive, watch } from 'vue'
 import QRCode from 'qrcode-svg'
+import type { Currency } from './fiat'
 export { printPage } from './receipt'
 
 /**
@@ -23,7 +24,7 @@ export type Invoice = {
     lines: InvoiceLine[]
     /** VAT in percent (0 for none) */
     vatRate: number
-    currency: 'EUR' | 'USD'
+    currency: Currency
     /** the crypto it is paid in, and the amount fixed at making */
     symbol: string
     amount: string

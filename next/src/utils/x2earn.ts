@@ -6,6 +6,7 @@
  */
 import { abi } from 'thor-devkit'
 import { read, X_ALLOCATION_VOTING } from './ecosystem'
+import { proofImpact, type ImpactKey } from './impact'
 
 export const X2EARN_APPS = '0x8392b7ccc763db03b47afcd8e8f5e24f9cf0554d'
 export const X2EARN_REWARDS_POOL = '0x6bee7ddab6c99d5b2af0554eaea484ce18f52631'
@@ -159,4 +160,56 @@ export async function rewardsOf(thor: Connex.Thor, addresses: string[], cap = 20
         if (page.length < 256) break
     }
     return out
+}
+
+export type AppStat = {
+    /** rewards seen in the sample */
+    actions: number
+    /** B3TR an action paid, on average */
+    perAction: number
+    /** the kinds of impact its proofs state, most stated first */
+    impact: ImpactKey[]
+}
+
+/** what each app pays per action and what impact it states, from a list of rewards */
+export function statsFromRewards(rewards: { appId: string, amount: bigint, proof: string }[]): Record<string, AppStat> {
+    const acc: Record<string, { n: number, sum: bigint, impact: Partial<Record<ImpactKey, number>> }> = {}
+    for (const r of rewards) {
+        const a = acc[r.appId] || (acc[r.appId] = { n: 0, sum: 0n, impact: {} })
+        a.n++
+        a.sum += r.amount
+        for (const k of Object.keys(proofImpact(r.proof)) as ImpactKey[]) a.impact[k] = (a.impact[k] || 0) + 1
+    }
+    const out: Record<string, AppStat> = {}
+    for (const [id, a] of Object.entries(acc)) {
+        out[id] = {
+            actions: a.n,
+            perAction: Number(a.sum / BigInt(a.n) / 10n ** 14n) / 1e4,
+            // a kind stated by at least a tenth of its actions: not one odd proof
+            impact: (Object.entries(a.impact) as [ImpactKey, number][]).filter(([, c]) => c * 10 >= a.n).sort((x, y) => y[1] - x[1]).map(([k]) => k)
+        }
+    }
+    return out
+}
+
+let statsCache: { at: number, stats: Record<string, AppStat> } | null = null
+
+/** the latest rewards of all apps (a sample of the last few hours), as per-app stats; kept 30 minutes */
+export async function appStats(thor: Connex.Thor, sample = 2048): Promise<Record<string, AppStat>> {
+    if (statsCache && statsCache.at > Date.now() - 30 * 60 * 1000) return statsCache.stats
+    const filter = thor.filter('event', [{ address: X2EARN_REWARDS_POOL, topic0: REWARD.signature }])
+    const rewards: { appId: string, amount: bigint, proof: string }[] = []
+    for (let offset = 0; offset < sample; offset += 256) {
+        const page = await filter.order('desc').apply(offset, 256)
+        for (const e of page) {
+            try {
+                const d = REWARD.decode(e.data, e.topics)
+                rewards.push({ appId: String(d.appId).toLowerCase(), amount: BigInt(String(d.amount)), proof: String(d.proof || '') })
+            } catch { }
+        }
+        if (page.length < 256) break
+    }
+    const stats = statsFromRewards(rewards)
+    statsCache = { at: Date.now(), stats }
+    return stats
 }

@@ -149,6 +149,7 @@ import type { Prices } from 'boot/services/prices'
 import { money, prefs } from 'src/utils/prefs'
 import { formatDate } from 'src/utils/format'
 import { bucketFor, rsi, sma, toCandles, type Candle } from 'src/utils/candles'
+import type { Currency } from 'src/utils/fiat'
 
 const MA = 10
 
@@ -292,7 +293,7 @@ export default defineComponent({
             } catch { }
         },
         'prefs.currency': {
-            async handler(c: 'EUR' | 'USD') { this.fx = await this.$svc.prices.fx(c) },
+            async handler(c: Currency) { this.fx = await this.$svc.prices.fx(c) },
             immediate: true
         }
     },

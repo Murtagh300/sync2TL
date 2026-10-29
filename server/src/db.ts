@@ -118,7 +118,17 @@ const MIGRATIONS: string[] = [
         expires_at INTEGER NOT NULL
     )`,
     `CREATE INDEX shop_orders_ref ON shop_orders(shop, ref)`,
-    `CREATE INDEX shop_orders_open ON shop_orders(status, expires_at)`
+    `CREATE INDEX shop_orders_open ON shop_orders(status, expires_at)`,
+    // a push when a voting reward can be claimed (push/voter-rewards.ts), and for new tokens (push/new-tokens.ts)
+    `ALTER TABLE subscriptions ADD COLUMN rewards INTEGER NOT NULL DEFAULT 0`,
+    `ALTER TABLE subscriptions ADD COLUMN tokens INTEGER NOT NULL DEFAULT 0`,
+    // the validators a device's StarGate NFTs are with: a push when one goes offline (push/validators.ts)
+    `CREATE TABLE push_validators (
+        endpoint TEXT NOT NULL REFERENCES subscriptions(endpoint) ON DELETE CASCADE,
+        validator TEXT NOT NULL,
+        PRIMARY KEY (endpoint, validator)
+    )`,
+    `CREATE INDEX push_validators_v ON push_validators(validator)`
 ]
 
 export function openDb(path: string): DatabaseSync {

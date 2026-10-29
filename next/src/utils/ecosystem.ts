@@ -34,7 +34,40 @@ export const sg = {
     maturityPeriodEndBlock: view('maturityPeriodEndBlock', [{ type: 'uint256', name: 'tokenId' }], [{ type: 'uint64', name: 'block' }]),
     claimableRewards: view('claimableRewards', [{ type: 'uint256', name: 'tokenId' }], [{ type: 'uint256', name: 'amount' }]),
     getDelegationStatus: view('getDelegationStatus', [{ type: 'uint256', name: 'tokenId' }], [{ type: 'uint8', name: 'status' }]),
-    claimRewards: fn('claimRewards', [['uint256', 'tokenId']])
+    claimRewards: fn('claimRewards', [['uint256', 'tokenId']]),
+    getLevelSupply: view('getLevelSupply', [{ type: 'uint8', name: 'levelId' }], [{ type: 'uint256', name: 'circulating' }, { type: 'uint256', name: 'cap' }]),
+    // checked with dry runs on mainnet: stake mints the NFT (and returns its id), unstake burns it
+    // and pays the VET back once it isn't delegated
+    stake: fn('stake', [['uint8', 'levelId']], [['uint256', 'tokenId']], true),
+    unstake: fn('unstake', [['uint256', 'tokenId']])
+}
+
+export type StakeLevel = { id: number, name: string, vet: bigint, maturityDays: number, minted: number, cap: number }
+
+/** the levels a new NFT can be staked at (not the X levels, which only came from old nodes) */
+export async function stakeLevels(thor: Connex.Thor): Promise<StakeLevel[]> {
+    const [d] = await read(thor, [{ to: STARGATE_NFT, f: sg.getLevels, args: [] }])
+    const levels = ((d?.levels || []) as { id: string, name: string, isX: boolean, maturityBlocks: string, vetAmountRequiredToStake: string }[])
+        .filter(l => !l.isX)
+    const supply = await read(thor, levels.map(l => ({ to: STARGATE_NFT, f: sg.getLevelSupply, args: [l.id] })))
+    return levels.map((l, i) => ({
+        id: Number(l.id),
+        name: l.name,
+        vet: BigInt(l.vetAmountRequiredToStake),
+        maturityDays: Math.round(Number(l.maturityBlocks) * 10 / 86400),
+        minted: Number(supply[i]?.circulating || 0),
+        cap: Number(supply[i]?.cap || 0)
+    })).sort((a, b) => (a.vet < b.vet ? -1 : 1))
+}
+
+/** staking pays exactly the level's VET */
+export function stakeClause(level: StakeLevel): { to: string, value: string, data: string } {
+    return { to: STARGATE, value: level.vet.toString(), data: sg.stake.encode(level.id) }
+}
+
+/** an NFT can be unstaked when it isn't working for a validator (none, or exited) */
+export function canUnstake(p: { status: DelegationStatus }): boolean {
+    return p.status === 'none' || p.status === 'exited'
 }
 
 export type DelegationStatus = 'none' | 'pending' | 'active' | 'exited'

@@ -26,14 +26,15 @@
                             <q-item-label>{{$t('settings.label_currency')}}</q-item-label>
                         </q-item-section>
                         <q-item-section side>
-                            <q-btn-toggle
+                            <q-select
                                 v-model="prefs.currency"
                                 dense
-                                no-caps
-                                unelevated
-                                toggle-color="primary"
-                                color="dark"
-                                :options="[{ label: '€ EUR', value: 'EUR' }, { label: '$ USD', value: 'USD' }]"
+                                borderless
+                                emit-value
+                                map-options
+                                options-dense
+                                :options="currencyOptions"
+                                :aria-label="$t('settings.label_currency')"
                             />
                         </q-item-section>
                     </q-item>
@@ -328,6 +329,7 @@ import { serverUrl } from 'src/utils/endpoints'
 import { BackupError, CONFIG_KEYS, LOCAL_KEYS, decryptSettings, encryptSettings, summarize, type Settings } from 'src/utils/settings-backup'
 import { downloadText } from 'src/utils/export'
 import { money } from 'src/utils/prefs'
+import { CURRENCIES, currencySign } from 'src/utils/fiat'
 import { desktop, type DesktopPrefs } from 'src/utils/desktop'
 
 export default defineComponent({
@@ -355,6 +357,9 @@ export default defineComponent({
         }
     },
     computed: {
+        currencyOptions(): { label: string, value: string }[] {
+            return CURRENCIES.map(c => ({ label: `${currencySign(c)} ${c}`.replace(`${c} ${c}`, c), value: c }))
+        },
         motionSupported: () => motionSupported(),
         limitOptions(): { label: string, value: number }[] {
             return LIMIT_OPTIONS.map(v => ({ label: v ? money(v) : this.$t('spendLimit.off'), value: v }))

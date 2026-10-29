@@ -1,5 +1,6 @@
 import { reactive, watch } from 'vue'
 import { numberLocale } from './format'
+import type { Currency } from './fiat'
 
 /**
  * Small per-device preferences, kept in localStorage: hidden balances, the fiat currency
@@ -18,7 +19,7 @@ export const accents: Record<Accent, { color: string, soft: string }> = {
 
 type Prefs = {
     hideBalances: boolean
-    currency: 'EUR' | 'USD'
+    currency: Currency
     accent: Accent
     haptics: boolean
     /** lock after this many minutes in the background; -1: never */
@@ -52,12 +53,18 @@ type Prefs = {
     pushRounds: boolean
     /** the simple home: the balance and three big buttons, no tab bar (pages/Index/SimpleHome.vue) */
     simpleMode: boolean
+    /** push when a voting reward can be claimed (server/src/push/voter-rewards.ts) */
+    pushRewards: boolean
+    /** push when a validator of the user's StarGate NFTs goes offline or leaves (server/src/push/validators.ts) */
+    pushValidators: boolean
+    /** push when VeChain's token registry lists a new token (server/src/push/new-tokens.ts) */
+    pushTokens: boolean
 }
 
 const KEY = 'bv-prefs'
 
 function load(): Prefs {
-    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, homeLayout: 'wide', highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true, errorReports: false, feeToken: 'vtho', safeAddress: '', pushOutgoing: false, feePayers: {}, vthoKeep: 50, pushRounds: false, simpleMode: false }
+    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, homeLayout: 'wide', highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true, errorReports: false, feeToken: 'vtho', safeAddress: '', pushOutgoing: false, feePayers: {}, vthoKeep: 50, pushRounds: false, simpleMode: false, pushRewards: false, pushValidators: false, pushTokens: false }
     try {
         return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') as Partial<Prefs> }
     } catch {

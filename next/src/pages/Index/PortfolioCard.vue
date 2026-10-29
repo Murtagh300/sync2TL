@@ -59,6 +59,7 @@ import { walletPortfolio, type Portfolio } from 'src/utils/portfolio'
 import { haptic, money, prefs } from 'src/utils/prefs'
 import { readSnapshot, writeSnapshot } from 'src/utils/snapshot'
 import { recordDayValue } from 'src/utils/value-history'
+import type { Currency } from 'src/utils/fiat'
 
 // what the selected wallet is worth, and how that moved
 export default defineComponent({
@@ -91,7 +92,7 @@ export default defineComponent({
     },
     watch: {
         'prefs.currency': {
-            async handler(c: 'EUR' | 'USD') {
+            async handler(c: Currency) {
                 this.fx = await this.$svc.prices.fx(c)
             },
             immediate: true

@@ -202,6 +202,7 @@ export default defineComponent({
                         { icon: 'o_eco', title: t('vebetter.title'), to: { name: 'vebetter' } },
                         { icon: 'o_explore', title: t('discover.title'), to: { name: 'discover' } },
                         { icon: 'o_how_to_vote', title: t('vote.action_open'), to: { name: 'vote' } },
+                        { icon: 'o_redeem', title: t('voterRewards.title'), to: { name: 'voter-rewards' } },
                         { icon: 'o_gavel', title: t('proposals.title'), to: { name: 'proposals' } },
                         { icon: 'o_co2', title: t('impact.title'), to: { name: 'impact' } },
                         { icon: 'o_leaderboard', title: t('leaderboard.action_open'), to: { name: 'leaderboard' } },
@@ -217,7 +218,8 @@ export default defineComponent({
                     items: [
                         { icon: 'o_insights', title: t('overview.title'), to: { name: 'overview' } },
                         { icon: 'o_query_stats', title: t('pnl.title'), to: { name: 'pnl' } },
-                        { icon: 'o_description', title: t('statement.title'), to: { name: 'statement' } }
+                        { icon: 'o_description', title: t('statement.title'), to: { name: 'statement' } },
+                        { icon: 'o_celebration', title: t('yearReview.title'), to: { name: 'year-review' } }
                     ]
                 },
                 {
@@ -226,6 +228,7 @@ export default defineComponent({
                         { icon: 'o_shield', title: t('security.title'), to: { name: 'security' } },
                         ...approvals,
                         { icon: 'o_apps', title: t('dapps.title'), to: { name: 'dapps' } },
+                        { icon: 'o_playlist_play', title: t('queue.title'), to: { name: 'send-queue' } },
                         { icon: 'o_link', title: t('wc.title'), to: { name: 'walletconnect' } },
                         { icon: 'o_contacts', title: t('contacts.title'), to: { name: 'contacts' } },
                         { icon: 'o_family_restroom', title: t('emergency.title'), to: { name: 'emergency' } },
@@ -236,6 +239,7 @@ export default defineComponent({
                 {
                     title: t('more.label_app'),
                     items: [
+                        { icon: 'o_help_center', title: t('helpCenter.title'), to: { name: 'help' } },
                         { icon: 'o_search', title: t('search.title'), to: { name: 'search' } },
                         { icon: 'o_new_releases', title: t('whatsNew.title'), click: () => this.whatsNew() },
                         { icon: 'o_school', title: t('tour.action_again'), click: () => this.replayTour() },

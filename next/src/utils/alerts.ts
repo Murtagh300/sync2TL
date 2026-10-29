@@ -4,6 +4,7 @@ import type { BVM } from 'boot/services/bvm'
 import { genesises } from 'src/consts'
 import { averageFee, LOW_TX, txLeft } from './vtho-tank'
 import { syncOwnPriceAlerts } from './push'
+import { currencySign, isCurrency } from './fiat'
 
 /**
  * Price alerts and the watchlist. The wallet checks them while it is open (at start and
@@ -65,10 +66,10 @@ export async function checkAlerts(svc: Service, t: (key: string, params?: Record
             for (const rule of tokenRules) {
                 const s = stats[rule.token!.toLowerCase()]
                 if (!s) continue
-                const price = s.price * await svc.prices.fx(rule.currency === 'USD' ? 'USD' : 'EUR')
+                const price = s.price * await svc.prices.fx(isCurrency(rule.currency) ? rule.currency : 'EUR')
                 const holds = ruleHolds(rule, price)
                 if (holds && !state.fired[rule.id]) {
-                    const sign = rule.currency === 'USD' ? '$' : '€'
+                    const sign = currencySign(rule.currency)
                     messages.push({
                         text: t(rule.kind === 'below' ? 'alerts.msg_token_below' : 'alerts.msg_token_above', {
                             name: rule.name, price: `${sign}${price.toPrecision(4)}`, value: `${sign}${rule.value}`
@@ -147,14 +148,15 @@ export async function checkAlerts(svc: Service, t: (key: string, params?: Record
  */
 export async function syncPriceAlerts(svc: Service, t: (key: string, params?: Record<string, unknown>) => string) {
     const rules = (await svc.config.getJSON<AlertRule[]>('alerts', [])).filter(r => r.token)
-    const fx = { EUR: await svc.prices.fx('EUR'), USD: 1 }
+    const fx: Record<string, number> = {}
+    for (const c of new Set(rules.map(r => (isCurrency(r.currency) ? r.currency : 'EUR')))) fx[c] = await svc.prices.fx(c)
     const alerts = rules.map(r => {
-        const sign = r.currency === 'USD' ? '$' : '€'
+        const sign = currencySign(r.currency)
         return {
             id: r.id.replace(/[^a-z0-9]/gi, '').slice(0, 32) || 'x',
             token: r.token!.toLowerCase(),
             kind: r.kind,
-            usd: r.value / (r.currency === 'USD' ? 1 : fx.EUR || 0.92),
+            usd: r.value / (fx[isCurrency(r.currency) ? r.currency : 'EUR'] || 1),
             title: t(r.kind === 'below' ? 'alerts.push_below' : 'alerts.push_above', { name: r.name, value: `${sign}${r.value}` }),
             url: '#/watchlist'
         }

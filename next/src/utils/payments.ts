@@ -1,6 +1,7 @@
 import { reactive, watch } from 'vue'
 import { BigNumber } from 'bignumber.js'
 import type { Incoming } from './incoming'
+import type { Currency } from './fiat'
 
 /**
  * Payment requests you sent (and whether they were paid), and payments you make on a
@@ -51,7 +52,7 @@ export type ScheduledBuy = {
     every: 'day' | 'week' | 'month' | null
     /** a limit buy: when one `to` costs this much or less (in the currency) */
     below: number | null
-    currency: 'EUR' | 'USD'
+    currency: Currency
     /** when the next one is due (repeating buys) */
     next: number
     /** a limit buy that fired: it waits until opened */
@@ -124,7 +125,7 @@ export function dueBuys(now = Date.now()): ScheduledBuy[] {
 }
 
 /** limit buys whose price is reached: price(symbol) is one token in the buy's currency, or 0 */
-export function reachedLimits(price: (symbol: string, currency: 'EUR' | 'USD') => number): ScheduledBuy[] {
+export function reachedLimits(price: (symbol: string, currency: Currency) => number): ScheduledBuy[] {
     return payments.buys.filter(b => {
         if (b.below === null || b.fired) return false
         const p = price(b.to, b.currency)

@@ -1,5 +1,6 @@
 import { createClient } from './net'
 import { bvmDirectUrl, serverUrl } from './endpoints'
+import { prefs } from './prefs'
 
 /**
  * Push notifications through BlackVeMarket: offers on your NFTs, sales and price alerts,
@@ -147,10 +148,40 @@ export async function ownPushState(): Promise<OwnPushState> {
 }
 
 /**
- * watch these addresses for incoming transfers on this device (again: replaces the list);
- * outgoing: also what leaves them, and approvals they give; rounds: a new VeBetterDAO round
+ * what else the server pushes besides incoming transfers: outgoing ones and approvals given, a new
+ * VeBetterDAO round, a voting reward to claim, a new token in the registry, and changes at the
+ * validators the user's StarGate NFTs are with
  */
-export async function enableOwnPush(addresses: string[], lang: string, opts: { outgoing?: boolean, rounds?: boolean } = {}) {
+export type PushOptions = { outgoing?: boolean, rounds?: boolean, rewards?: boolean, tokens?: boolean, validators?: string[] }
+
+const VALIDATORS_KEY = 'bv-push-validators'
+
+/** the validators last handed over (the StarGate page refreshes them) */
+export function pushValidators(): string[] {
+    try {
+        const v = JSON.parse(localStorage.getItem(VALIDATORS_KEY) || '[]') as string[]
+        return Array.isArray(v) ? v.filter(a => /^0x[0-9a-f]{40}$/.test(a)).slice(0, 20) : []
+    } catch {
+        return []
+    }
+}
+
+export function setPushValidators(list: string[]): boolean {
+    const next = [...new Set(list.map(a => a.toLowerCase()))].filter(a => /^0x[0-9a-f]{40}$/.test(a) && !/^0x0{40}$/.test(a)).sort().slice(0, 20)
+    const changed = JSON.stringify(next) !== JSON.stringify(pushValidators())
+    try {
+        localStorage.setItem(VALIDATORS_KEY, JSON.stringify(next))
+    } catch { }
+    return changed
+}
+
+/** the options as the settings have them now */
+export function pushOptions(): PushOptions {
+    return { outgoing: prefs.pushOutgoing, rounds: prefs.pushRounds, rewards: prefs.pushRewards, tokens: prefs.pushTokens, validators: prefs.pushValidators ? pushValidators() : [] }
+}
+
+/** watch these addresses for incoming transfers on this device (again: replaces the list), and more (PushOptions) */
+export async function enableOwnPush(addresses: string[], lang: string, opts: PushOptions = pushOptions()) {
     if (!own) throw new Error('unavailable')
     if ((await Notification.requestPermission()) !== 'granted') {
         throw new Error('blocked')
@@ -169,7 +200,10 @@ export async function enableOwnPush(addresses: string[], lang: string, opts: { o
         addresses: addresses.map(a => a.toLowerCase()).slice(0, 20),
         lang: lang.slice(0, 2),
         outgoing: !!opts.outgoing,
-        rounds: !!opts.rounds
+        rounds: !!opts.rounds,
+        rewards: !!opts.rewards,
+        tokens: !!opts.tokens,
+        validators: opts.validators || []
     })
 }
 

@@ -2,6 +2,14 @@
     <div class="fit column no-wrap">
         <page-toolbar :title="$t('stargate.title')">
             <q-btn
+                v-if="signers.length"
+                flat
+                round
+                icon="o_add_circle_outline"
+                :aria-label="$t('stargate.action_stake')"
+                @click="stake()"
+            />
+            <q-btn
                 flat
                 round
                 icon="o_compare_arrows"
@@ -42,9 +50,9 @@
                 v-else-if="!positions.length"
                 icon="o_hub"
                 :text="$t('stargate.msg_none')"
-                :action="$t('stargate.action_open')"
-                action-icon="o_open_in_new"
-                @action="openURL('https://app.stargate.vechain.org')"
+                :action="signers.length ? $t('stargate.action_stake') : $t('stargate.action_open')"
+                :action-icon="signers.length ? 'o_add_circle_outline' : 'o_open_in_new'"
+                @action="signers.length ? stake() : openURL('https://app.stargate.vechain.org')"
             />
             <template v-else>
                 <div class="row q-col-gutter-sm q-mb-md">
@@ -97,6 +105,26 @@
                                 :label="$t('stargate.action_claim')"
                                 @click="claim(p)"
                             />
+                            <q-btn
+                                v-if="p.canSign && canUnstake(p) && !maturity(p)"
+                                flat
+                                dense
+                                no-caps
+                                color="negative"
+                                class="q-px-sm q-mt-xs"
+                                :label="$t('stargate.action_unstake')"
+                                @click="unstake(p)"
+                            />
+                            <q-btn
+                                v-else-if="p.canSign && p.status === 'none'"
+                                flat
+                                dense
+                                no-caps
+                                color="primary"
+                                class="q-px-sm q-mt-xs"
+                                :label="$t('stargate.action_delegate')"
+                                :to="{ name: 'validators' }"
+                            />
                         </q-item-section>
                     </q-item>
                 </q-list>
@@ -112,7 +140,11 @@ import PageContent from 'components/PageContent.vue'
 import EmptyState from 'components/EmptyState.vue'
 import AddressLabel from 'components/AddressLabel.vue'
 import SuccessDialog from 'components/SuccessDialog.vue'
-import { blockTime, sg, STARGATE, stakePositions, type StakePosition } from 'src/utils/ecosystem'
+import { blockTime, canUnstake, sg, STARGATE, stakeClause, stakePositions, type StakeLevel, type StakePosition } from 'src/utils/ecosystem'
+import { delegationsOf } from 'src/utils/validators'
+import { enableOwnPush, setPushValidators } from 'src/utils/push'
+import { prefs } from 'src/utils/prefs'
+import StakeDialog from './StakeDialog.vue'
 import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { canSign } from 'src/utils/watch'
 import { formatUnits, formatDate } from 'src/utils/format'
@@ -136,6 +168,12 @@ export default defineComponent({
         },
         totalClaimable(): bigint {
             return this.positions.reduce((s, p) => s + p.claimable, 0n)
+        },
+        /** the addresses that can stake: of wallets that sign */
+        signers(): { address: string, label: string }[] {
+            const main = this.wallets.filter(w => w.gid === genesises.main.id && canSign(w))
+            const chosen = selection.walletId === ALL_WALLETS ? main : [selectedWallet(main)].filter((w): w is M.Wallet => !!w)
+            return chosen.flatMap(w => w.meta.addresses.map((a, i) => ({ address: a, label: `${w.meta.name} #${i + 1}` })))
         }
     },
     async created() {
@@ -166,12 +204,67 @@ export default defineComponent({
                     }
                 }
                 this.positions = rows
+                void this.refreshPushValidators(thor, rows)
             } catch (err) {
                 console.warn('stargate:', err)
                 this.error = true
             } finally {
                 this.loading = false
             }
+        },
+        canUnstake,
+        /** pushes about validators follow where the NFTs are now */
+        async refreshPushValidators(thor: Connex.Thor, rows: Row[]) {
+            if (!prefs.pushValidators || !rows.length) return
+            try {
+                const dels = await delegationsOf(thor, rows.map(r => r.tokenId))
+                if (setPushValidators(dels.filter(d => d.status === 1 || d.status === 2).map(d => d.validator))) {
+                    const addresses = this.wallets.filter(w => w.gid === genesises.main.id).flatMap(w => w.meta.addresses)
+                    await enableOwnPush(addresses, this.$i18n.locale)
+                }
+            } catch { }
+        },
+        async stake() {
+            let pick: { from: string, level?: StakeLevel }
+            try {
+                pick = await this.$dialog<{ from: string, level?: StakeLevel }>({ component: StakeDialog, addresses: this.signers })
+            } catch {
+                return
+            }
+            if (!pick.level) return
+            const comment = this.$t('stargate.comment_stake', { level: pick.level.name })
+            try {
+                await this.$signTx(genesises.main.id, {
+                    message: [{ ...stakeClause(pick.level), comment }],
+                    options: { signer: pick.from, comment }
+                })
+            } catch {
+                return
+            }
+            this.$dialog({ component: SuccessDialog, title: this.$t('stargate.title_staked'), message: this.$t('stargate.msg_staked', { level: pick.level.name }) }).catch(() => { })
+            setTimeout(() => void this.load(), 12 * 1000)
+        },
+        async unstake(p: Row) {
+            try {
+                await new Promise<void>((resolve, reject) => {
+                    this.$q.dialog({
+                        title: this.$t('stargate.title_unstake', { level: p.level, id: p.tokenId }),
+                        message: this.$t('stargate.msg_unstake', { amount: formatUnits(p.staked, 18, 0) }),
+                        cancel: true,
+                        ok: { label: this.$t('stargate.action_unstake'), color: 'negative', flat: true }
+                    }).onOk(() => resolve()).onCancel(() => reject(new Error('cancel')))
+                })
+            } catch {
+                return
+            }
+            const comment = this.$t('stargate.comment_unstake', { level: p.level, id: p.tokenId })
+            try {
+                await this.$signTx(genesises.main.id, {
+                    message: [{ to: STARGATE, value: '0', data: sg.unstake.encode(p.tokenId), comment }],
+                    options: { signer: p.owner, comment }
+                })
+                setTimeout(() => void this.load(), 12 * 1000)
+            } catch { }
         },
         async claim(p: Row) {
             const comment = this.$t('stargate.comment_claim', { level: p.level, id: p.tokenId })

@@ -67,6 +67,31 @@ an update comes from `next/src/changelog.ts` (keep the two in step).
   Vietnamese, Russian, Polish and Indonesian.
 - Browser extension (`extension/`): VeChain sites find BlackVault where they look for a wallet.
 
+**Round three: everyday**
+- Send again: the last three payments on the home screen, one tap to the send page filled in.
+- Send queue: put payments aside and send them in one transaction (one signature, one base fee).
+- Clipboard check: a pasted address that looks like the one just copied but isn't is stopped.
+- Currencies: GBP, CHF, JPY, CNY, KRW, AUD, CAD, BRL, TRY, PLN, IDR, SEK, NOK, DKK, CZK and INR, at the
+  ECB's daily rates (the server's `GET /fx`, else Frankfurter).
+- Help: twelve short topics and the glossary, searchable, offline, in all 15 languages.
+
+**Round three: VeChain**
+- Voting rewards: what VeBetterDAO's VoterRewards holds for you per ended round (with the Galaxy Member
+  bonus), all rounds of an address claimed in one transaction.
+- StarGate: stake VET into a new NFT (any open level), unstake an NFT no validator uses.
+- Liquidity: add to and take out of BetterSwap V2 pools from the wallet (its router, exact approvals,
+  1% slippage), or start a position in one of the largest pools.
+- Discover: search, filter by the impact apps state, sort by B3TR per action (from the latest rewards).
+- Impact goal for the year, with progress and whether it is on track.
+- VTHO tank: since Hayabusa plain VET makes no VTHO (measured on mainnet); the tank now shows what
+  your StarGate NFTs bring in a week, how many transactions that pays for and when the tank runs dry.
+- Push: a voting reward to claim, your validator offline or leaving, a new token in the registry.
+
+**Round three: overview**
+- Connections: live WalletConnect sessions with "disconnect all", token approvals and signed sites.
+- Year in review: a card to share with numbers only (transactions, days, busiest month, VET in and
+  out, X2Earn actions and B3TR).
+
 ## 2.3.0 — 2026-10-28
 
 **UI polish**

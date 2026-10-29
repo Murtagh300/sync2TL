@@ -160,16 +160,30 @@ export function createShops(db: DatabaseSync, opts: {
 }
 
 /** USD per euro from the ECB's daily reference rates, kept a few hours */
-export function ecbRate() {
-    let cached: { at: number, rate: number } | null = null
-    return async () => {
-        if (cached && Date.now() - cached.at < 6 * 3600 * 1000) return cached.rate
-        const r = await fetch('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml', { signal: AbortSignal.timeout(15000) })
-        const m = /currency='USD' rate='([0-9.]+)'/.exec(await r.text())
-        const rate = m ? Number(m[1]) : 0
-        if (rate > 0) cached = { at: Date.now(), rate }
-        return rate || cached?.rate || 0
+/** the ECB's daily reference rates (units per euro), fetched at most every six hours */
+export function ecbRates() {
+    let cached: { at: number, rates: Record<string, number> } | null = null
+    return async (): Promise<Record<string, number>> => {
+        if (cached && Date.now() - cached.at < 6 * 3600 * 1000) return cached.rates
+        try {
+            const r = await fetch('https://www.ecb.europa.eu/stats/eurofxref/eurofxref-daily.xml', { signal: AbortSignal.timeout(15000) })
+            const rates: Record<string, number> = {}
+            for (const m of (await r.text()).matchAll(/currency='([A-Z]{3})' rate='([0-9.]+)'/g)) {
+                const v = Number(m[2])
+                if (v > 0) rates[m[1]!] = v
+            }
+            if (rates.USD) cached = { at: Date.now(), rates }
+        } catch (err) {
+            if (!cached) throw err
+        }
+        if (!cached) throw new Error('no ECB rates')
+        return cached.rates
     }
+}
+
+/** dollars per euro */
+export function ecbRate(rates = ecbRates()) {
+    return async () => (await rates().catch(() => ({} as Record<string, number>))).USD || 0
 }
 
 type Arrivals = (node: string, addresses: string[], from: number, to: number) => Promise<{ txId: string, to: string, kind: string, contract?: string, amount?: bigint }[]>

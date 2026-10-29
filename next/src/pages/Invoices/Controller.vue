@@ -260,6 +260,7 @@ import { incomingTransfers } from 'src/utils/incoming'
 import { buildPaymentLink } from 'src/utils/payment-request'
 import { matchPaidRequests, newId, payments, type PaymentRequestRecord } from 'src/utils/payments'
 import { tillAmount } from 'src/utils/pos'
+import type { Currency } from 'src/utils/fiat'
 import { dueDate, invoiceHtml, invoices, invoiceTotals, nextInvoiceNumber, printPage, type Invoice, type InvoiceLine } from 'src/utils/invoice'
 
 const ZERO = '0x0000000000000000000000000000000000000000'
@@ -283,7 +284,7 @@ export default defineComponent({
         fx: 1
     }),
     computed: {
-        currency(): 'EUR' | 'USD' {
+        currency(): Currency {
             return prefs.currency
         },
         list(): Invoice[] {

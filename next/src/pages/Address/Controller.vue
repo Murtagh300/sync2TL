@@ -186,6 +186,7 @@ import { visibleTokens, type TokenPrefs } from 'src/utils/tokens'
 import ReceiveDialog from './ReceiveDialog.vue'
 import type { Prices } from 'boot/services/prices'
 import { prefs } from 'src/utils/prefs'
+import type { Currency } from 'src/utils/fiat'
 
 export default defineComponent({
     components: {
@@ -243,7 +244,7 @@ export default defineComponent({
             this.stats = await this.$svc.prices.stats(list.map(t => t.address)).catch(() => ({}))
         },
         'prefs.currency': {
-            async handler(c: 'EUR' | 'USD') {
+            async handler(c: Currency) {
                 this.fx = await this.$svc.prices.fx(c)
             },
             immediate: true

@@ -14,6 +14,9 @@ import { createStore, validateSubscribe, type Subscription } from '../src/push/s
 import { createTills, SALE_TTL } from '../src/till.ts'
 import { createShops, orderAmount, ORDER_TTL, toWei } from '../src/shop.ts'
 import { createRoundWatch, roundText } from '../src/push/rounds.ts'
+import { createRewardWatch, rewardText } from '../src/push/voter-rewards.ts'
+import { createValidatorWatch, validatorText, type ValidatorState } from '../src/push/validators.ts'
+import { createTokenWatch, tokenText } from '../src/push/new-tokens.ts'
 import { createPriceAlerts, validatePriceAlerts } from '../src/push/price-alerts.ts'
 import { formatAmount, messagesFor, outgoingFor, type Arrival, type Departure } from '../src/push/watcher.ts'
 import { createReminders, nextAfter, validateReminders } from '../src/push/reminders.ts'
@@ -451,4 +454,73 @@ test('shop: an order in euros becomes an exact VET amount, settled by the matchi
     t += ORDER_TTL
     assert.equal(shops.status(id, key, 'o2')!.status, 'expired')
     assert.deepEqual(shops.open(), [])
+})
+
+test('voting rewards: pushed once per ended round, to devices whose addresses earned', async () => {
+    const db = openDb(':memory:')
+    const store = createStore(db)
+    store.subscribe(validateSubscribe({ ...sub, rewards: true }).sub, [A])
+    store.subscribe(validateSubscribe({ ...sub, subscription: { ...sub.subscription, endpoint: 'https://fcm.googleapis.com/fcm/send/other' }, addresses: [B], rewards: true }).sub, [B])
+    let round = 80
+    const asked: number[] = []
+    const sent: { endpoint: string, title: string }[] = []
+    const w = createRewardWatch(db, {
+        nodes: ['n'],
+        round: async () => round,
+        rewards: async (_n, r, addresses) => { asked.push(r); return new Map(addresses.map(a => [a, a === A ? 12345n * 10n ** 16n : 0n])) },
+        send: async (s, payload) => { sent.push({ endpoint: s.endpoint, title: JSON.parse(payload).title }) }
+    })
+    assert.equal(await w.tick(), 1)
+    assert.deepEqual(asked, [79])
+    assert.equal(sent[0]!.endpoint, sub.subscription.endpoint)
+    assert.equal(sent[0]!.title, rewardText('nl', 79, '123.45'))
+    assert.equal(await w.tick(), 0)
+    round = 81
+    assert.equal(await w.tick(), 1)
+    assert.deepEqual(asked, [79, 80])
+})
+
+test('validators: a change is pushed once, to the devices whose NFTs are with it', async () => {
+    const V = '0x' + 'c'.repeat(40)
+    assert.throws(() => validateSubscribe({ ...sub, validators: Array.from({ length: 21 }, (_, i) => '0x' + i.toString(16).padStart(40, '0')) }), /at most 20/)
+    const db = openDb(':memory:')
+    const store = createStore(db)
+    store.subscribe(validateSubscribe({ ...sub, validators: [V, 'nope'] }).sub, [A])
+    store.subscribe(validateSubscribe({ ...sub, subscription: { ...sub.subscription, endpoint: 'https://fcm.googleapis.com/fcm/send/other' } }).sub, [B])
+    let state: ValidatorState = 'online'
+    const titles: string[] = []
+    const w = createValidatorWatch(db, { nodes: ['n'], states: async (_n, list) => new Map(list.map(v => [v, state])), send: async (_s, payload) => { titles.push(JSON.parse(payload).title) } })
+    assert.equal(await w.tick(), 0)
+    state = 'offline'
+    assert.equal(await w.tick(), 1)
+    assert.equal(await w.tick(), 0)
+    state = 'online'
+    assert.equal(await w.tick(), 1)
+    state = 'exiting'
+    assert.equal(await w.tick(), 1)
+    assert.deepEqual(titles, [validatorText('offline', 'nl', V), validatorText('online', 'nl', V), validatorText('exiting', 'nl', V)])
+    assert.match(titles[0]!, /0xcccc…cccc/)
+    // subscribing again without validators stops it
+    store.subscribe(validateSubscribe(sub).sub, [A])
+    state = 'offline'
+    assert.equal(await w.tick(), 0)
+})
+
+test('new tokens: the first reading sets what is known, then each new one is pushed once', async () => {
+    const db = openDb(':memory:')
+    const store = createStore(db)
+    store.subscribe(validateSubscribe({ ...sub, tokens: true }).sub, [A])
+    const t1 = { address: TOKEN, symbol: 'B3TR', name: 'B3TR' }
+    const t2 = { address: '0x' + 'd'.repeat(40), symbol: 'NEW', name: 'New Token' }
+    let list = [t1]
+    const titles: string[] = []
+    const w = createTokenWatch(db, { tokens: async () => list, send: async (_s, payload) => { titles.push(JSON.parse(payload).title) } })
+    assert.equal(await w.tick(), 0)
+    list = [t1, t2]
+    assert.equal(await w.tick(), 1)
+    assert.equal(await w.tick(), 0)
+    assert.deepEqual(titles, [tokenText('nl', t2)])
+    // a registry that suddenly holds dozens more: not news
+    list = [t1, t2, ...Array.from({ length: 30 }, (_, i) => ({ address: '0x' + i.toString(16).padStart(40, 'e'), symbol: 'X', name: 'X' }))]
+    assert.equal(await w.tick(), 0)
 })

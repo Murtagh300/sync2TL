@@ -82,7 +82,7 @@
                     size="sm"
                     toggle-color="primary"
                     color="dark"
-                    :options="[{ label: sym, value: false }, { label: prefs.currency === 'EUR' ? '€' : '$', value: true }]"
+                    :options="[{ label: sym, value: false }, { label: currencySign(prefs.currency), value: true }]"
                 />
             </div>
             <q-input
@@ -118,7 +118,7 @@
                 :placeholder="`0${decimalSeparator()}00`"
                 outlined
                 spellcheck="false"
-                :prefix="prefs.currency === 'EUR' ? '€' : '$'"
+                :prefix="currencySign(prefs.currency)"
             />
             <div class="row items-center no-wrap q-px-md q-mt-xs">
                 <div class="text-muted conversion ellipsis">{{conversion}}</div>
@@ -194,6 +194,15 @@
                 color="primary"
                 :label="$t('send.action_send')"
             />
+            <q-btn
+                v-if="!message.trim() && !schedule && wallet && canSign(wallet)"
+                flat
+                no-caps
+                color="primary"
+                icon="o_playlist_add"
+                :label="queued.length ? $t('queue.action_add_n', { n: queued.length }) : $t('queue.action_add')"
+                @click="onQueue"
+            />
         </page-action>
     </q-form>
 </template>
@@ -227,6 +236,8 @@ import { findLookalike, isKnownRecipient } from 'src/utils/recipient'
 import { nameOf } from 'src/utils/names'
 import AddressAvatar from 'components/AddressAvatar.vue'
 import ReceiveDialog from 'pages/Address/ReceiveDialog.vue'
+import { currencySign } from 'src/utils/fiat'
+import { enqueue, queueOf } from 'src/utils/send-queue'
 
 export default defineComponent({
     components: {
@@ -373,6 +384,10 @@ export default defineComponent({
         empty(): boolean {
             return this.balance !== '' && new BigNumber(this.balance).isZero()
         },
+        /** payments from this address waiting to go out together */
+        queued(): unknown[] {
+            return this.wallet && this.from ? queueOf(this.wallet.gid, this.from) : []
+        },
         /** the last few recipients and contacts, one tap away */
         quickTo(): string[] {
             const seen = new Set<string>()
@@ -385,6 +400,7 @@ export default defineComponent({
         }
     },
     methods: {
+        currencySign,
         isAddress: address.test,
         nameOf,
         decimalSeparator,
@@ -495,6 +511,32 @@ export default defineComponent({
             return (!this.errors.to && !this.errors.amount)
         },
         canSign,
+        /** puts this payment aside, to be sent with others in one transaction */
+        onQueue() {
+            if (!this.validate() || !this.currentToken || !this.wallet) {
+                return
+            }
+            const ok = enqueue({
+                gid: this.wallet.gid,
+                from: this.from,
+                to: this.recipient!,
+                symbol: this.sym,
+                token: this.sym === 'VET' ? '' : this.currentToken.address,
+                decimals: this.currentToken.decimals,
+                amount: this.amountText
+            })
+            if (!ok) {
+                this.$q.notify({ message: this.$t('queue.msg_full'), color: 'warning' })
+                return
+            }
+            this.$q.notify({
+                message: this.$t('queue.msg_added', { n: this.queued.length }),
+                actions: [{ label: this.$t('queue.action_open'), color: 'primary', handler: () => { void this.$router.push({ name: 'send-queue', query: { wid: String(this.wallet!.id), i: this.i || '0' } }) } }]
+            })
+            this.recipient = null
+            this.amountText = ''
+            this.fiatText = ''
+        },
         async onSend() {
             if (!canSign(this.wallet)) {
                 this.$q.notify({ message: this.$t('watch.msg_cannot_sign'), color: 'negative' })

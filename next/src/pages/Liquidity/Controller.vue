@@ -1,6 +1,15 @@
 <template>
     <div class="fit column no-wrap">
-        <page-toolbar :title="$t('liquidity.title')" />
+        <page-toolbar :title="$t('liquidity.title')">
+            <q-btn
+                v-if="owner"
+                flat
+                round
+                icon="o_add_circle_outline"
+                :aria-label="$t('liquidity.action_new')"
+                @click="pickPool()"
+            />
+        </page-toolbar>
         <page-content
             class="col"
             padding
@@ -33,8 +42,8 @@
                 icon="o_water_drop"
                 :text="$t('liquidity.msg_none')"
                 :action="$t('empty.action_add_liquidity')"
-                action-icon="o_open_in_new"
-                @action="openURL('https://www.betterswap.io/pools')"
+                :action-icon="owner ? 'o_add_circle_outline' : 'o_open_in_new'"
+                @action="owner ? pickPool() : openURL('https://www.betterswap.io/pools')"
             />
             <template v-else>
                 <div
@@ -49,7 +58,7 @@
                         v-for="p in positions"
                         :key="p.key"
                         clickable
-                        @click="openURL(p.url)"
+                        @click="choose(p)"
                     >
                         <q-item-section avatar>
                             <div class="pair-icons">
@@ -108,7 +117,10 @@ import { defineComponent } from 'vue'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import EmptyState from 'components/EmptyState.vue'
-import { compareToHodl, findPositions, type Position } from 'src/utils/liquidity'
+import { compareToHodl, findPositions, loadPools, type Pool, type Position } from 'src/utils/liquidity'
+import { routerOf } from 'src/utils/liquidity-v2'
+import { canSign } from 'src/utils/watch'
+import PoolDialog from './PoolDialog.vue'
 import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { money, prefs } from 'src/utils/prefs'
 import { numberLocale } from 'src/utils/format'
@@ -122,9 +134,15 @@ export default defineComponent({
         loading: true,
         error: false,
         positions: [] as Position[],
-        fx: 1
+        fx: 1,
+        /** addresses of the chosen wallets that can sign */
+        signable: [] as string[]
     }),
     computed: {
+        /** where a new position comes from: the first address that can sign */
+        owner(): string {
+            return this.signable[0] || ''
+        },
         totalUsd(): number {
             return this.positions.reduce((s, p) => s + (p.usd || 0), 0)
         }
@@ -135,6 +153,70 @@ export default defineComponent({
     methods: {
         money,
         openURL,
+        /** a BetterSwap V2 position: add, take out or open; others open on their DEX */
+        async choose(p: Position) {
+            const src = p.source
+            const pool = src?.kind === 'v2' && this.signable.includes(src.owner.toLowerCase())
+                ? (await loadPools().catch(() => [] as Pool[])).find(x => x.poolAddress.toLowerCase() === src.pool.toLowerCase())
+                : undefined
+            if (!pool || !routerOf(pool) || src?.kind !== 'v2') {
+                openURL(p.url)
+                return
+            }
+            this.$q.bottomSheet({
+                actions: [
+                    { label: this.$t('liquidity.action_add'), icon: 'o_add', id: 'add' },
+                    { label: this.$t('liquidity.action_remove'), icon: 'o_remove', id: 'remove' },
+                    { label: this.$t('liquidity.action_open_dex'), icon: 'o_open_in_new', id: 'open' }
+                ]
+            }).onOk((a: { id: string }) => {
+                if (a.id === 'open') openURL(p.url)
+                else void this.change(pool, src.owner, a.id as 'add' | 'remove', src.balance)
+            })
+        },
+        /** the pools with the most in them, to start a new position in */
+        async pickPool() {
+            const pools = (await loadPools().catch(() => [] as Pool[]))
+                .filter(x => routerOf(x) && BigInt(x.reserve0?.raw || 0) > 0n && BigInt(x.reserve1?.raw || 0) > 0n)
+                .sort((a, b) => (b.totalUsdValue || 0) - (a.totalUsdValue || 0))
+                .slice(0, 20)
+            if (!pools.length) {
+                this.$q.notify(this.$t('common.something_wrong'))
+                return
+            }
+            this.$q.dialog({
+                title: this.$t('liquidity.title_pick'),
+                options: {
+                    type: 'radio',
+                    model: pools[0]!.poolAddress,
+                    items: pools.map(x => ({
+                        label: `${x.token0.symbol || 'VET'}/${x.token1.symbol || 'VET'} · ${money((x.totalUsdValue || 0) * this.fx, prefs.currency, { compact: true })}${x.apy ? ` · ${this.$t('liquidity.label_apy', { apy: x.apy.toFixed(1) })}` : ''}`,
+                        value: x.poolAddress
+                    }))
+                },
+                cancel: true
+            }).onOk((address: string) => {
+                const pool = pools.find(x => x.poolAddress === address)
+                if (pool) void this.change(pool, this.owner, 'add', 0n)
+            })
+        },
+        async change(pool: Pool, owner: string, mode: 'add' | 'remove', lp: bigint) {
+            let clauses: { to: string, value: string, data: string }[]
+            try {
+                clauses = await this.$dialog<{ to: string, value: string, data: string }[]>({ component: PoolDialog, pool, owner, mode, lp: lp.toString() })
+            } catch {
+                return
+            }
+            const pair = `${pool.token0.symbol || 'VET'}/${pool.token1.symbol || 'VET'}`
+            const comment = this.$t(mode === 'add' ? 'liquidity.comment_add' : 'liquidity.comment_remove', { pair })
+            try {
+                await this.$signTx(genesises.main.id, {
+                    message: clauses.map(c => ({ ...c, comment })),
+                    options: { signer: owner, comment }
+                })
+                setTimeout(() => void this.load(), 12 * 1000)
+            } catch { }
+        },
         signed(v: number) {
             return `${v > 0 ? '+' : v < 0 ? '−' : ''}${Math.abs(v).toLocaleString(numberLocale(), { maximumFractionDigits: 1 })}%`
         },
@@ -149,6 +231,7 @@ export default defineComponent({
                 const wallets = (await this.$svc.wallet.all()).filter(w => w.gid === genesises.main.id)
                 const chosen = selection.walletId === ALL_WALLETS ? wallets : [selectedWallet(wallets)].filter((w): w is M.Wallet => !!w)
                 const addresses = [...new Set(chosen.flatMap(w => w.meta.addresses))]
+                this.signable = chosen.filter(canSign).flatMap(w => w.meta.addresses.map(a => a.toLowerCase()))
                 const thor = this.$svc.bc(genesises.main.id).thor
                 const all = await Promise.all(addresses.map(a => findPositions(thor, a)))
                 const list = all.flat()

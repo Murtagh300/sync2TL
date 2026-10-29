@@ -16,6 +16,111 @@
         >
             <p class="text-soft">{{$t('impact.msg_intro')}}</p>
             <div
+                v-if="!loading && !error"
+                class="bvm-tile goal q-mb-md"
+            >
+                <template v-if="editing">
+                    <div class="text-weight-bold q-mb-sm">{{$t('impact.title_goal', { year })}}</div>
+                    <q-select
+                        v-model="draft.key"
+                        outlined
+                        dense
+                        emit-value
+                        map-options
+                        :options="goalOptions"
+                        :label="$t('impact.label_goal_kind')"
+                    />
+                    <q-input
+                        v-model.number="draft.target"
+                        outlined
+                        dense
+                        type="number"
+                        min="0"
+                        class="q-mt-sm"
+                        :label="$t('impact.label_goal_target')"
+                        :suffix="unitOf(draft.key)"
+                    />
+                    <div class="row q-gutter-sm q-mt-sm justify-end">
+                        <q-btn
+                            v-if="goal"
+                            flat
+                            no-caps
+                            color="negative"
+                            :label="$t('impact.action_goal_remove')"
+                            @click="setGoal(null)"
+                        />
+                        <q-btn
+                            flat
+                            no-caps
+                            :label="$t('common.cancel')"
+                            @click="editing = false"
+                        />
+                        <q-btn
+                            unelevated
+                            no-caps
+                            color="primary"
+                            :disable="!(draft.target > 0)"
+                            :label="$t('impact.action_goal_save')"
+                            @click="setGoal({ key: draft.key, target: draft.target, year })"
+                        />
+                    </div>
+                </template>
+                <template v-else-if="goal && progress">
+                    <div class="row no-wrap items-center">
+                        <q-icon
+                            :name="icons[goal.key]"
+                            size="22px"
+                            color="primary"
+                            class="q-mr-sm"
+                        />
+                        <div class="col text-weight-bold">{{$t('impact.title_goal', { year: goal.year })}}</div>
+                        <q-btn
+                            flat
+                            dense
+                            no-caps
+                            color="primary"
+                            :label="$t('impact.action_goal_edit')"
+                            @click="edit()"
+                        />
+                    </div>
+                    <div class="goal-bar q-mt-sm">
+                        <div
+                            class="goal-fill"
+                            :style="{ width: `${Math.round(progress.share * 100)}%` }"
+                        />
+                    </div>
+                    <div class="row justify-between q-mt-xs">
+                        <span class="text-soft">{{$t('impact.label_goal_progress', { done: num(progress.done), target: num(goal.target), unit: unitOf(goal.key), kind: $t(`impact.k_${goal.key}`) })}}</span>
+                        <span class="text-caption text-weight-bold">{{Math.round(progress.share * 100)}}%</span>
+                    </div>
+                    <div
+                        class="text-caption q-mt-xs"
+                        :class="progress.share >= 1 ? 'text-positive' : onTrack ? 'text-muted' : 'text-warning'"
+                    >{{progress.share >= 1 ? $t('impact.msg_goal_done') : onTrack ? $t('impact.msg_goal_on_track') : $t('impact.msg_goal_behind')}}</div>
+                </template>
+                <div
+                    v-else
+                    class="row no-wrap items-center"
+                >
+                    <q-icon
+                        name="o_flag"
+                        size="22px"
+                        color="primary"
+                        class="q-mr-sm"
+                    />
+                    <div class="col text-soft">{{$t('impact.msg_goal_none')}}</div>
+                    <q-btn
+                        unelevated
+                        dense
+                        no-caps
+                        color="primary"
+                        class="q-px-sm"
+                        :label="$t('impact.action_goal_set')"
+                        @click="edit()"
+                    />
+                </div>
+            </div>
+            <div
                 v-if="loading"
                 class="row q-col-gutter-sm"
             >
@@ -79,6 +184,7 @@ import { selectedWallet, selection, ALL_WALLETS } from 'src/utils/selection'
 import { rewardsOf } from 'src/utils/x2earn'
 import { addImpact, IMPACT_KEYS, impactShown, type Impact, type ImpactKey } from 'src/utils/impact'
 import { shareCard } from 'src/utils/share-card'
+import { GOAL_UNIT, goalProgress, loadGoal, onTrack, saveGoal, type ImpactGoal } from 'src/utils/impact-goal'
 
 const ICONS: Record<ImpactKey, string> = {
     carbon: 'o_co2',
@@ -102,7 +208,13 @@ export default defineComponent({
         total: {} as Impact,
         actions: 0,
         first: 0,
-        icons: ICONS
+        icons: ICONS,
+        /** this year's impact, for the goal */
+        yearTotal: {} as Impact,
+        goal: loadGoal(),
+        editing: false,
+        year: new Date().getFullYear(),
+        draft: { key: 'carbon' as ImpactKey, target: 0 }
     }),
     computed: {
         shown(): { key: ImpactKey, text: string }[] {
@@ -112,6 +224,15 @@ export default defineComponent({
             const c = this.total.carbon
             return c ? this.$t('impact.headline_carbon', { amount: this.fmt('carbon', c) }) : this.$t('impact.headline_actions', { n: this.actions })
         },
+        progress(): { done: number, share: number } | null {
+            return this.goal ? goalProgress(this.goal, this.goal.year === this.year ? this.yearTotal : {}) : null
+        },
+        onTrack(): boolean {
+            return !!this.progress && onTrack(this.progress.share)
+        },
+        goalOptions(): { label: string, value: ImpactKey }[] {
+            return IMPACT_KEYS.filter(k => GOAL_UNIT[k]).map(k => ({ label: this.$t(`impact.k_${k}`), value: k }))
+        },
         since(): string {
             return this.first ? new Date(this.first).toLocaleDateString(this.$i18n.locale, { month: 'long', year: 'numeric' }) : ''
         }
@@ -120,6 +241,21 @@ export default defineComponent({
         await this.load()
     },
     methods: {
+        unitOf(key: ImpactKey) {
+            return GOAL_UNIT[key]?.unit || ''
+        },
+        num(v: number) {
+            return new Intl.NumberFormat(numberLocale(), { maximumFractionDigits: v < 10 ? 1 : 0 }).format(v)
+        },
+        edit() {
+            this.draft = { key: this.goal?.key || 'carbon', target: this.goal?.target || 0 }
+            this.editing = true
+        },
+        setGoal(g: ImpactGoal | null) {
+            saveGoal(g)
+            this.goal = g
+            this.editing = false
+        },
         fmt(key: ImpactKey, v: number): string {
             const s = impactShown(key, v)
             const n = new Intl.NumberFormat(numberLocale(), { maximumFractionDigits: s.value < 10 ? 1 : 0 }).format(s.value)
@@ -136,6 +272,8 @@ export default defineComponent({
                 this.total = total
                 this.actions = actions
                 this.first = list.length ? Math.min(...list.map(r => r.time)) : 0
+                const yearStart = new Date(this.year, 0, 1).getTime()
+                this.yearTotal = addImpact(list.filter(r => r.time >= yearStart).map(r => r.proof)).total
             } catch (err) {
                 console.warn('impact:', err)
                 this.error = true
@@ -163,4 +301,19 @@ export default defineComponent({
 
 .tile-value
   font-size: 20px
+
+.goal
+  padding: 14px 16px
+
+.goal-bar
+  height: 10px
+  border-radius: 999px
+  background: rgba(255, 255, 255, 0.07)
+  overflow: hidden
+
+.goal-fill
+  height: 100%
+  border-radius: 999px
+  background: var(--q-primary)
+  transition: width 0.4s ease-out
 </style>

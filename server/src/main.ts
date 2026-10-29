@@ -14,12 +14,15 @@ import { createStore, MAX_WATCHED, validateSubscribe, type Subscription } from '
 import { arrivals, createWatcher, tokenRegistry } from './push/watcher.ts'
 import { createReminders, validateReminders } from './push/reminders.ts'
 import { createRoundWatch } from './push/rounds.ts'
+import { createRewardWatch } from './push/voter-rewards.ts'
+import { createValidatorWatch } from './push/validators.ts'
+import { createTokenWatch } from './push/new-tokens.ts'
 import { betterswapPrices, createPriceAlerts, validatePriceAlerts } from './push/price-alerts.ts'
 import { createPhishing, HOST } from './phishing.ts'
 import { createX2Index } from './x2earn.ts'
 import { createChat } from './chat.ts'
 import { createTills } from './till.ts'
-import { createShops, createShopWatch, ecbRate } from './shop.ts'
+import { createShops, createShopWatch, ecbRate, ecbRates } from './shop.ts'
 
 /**
  * BlackVault's server. Everything here is public data or data the wallet chose to send;
@@ -30,6 +33,7 @@ import { createShops, createShopWatch, ecbRate } from './shop.ts'
  *   GET  /health, /status    what the wallet depends on
  *   GET  /config             remote config (feature switches, a notice)
  *   GET  /phishing?host=     whether a site is a known phishing site
+ *   GET  /fx                 the ECB's daily exchange rates (units per euro)
  *   GET  /x2earn/leaderboard?days=7|30&address=   X2Earn's top earners, and where an address stands
  *   POST /chat/key           publish a chat key (a certificate signed by the address)
  *   GET  /chat/keys/:address the chat keys of an address
@@ -43,7 +47,7 @@ import { createShops, createShopWatch, ecbRate } from './shop.ts'
  *   GET  /shop/:id/orders/:ref   an order's status (Authorization: Bearer key)
  *   GET  /checkout/:token    an order as the wallet's checkout page shows it
  *   GET  /push/key           the VAPID public key
- *   POST /push/subscribe     { subscription, addresses, lang, outgoing?, rounds? }
+ *   POST /push/subscribe     { subscription, addresses, lang, outgoing?, rounds?, rewards?, tokens?, validators? }
  *   POST /push/price-alerts  { endpoint, alerts }: token price alerts pushed once per crossing
  *   POST /push/unsubscribe   { endpoint }
  *   POST /errors             an opt-in, scrubbed error report
@@ -89,6 +93,10 @@ if (config.vapid) {
     setInterval(() => { reminders.tick(sender).catch(err => console.warn('[push] reminders:', err)) }, 60 * 1000).unref()
     // a new VeBetterDAO round, for the devices that asked
     createRoundWatch(db, { nodes: config.mainnetNodes, send }).start()
+    // a voting reward to claim, a validator offline or leaving, a new token in the registry
+    createRewardWatch(db, { nodes: config.mainnetNodes, send }).start()
+    createValidatorWatch(db, { nodes: config.mainnetNodes, send }).start()
+    createTokenWatch(db, { send }).start()
     // price alerts: BetterSwap's prices every two minutes
     setInterval(() => { priceAlerts.tick(sender).catch(err => console.warn('[push] price alerts:', (err as Error).message)) }, 2 * 60 * 1000).unref()
     console.log('[push] on')
@@ -104,7 +112,8 @@ const CHAT_PUSH: Record<string, string> = {
 }
 const tills = createTills(db)
 const usdPrices = betterswapPrices(config.betterswapUrl)
-const shops = createShops(db, { price: async token => (await usdPrices([token])).get(token) || 0, eurUsd: ecbRate() })
+const fxRates = ecbRates()
+const shops = createShops(db, { price: async token => (await usdPrices([token])).get(token) || 0, eurUsd: ecbRate(fxRates) })
 createShopWatch(db, shops, { nodes: config.mainnetNodes, arrivals }).start()
 const chat = createChat(db, {
     onMessage: m => {
@@ -146,6 +155,14 @@ router.get('/status', async ctx => {
     ctx.res.end(statusPage(h))
 })
 router.get('/config', ctx => json(ctx.res, 200, flags(), { 'Cache-Control': 'public, max-age=60' }))
+
+router.get('/fx', async ctx => {
+    try {
+        json(ctx.res, 200, { base: 'EUR', rates: await fxRates() }, { 'Cache-Control': 'public, max-age=3600' })
+    } catch {
+        throw new HttpError(503, 'exchange rates unavailable')
+    }
+})
 
 router.get('/phishing', ctx => {
     if (!gatewayLimit.take(`ph:${ctx.ip}`)) throw new HttpError(429, 'slow down')

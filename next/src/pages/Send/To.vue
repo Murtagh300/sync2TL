@@ -11,10 +11,11 @@
         v-model.lazy="to"
         spellcheck="false"
         :loading="resolving"
-        :hint="resolvedFrom ? $t('send.msg_resolved', { name: resolvedFrom }) : knownName ? $t('send.msg_known_as', { name: knownName }) : undefined"
+        :hint="pasteNote || (resolvedFrom ? $t('send.msg_resolved', { name: resolvedFrom }) : knownName ? $t('send.msg_known_as', { name: knownName }) : undefined)"
         :input-class="isAddress(to) ? 'to-address' : ''"
         :error="!!vetError || $attrs.error === true"
         :error-message="vetError || ($attrs['error-message'] as string)"
+        @paste="onPaste"
     >
         <template
             v-if="isAddress(to)"
@@ -75,6 +76,8 @@ import QrScannerDialog from 'pages/QrScannerDialog'
 import { QrScanner } from 'src/utils/qr-scanner'
 import { isVetName, nameOf, resolveVetName } from 'src/utils/names'
 import { parsePaymentRequest } from 'src/utils/payment-request'
+import { checkPasted } from 'src/utils/clipboard-guard'
+import { haptic } from 'src/utils/prefs'
 
 export default defineComponent({
     components: {
@@ -97,6 +100,9 @@ export default defineComponent({
             resolvedFrom: '',
             resolvedAddress: '',
             vetError: '',
+            /** what to say about a pasted address that isn't the one just copied */
+            pasteNote: '',
+            pasted: '',
             // async computed (see src/shims-async-computed.d.ts)
             hasCamera: null as boolean | null
         }
@@ -113,6 +119,18 @@ export default defineComponent({
         },
         to(v: string) {
             this.vetError = ''
+            this.pasteNote = ''
+            const pasted = this.pasted
+            this.pasted = ''
+            if (v && pasted && v.trim().toLowerCase() === pasted.trim().toLowerCase()) {
+                const r = checkPasted(pasted)
+                if (r === 'swapped') {
+                    haptic('error')
+                    this.vetError = this.$t('send.msg_paste_swapped')
+                    return
+                }
+                if (r === 'different') this.pasteNote = this.$t('send.msg_paste_different')
+            }
             if (v && isVetName(v)) {
                 void this.resolve(v)
                 return
@@ -130,6 +148,9 @@ export default defineComponent({
         }
     },
     methods: {
+        onPaste(e: ClipboardEvent) {
+            this.pasted = e.clipboardData?.getData('text') || ''
+        },
         isAddress: address.test,
         async resolve(name: string) {
             this.resolving = true
