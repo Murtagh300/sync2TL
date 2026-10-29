@@ -5,6 +5,8 @@ an update comes from `next/src/changelog.ts` (keep the two in step).
 
 ## Unreleased
 
+## 2.4.0 — 2026-10-29
+
 **Safety**
 - Phishing check before connecting or signing: MetaMask's list and ours (on the BlackVault server), and
   sites that copy a VeChain project's name ("vebeterdao.org") or borrow it in their address.

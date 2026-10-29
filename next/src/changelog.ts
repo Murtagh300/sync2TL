@@ -12,6 +12,46 @@ export type Release = {
 }
 
 export const releases: Release[] = [{
+    version: '2.4.0',
+    date: '2026-10-29',
+    items: {
+        en: [
+            'SQUAD, B3TR and VOT3 always on your home screen with a Buy now button, and sunglasses on the avatar of anyone holding 10 million SQUAD.',
+            'Every VeChain dApp in one place, by category; add any token by its address, and see tokens that just went live on BetterSwap.',
+            'Claim your VeBetterDAO voting rewards, stake VET in StarGate, and add or take out liquidity on BetterSwap, all from the wallet.',
+            'Send several payments in one transaction, send again from home, and a warning when a pasted address was swapped.',
+            'Sixteen more currencies, a help centre, a year in review to share, and a loading animation of our own.'
+        ],
+        nl: [
+            'SQUAD, B3TR en VOT3 altijd op je startscherm met een Koop nu-knop, en een zonnebril op de avatar van wie 10 miljoen SQUAD heeft.',
+            'Alle VeChain-dApps op één plek, per categorie; voeg elke token toe met zijn adres, en zie tokens die net live gingen op BetterSwap.',
+            'Haal je stembeloningen van VeBetterDAO op, stake VET in StarGate, en voeg liquiditeit toe of haal hem weg op BetterSwap, allemaal vanuit de wallet.',
+            'Verstuur meerdere betalingen in één transactie, stuur opnieuw vanaf home, en een waarschuwing als een geplakt adres is verwisseld.',
+            'Zestien extra valuta, een helpcentrum, een jaaroverzicht om te delen, en een eigen laadanimatie.'
+        ],
+        de: [
+            'SQUAD, B3TR und VOT3 immer auf dem Startbildschirm mit Jetzt-kaufen-Knopf, und eine Sonnenbrille auf dem Avatar aller mit 10 Millionen SQUAD.',
+            'Alle VeChain-dApps an einem Ort, nach Kategorie; füge jeden Token per Adresse hinzu und sieh Token, die gerade auf BetterSwap live gingen.',
+            'Hol deine VeBetterDAO-Abstimmungsbelohnungen ab, stake VET in StarGate und füge auf BetterSwap Liquidität hinzu oder entnimm sie, alles aus der Wallet.',
+            'Sende mehrere Zahlungen in einer Transaktion, sende erneut von der Startseite, und eine Warnung, wenn eine eingefügte Adresse vertauscht wurde.',
+            'Sechzehn weitere Währungen, eine Hilfe, ein Jahresrückblick zum Teilen und eine eigene Ladeanimation.'
+        ],
+        fr: [
+            'SQUAD, B3TR et VOT3 toujours sur l\'écran d\'accueil avec un bouton Acheter, et des lunettes de soleil sur l\'avatar de qui détient 10 millions de SQUAD.',
+            'Toutes les dApps VeChain au même endroit, par catégorie ; ajoutez n\'importe quel jeton par son adresse et voyez ceux qui viennent d\'arriver sur BetterSwap.',
+            'Réclamez vos récompenses de vote VeBetterDAO, stakez du VET dans StarGate, et ajoutez ou retirez des liquidités sur BetterSwap, depuis le portefeuille.',
+            'Envoyez plusieurs paiements en une transaction, renvoyez depuis l\'accueil, et une alerte quand une adresse collée a été échangée.',
+            'Seize devises de plus, une aide, un bilan de l\'année à partager et une animation de chargement maison.'
+        ],
+        zh: [
+            'SQUAD、B3TR 和 VOT3 始终显示在首页并带“立即购买”按钮；持有 1000 万 SQUAD 的人头像会戴上墨镜。',
+            '所有 VeChain dApp 按类别集中展示；可按地址添加任意代币，并查看刚在 BetterSwap 上线的代币。',
+            '在钱包里领取 VeBetterDAO 投票奖励、在 StarGate 质押 VET，以及在 BetterSwap 添加或取出流动性。',
+            '一笔交易发送多笔付款，在首页再次发送，粘贴的地址被替换时会提醒你。',
+            '新增十六种货币、帮助中心、可分享的年度回顾，以及我们自己的加载动画。'
+        ]
+    }
+}, {
     version: '2.3.0',
     date: '2026-10-28',
     items: {
