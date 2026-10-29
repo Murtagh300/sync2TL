@@ -30,7 +30,7 @@
             class="text-soft description q-mt-md q-mb-none"
         >{{info.description}}</p>
         <div
-            v-if="info.links.length"
+            v-if="info.links.length && !ownLinks"
             class="row q-gutter-sm q-mt-sm"
         >
             <q-btn
@@ -53,6 +53,7 @@
 import { defineComponent } from 'vue'
 import { money, prefs } from 'src/utils/prefs'
 import { openURL } from 'src/utils/open-url'
+import { tokenLinks } from 'src/utils/token-meta'
 import type { Prices } from 'boot/services/prices'
 
 // market cap, volume, liquidity, supply and links of a token (BetterSwap)
@@ -67,6 +68,10 @@ export default defineComponent({
         icons: { website: 'o_language', twitter: 'o_alternate_email', telegram: 'o_send', discord: 'o_forum' } as Record<string, string>
     }),
     computed: {
+        /** the token page shows the registry's links above (TokenSite.vue) */
+        ownLinks(): boolean {
+            return tokenLinks(this.token).length > 0
+        },
         marketCap(): number | null {
             return this.info && this.price !== null && this.info.circulatingSupply ? this.info.circulatingSupply * this.price * this.fx : null
         }

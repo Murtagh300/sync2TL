@@ -83,6 +83,10 @@
                     >{{position.pct >= 0 ? '+' : ''}}{{$fixed(position.pct, 1)}}%</div>
                 </div>
             </div>
+            <token-site
+                v-if="token && wallet.gid === mainGid"
+                :token="token"
+            />
             <token-info
                 v-if="token && wallet.gid === mainGid"
                 :token="token"
@@ -111,6 +115,7 @@ import AddressLabel from 'components/AddressLabel.vue'
 import AmountLabel from 'components/AmountLabel.vue'
 import PriceChart, { type ChartMark } from './PriceChart.vue'
 import TokenInfo from './TokenInfo.vue'
+import TokenSite from './TokenSite.vue'
 import { genesises } from 'src/consts'
 import type { TransferLogItem } from './models'
 import { BigNumber } from 'bignumber.js'
@@ -121,6 +126,7 @@ import { costBasis, VVET } from 'src/utils/cost-basis'
 export default defineComponent({
     components: {
         TokenInfo,
+        TokenSite,
         Logs,
         HeadItem,
         AsyncResolve,

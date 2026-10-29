@@ -27,6 +27,22 @@
                     <template v-else>{{token.name}}</template>
                 </q-item-label>
             </q-item-section>
+            <q-item-section
+                v-if="buy"
+                side
+            >
+                <q-btn
+                    unelevated
+                    dense
+                    no-caps
+                    size="sm"
+                    color="primary"
+                    class="buy-btn"
+                    :label="$t('featured.action_buy')"
+                    :aria-label="$t('featured.action_buy_symbol', { symbol: token.symbol })"
+                    @click.stop="$emit('buy')"
+                />
+            </q-item-section>
             <q-item-section side>
                 <amount-label
                     class="bvm-amount token-amount"
@@ -52,7 +68,7 @@
                 @click="$emit('pin', !pinned)"
             />
             <q-btn
-                v-if="!token.permanent"
+                v-if="!token.permanent && !buy"
                 flat
                 round
                 dense
@@ -85,9 +101,11 @@ export default defineComponent({
         stat: Object as () => Prices.Stat | undefined,
         /** fiat per USD */
         fx: { type: Number, default: 1 },
-        pinned: Boolean
+        pinned: Boolean,
+        /** a featured token: always shown, with a buy button */
+        buy: Boolean
     },
-    emits: ['pin', 'hide'],
+    emits: ['pin', 'hide', 'buy'],
     computed: {
         /** the balance in fiat, when priced */
         value(): number | null {

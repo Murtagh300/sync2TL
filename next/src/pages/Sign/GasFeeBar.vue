@@ -11,7 +11,7 @@
                         v-if="tokenFee.cost > 0"
                         class="bvm-amount fee-amount"
                     >{{tokenAmount}}</span>
-                    <q-spinner-dots
+                    <bv-loader
                         v-else
                         color="primary"
                     />
@@ -26,7 +26,7 @@
                         :value="fee"
                         :decimals="18"
                     />
-                    <q-spinner-dots
+                    <bv-loader
                         v-else
                         color="primary"
                     />

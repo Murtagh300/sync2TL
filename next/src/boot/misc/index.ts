@@ -9,8 +9,13 @@ import { installErrorReports } from 'src/utils/error-reports'
 import { startRemoteConfig } from 'src/utils/remote-config'
 import { startInstallWatch } from 'src/utils/install'
 import { fixed } from 'src/utils/format'
+import BvLoader from 'components/BvLoader.vue'
 
 declare module 'vue' {
+    interface GlobalComponents {
+        /** BlackVault's loading animation, everywhere a spinner was */
+        BvLoader: typeof BvLoader
+    }
     interface ComponentCustomProperties {
         /** navigate back or go to home(/) if the stack is empty */
         $backOrHome(): void
@@ -30,6 +35,7 @@ export default defineBoot(({ app, router }) => {
     installErrorReports(app, () => String(router.currentRoute.value.name || ''))
     startRemoteConfig()
     startInstallWatch()
+    app.component('BvLoader', BvLoader)
     State.boot(app)
     Plugins.boot(app)
     Modals.boot(app)

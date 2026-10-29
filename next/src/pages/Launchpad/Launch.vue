@@ -9,7 +9,7 @@
                 v-if="!launch"
                 class="row justify-center q-py-xl"
             >
-                <q-spinner-dots
+                <bv-loader
                     v-if="!error"
                     size="32px"
                 />

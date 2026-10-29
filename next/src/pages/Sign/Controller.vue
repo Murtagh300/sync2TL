@@ -23,7 +23,7 @@
                     :t="200"
                 >
                     <p>
-                        <q-spinner-dots class="text-h2" />
+                        <bv-loader size="64px" />
                     </p>
                     <p>{{$t('sign.msg_loading_content')}}</p>
                 </delay-render>

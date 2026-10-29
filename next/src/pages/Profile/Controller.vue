@@ -50,6 +50,7 @@
                             :src="avatar"
                             alt=""
                         >
+                        <squad-shades v-if="avatar && squad" />
                         <address-avatar
                             v-else
                             :addr="address"
@@ -129,6 +130,9 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import { address as addressUtil } from 'thor-devkit'
+import SquadShades from 'components/SquadShades.vue'
+import { holdsSquad } from 'src/utils/squad'
+import { genesises } from 'src/consts'
 import EmptyState from 'components/EmptyState.vue'
 import AddressAvatar from 'components/AddressAvatar.vue'
 import ReceiveDialog from 'pages/Address/ReceiveDialog.vue'
@@ -141,7 +145,7 @@ import { profileLink } from 'src/utils/profile'
 const isAddress = (v: string): boolean => addressUtil.test(v)
 
 export default defineComponent({
-    components: { EmptyState, AddressAvatar },
+    components: { EmptyState, AddressAvatar, SquadShades },
     props: {
         id: { type: String, required: true }
     },
@@ -151,6 +155,8 @@ export default defineComponent({
         vetName: '',
         displayName: '',
         avatar: '',
+        /** a SQUAD holder's own picture wears the sunglasses too */
+        squad: false,
         holdings: null as BVM.Holdings | null
     }),
     computed: {
@@ -209,6 +215,7 @@ export default defineComponent({
                 this.vetName = name
                 this.displayName = profile?.displayName || ''
                 this.avatar = profile?.avatar || ''
+                if (this.address) holdsSquad(this.$svc.bc(genesises.main.id).thor, this.address).then(v => { this.squad = v }).catch(() => { })
                 this.holdings = holdings
             } catch (err) {
                 console.warn('profile:', err)
@@ -256,6 +263,8 @@ export default defineComponent({
   border: 2px solid $hairline-2
   img
     object-fit: cover
+  :deep(.q-avatar__content)
+    position: relative
 
 .profile-name
   font-size: clamp(26px, 8vw, 36px)

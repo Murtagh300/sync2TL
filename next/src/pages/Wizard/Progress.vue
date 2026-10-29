@@ -10,7 +10,7 @@
             :class="{ 'step--current': isCurrent(i) }"
             :key="i+''"
         >
-            <q-spinner
+            <bv-loader
                 v-if="isCurrent(i)"
                 size="18px"
                 color="primary"

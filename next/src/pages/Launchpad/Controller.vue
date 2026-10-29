@@ -15,7 +15,7 @@
                     v-if="loading"
                     class="row justify-center q-py-xl"
                 >
-                    <q-spinner-dots size="32px" />
+                    <bv-loader size="32px" />
                 </div>
                 <div
                     v-else-if="error"

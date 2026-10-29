@@ -122,8 +122,10 @@
                             :stat="stats[(token.address || zero).toLowerCase()]"
                             :fx="fx"
                             :pinned="tokenPrefs.pinned.includes(token.symbol)"
+                            :buy="isFeatured(token) && canSign(wallet)"
                             @pin="pin(token, $event)"
                             @hide="hide(token)"
+                            @buy="$router.push(buyRoute(token.symbol, walletId, addressIndex))"
                         >
                             <q-btn
                                 outline
@@ -182,7 +184,7 @@ import AsyncResolve from 'components/AsyncResolve'
 import PageToolbar from 'components/PageToolbar.vue'
 import PageContent from 'components/PageContent.vue'
 import NftGrid from './NftGrid.vue'
-import { visibleTokens, type TokenPrefs } from 'src/utils/tokens'
+import { buyRoute, isFeatured, visibleTokens, type TokenPrefs } from 'src/utils/tokens'
 import ReceiveDialog from './ReceiveDialog.vue'
 import type { Prices } from 'boot/services/prices'
 import { prefs } from 'src/utils/prefs'
@@ -255,6 +257,8 @@ export default defineComponent({
     },
     methods: {
         canSign,
+        isFeatured,
+        buyRoute,
         async saveTokenPrefs(p: TokenPrefs) {
             this.tokenPrefs = p
             await this.$svc.config.setJSON('token-prefs', p)

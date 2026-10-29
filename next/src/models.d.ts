@@ -36,6 +36,12 @@ declare namespace M {
         address: string
         iconSrc: string
         permanent: boolean
+        /** from the token registry (or BetterSwap, for an added token) */
+        desc?: string
+        website?: string
+        links?: Record<string, string>
+        /** added by the user, not in VeChain's token registry */
+        custom?: boolean
     }
 
     interface TxRequest {

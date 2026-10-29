@@ -117,7 +117,7 @@
                         class="col bvm-display swap-amount swap-out ellipsis"
                         :class="{ 'swap-out--empty': !quoteResult && !quoting }"
                     >
-                        <q-spinner-dots
+                        <bv-loader
                             v-if="quoting"
                             size="24px"
                         />

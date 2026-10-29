@@ -36,7 +36,7 @@
                 </template>
                 <template v-else>
                     <div class="row items-center no-wrap q-mt-lg text-muted">
-                        <q-spinner-dots
+                        <bv-loader
                             size="20px"
                             class="q-mr-sm"
                         />{{$t('tap.msg_waiting')}}

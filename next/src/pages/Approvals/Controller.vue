@@ -22,7 +22,7 @@
                 v-if="loading"
                 class="column flex-center q-py-xl"
             >
-                <q-spinner-dots size="40px" />
+                <bv-loader size="40px" />
                 <div class="text-muted q-mt-sm">{{$t('approvals.msg_scanning')}}</div>
             </div>
             <div

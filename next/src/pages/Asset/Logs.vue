@@ -36,7 +36,7 @@
         </div>
         <template v-slot:loading>
             <div class="text-center q-my-sm">
-                <q-spinner-dots
+                <bv-loader
                     color="primary"
                     size="20px"
                 />

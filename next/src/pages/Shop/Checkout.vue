@@ -33,7 +33,7 @@
                         v-if="paying"
                         class="row items-center no-wrap q-mt-md text-muted"
                     >
-                        <q-spinner-dots
+                        <bv-loader
                             size="20px"
                             class="q-mr-sm"
                         />{{$t('shop.msg_waiting')}}

@@ -92,6 +92,17 @@ an update comes from `next/src/changelog.ts` (keep the two in step).
 - Year in review: a card to share with numbers only (transactions, days, busiest month, VET in and
   out, X2Earn actions and B3TR).
 
+**Round four**
+- SQUAD, B3TR and VOT3 always on the home screen and every address, with "Buy now" (a swap from VET;
+  VOT3 through VeBetterDAO's convert).
+- Holders of 10 million SQUAD or more wear the Squirtle Squad's sunglasses on their avatar and profile picture.
+- All dApps: VeChain's App Hub and VeBetterDAO's apps in one list, by category; ours featured.
+- Tokens: categories, add any token by its contract address, and tokens just live on BetterSwap
+  (Token Forge graduates) one tap away, all marked as not checked. Token pages link the project's
+  website (SHA: Safe Haven's own page).
+- A loading animation of our own (a vault dial) instead of the stock spinners; placeholders glint in
+  the accent colour. Calmer when the device asks for less motion.
+
 ## 2.3.0 — 2026-10-28
 
 **UI polish**

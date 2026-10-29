@@ -35,7 +35,7 @@
                     v-if="searchingAll"
                     #append
                 >
-                    <q-spinner
+                    <bv-loader
                         size="16px"
                         color="primary"
                     />
@@ -232,7 +232,7 @@
             v-else-if="loading"
             class="row justify-center q-py-lg"
         >
-            <q-spinner-dots
+            <bv-loader
                 color="primary"
                 size="28px"
             />

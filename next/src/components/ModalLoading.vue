@@ -8,23 +8,20 @@
                 name="q-transition--fade"
                 appear
             >
-                <q-spinner-ios
-                    :size="80"
-                    color="primary"
-                />
+                <bv-loader size="88px" />
             </transition>
         </delay-render>
     </div>
 </template>
 <script lang="ts">
 import { defineComponent } from 'vue'
-import { QSpinnerIos } from 'quasar'
+import BvLoader from './BvLoader.vue'
 import DelayRender from './DelayRender'
 import { nofocusout } from 'boot/directives'
 
 // mounted as its own app by $loading, so it brings its own components and directive
 export default defineComponent({
-    components: { QSpinnerIos, DelayRender },
+    components: { BvLoader, DelayRender },
     directives: { nofocusout },
     mounted() {
         (this.$el as HTMLElement).focus()

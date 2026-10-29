@@ -18,6 +18,9 @@ export namespace TokenRegistry {
         address: string
         icon: string
         iconSrc?: string
+        desc?: string
+        website?: string
+        links?: Record<string, string>
     }
 
     export const permanents: Entity[] = [

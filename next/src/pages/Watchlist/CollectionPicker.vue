@@ -25,7 +25,7 @@
                     v-if="loading"
                     class="row justify-center q-pa-lg"
                 >
-                    <q-spinner-dots size="28px" />
+                    <bv-loader size="28px" />
                 </div>
                 <q-list v-else>
                     <q-item

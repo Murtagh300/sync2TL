@@ -44,7 +44,7 @@
                         <q-r-code :key="link">{{link}}</q-r-code>
                     </div>
                     <div class="row items-center no-wrap q-mt-md text-muted">
-                        <q-spinner-dots
+                        <bv-loader
                             size="20px"
                             class="q-mr-sm"
                         />{{$t('pos.msg_waiting')}}

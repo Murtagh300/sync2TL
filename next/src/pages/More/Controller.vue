@@ -72,7 +72,18 @@
                 </template>
             </q-input>
             <template v-if="!query">
-                <div class="bvm-label q-mb-sm q-ml-xs">{{$t('dappsGrid.title')}}</div>
+                <div class="row items-center no-wrap q-mb-sm q-ml-xs">
+                    <div class="bvm-label col">{{$t('dappsGrid.title')}}</div>
+                    <q-btn
+                        flat
+                        dense
+                        no-caps
+                        color="primary"
+                        icon-right="o_chevron_right"
+                        :label="$t('appHub.action_all')"
+                        :to="{ name: 'apps' }"
+                    />
+                </div>
                 <dapps-grid class="q-mb-lg" />
             </template>
             <template
@@ -239,6 +250,7 @@ export default defineComponent({
                 {
                     title: t('more.label_app'),
                     items: [
+                        { icon: 'o_apps', title: t('appHub.title'), to: { name: 'apps' } },
                         { icon: 'o_help_center', title: t('helpCenter.title'), to: { name: 'help' } },
                         { icon: 'o_search', title: t('search.title'), to: { name: 'search' } },
                         { icon: 'o_new_releases', title: t('whatsNew.title'), click: () => this.whatsNew() },

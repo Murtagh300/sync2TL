@@ -348,3 +348,17 @@ body.bv-privacy-blur #q-app
   clip: rect(0, 0, 0, 0)
   white-space: nowrap
   border: 0
+
+// loading placeholders: a quiet tile with a glint of the accent passing over it (BvLoader is the spinner)
+.q-skeleton
+  background: rgba(255, 255, 255, 0.045)
+  border-radius: $radius
+
+.q-skeleton--anim-wave::after
+  background: linear-gradient(105deg, transparent 25%, var(--bv-accent-soft) 45%, rgba(255, 255, 255, 0.06) 50%, var(--bv-accent-soft) 55%, transparent 75%)
+  animation-duration: 1.7s
+  animation-timing-function: cubic-bezier(0.45, 0, 0.25, 1)
+
+@media (prefers-reduced-motion: reduce)
+  .q-skeleton--anim-wave::after
+    animation: none

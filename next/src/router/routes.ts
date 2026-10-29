@@ -34,6 +34,7 @@ import { Discover, Leaderboard, Stargate, VeBetter, Vote, Validators, VthoTank, 
 import SendQueue from 'pages/SendQueue'
 import YearReview from 'pages/YearReview'
 import Help from 'pages/Help'
+import AppHub from 'pages/AppHub'
 import WalletConnect from 'pages/WalletConnect'
 import SwitchGuide from 'pages/SwitchGuide'
 import { Dust, Consolidate } from 'pages/Tidy'
@@ -108,6 +109,11 @@ const routes: RouteRecordRaw[] = [
             path: 'help',
             name: 'help',
             component: Help
+        }, {
+            // every VeChain dApp (utils/apphub.ts)
+            path: 'apps',
+            name: 'apps',
+            component: AppHub
         }, {
             path: 'nfts',
             name: 'nfts',

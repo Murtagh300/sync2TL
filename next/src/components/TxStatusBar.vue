@@ -8,7 +8,7 @@
             aria-live="polite"
             @click="open()"
         >
-            <q-spinner
+            <bv-loader
                 v-if="shown.state === 'pending'"
                 size="18px"
                 color="primary"

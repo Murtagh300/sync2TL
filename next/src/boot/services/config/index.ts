@@ -30,7 +30,7 @@ const presetNodes: M.Node[] = [
     }
 ]
 
-type JsonKey = 'watchlist' | 'alerts' | 'alert-state' | 'token-prefs' | 'hidden-nfts' | 'nft-notes'
+type JsonKey = 'watchlist' | 'alerts' | 'alert-state' | 'token-prefs' | 'hidden-nfts' | 'nft-notes' | 'custom-tokens'
 
 export function build(storage: Storage) {
     const t = delegateTable<Storage.ConfigEntity, Storage.ConfigEntity>(
@@ -39,7 +39,7 @@ export function build(storage: Storage) {
         m => m
     )
     type Key = 'nodes' | 'activeNodeMap' | 'userMasterKeyGlob' |
-        'tokenRegistry' | 'activeTokenSymbols' | 'recentRecipients' | 'language' | 'bio-pass-on' | 'contacts' | 'watchlist' | 'alerts' | 'alert-state' | 'token-prefs' | 'hidden-nfts' | 'nft-notes'
+        'tokenRegistry' | 'activeTokenSymbols' | 'recentRecipients' | 'language' | 'bio-pass-on' | 'contacts' | 'watchlist' | 'alerts' | 'alert-state' | 'token-prefs' | 'hidden-nfts' | 'nft-notes' | 'custom-tokens'
 
     const getSubKey = async (key: Key, subKey: string) => {
         const row = (await t.all().where({ key, subKey }).query())[0]
@@ -95,15 +95,24 @@ export function build(storage: Storage) {
                     symbol: entity.symbol,
                     decimals: entity.decimals,
                     address: entity.address,
-                    iconSrc: entity.iconSrc || TokenRegistry.iconSrc(entity.icon),
-                    permanent
+                    iconSrc: entity.iconSrc || (entity.icon ? TokenRegistry.iconSrc(entity.icon) : ''),
+                    permanent,
+                    desc: entity.desc,
+                    website: entity.website,
+                    links: entity.links
                 }
             }
+            // tokens the user added by address (mainnet), unless the registry has them by now
+            const listed = new Set(registry.main.map(e => e.address.toLowerCase()))
+            const custom = (JSON.parse((await get('custom-tokens')) || '[]') as TokenRegistry.Entity[])
+                .filter(e => !listed.has(e.address.toLowerCase()))
+                .map(e => ({ ...toModel(genesises.main.id, e, false), custom: true }))
 
             const gids = unique(nodes.map(n => n.genesis.id))
             return ([] as M.TokenSpec[]).concat(
                 ...gids.map(gid => TokenRegistry.permanents.map(e => toModel(gid, e, true))),
                 registry.main.map(e => toModel(genesises.main.id, e, false)),
+                custom,
                 registry.test.map(e => toModel(genesises.test.id, e, false))
             )
         },

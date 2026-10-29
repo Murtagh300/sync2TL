@@ -115,7 +115,7 @@
                     v-if="loading && !feed.length"
                     class="row justify-center q-py-lg"
                 >
-                    <q-spinner-dots size="28px" />
+                    <bv-loader size="28px" />
                 </div>
                 <empty-state
                     v-else-if="!feed.length"

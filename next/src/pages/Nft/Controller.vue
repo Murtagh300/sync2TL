@@ -89,7 +89,7 @@
                 v-else-if="!nft"
                 class="row justify-center q-py-xl"
             >
-                <q-spinner-dots
+                <bv-loader
                     v-if="!error"
                     color="primary"
                     size="28px"
