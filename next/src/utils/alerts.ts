@@ -2,11 +2,13 @@ import type { Service } from 'boot/services'
 import { desktop } from './desktop'
 import type { BVM } from 'boot/services/bvm'
 import { genesises } from 'src/consts'
+import { averageFee, LOW_TX, txLeft } from './vtho-tank'
+import { syncOwnPriceAlerts } from './push'
 
 /**
  * Price alerts and the watchlist. The wallet checks them while it is open (at start and
- * every few minutes); BlackVeMarket push alerts would reach a closed app too, but need
- * a signed-in session there.
+ * every few minutes); token price rules also go to the BlackVault server, which pushes them
+ * to a closed app (syncPriceAlerts).
  */
 
 export type Watchlist = {
@@ -43,7 +45,8 @@ export function collectionBySlug(collections: Record<string, BVM.Collection>, sl
     return Object.values(collections).find(c => c.slug === slug)
 }
 
-export type AlertMessage = { text: string, slug?: string }
+/** a message, and where tapping it goes: a collection, or a route */
+export type AlertMessage = { text: string, slug?: string, route?: { name: string } }
 
 /** the alerts that fire now; their state is saved, so each fires once per change */
 export async function checkAlerts(svc: Service, t: (key: string, params?: Record<string, unknown>) => string): Promise<AlertMessage[]> {
@@ -116,8 +119,47 @@ export async function checkAlerts(svc: Service, t: (key: string, params?: Record
         }
     }
 
+    // a VTHO tank running low: once, until it is filled again
+    try {
+        const activity = await svc.activity.page(500, 0)
+        const thor = svc.bc(genesises.main.id).thor
+        for (const w of wallets.filter(x => x.meta.type !== 'watch')) {
+            for (const address of w.meta.addresses) {
+                const acc = await thor.account(address).get()
+                const left = txLeft(Number(BigInt(acc.energy)) / 1e18, averageFee(activity, address))
+                const key = `vtho:${address.toLowerCase()}`
+                const low = left < LOW_TX && BigInt(acc.balance) > 0n
+                if (low && !state.fired[key]) messages.push({ text: t('tank.msg_alert_low', { name: w.meta.name, n: left }), route: { name: 'vtho-tank' } })
+                state.fired[key] = low
+            }
+        }
+    } catch {
+        // the node unreachable: check again next time
+    }
+
     await svc.config.setJSON('alert-state', state)
     return messages
+}
+
+/**
+ * hand the token price rules to the BlackVault server, so they reach a closed app too; in dollars,
+ * at today's rate (again at every start, so the rate stays close)
+ */
+export async function syncPriceAlerts(svc: Service, t: (key: string, params?: Record<string, unknown>) => string) {
+    const rules = (await svc.config.getJSON<AlertRule[]>('alerts', [])).filter(r => r.token)
+    const fx = { EUR: await svc.prices.fx('EUR'), USD: 1 }
+    const alerts = rules.map(r => {
+        const sign = r.currency === 'USD' ? '$' : '€'
+        return {
+            id: r.id.replace(/[^a-z0-9]/gi, '').slice(0, 32) || 'x',
+            token: r.token!.toLowerCase(),
+            kind: r.kind,
+            usd: r.value / (r.currency === 'USD' ? 1 : fx.EUR || 0.92),
+            title: t(r.kind === 'below' ? 'alerts.push_below' : 'alerts.push_above', { name: r.name, value: `${sign}${r.value}` }),
+            url: '#/watchlist'
+        }
+    })
+    await syncOwnPriceAlerts(alerts)
 }
 
 /** also as a system notification when the app is in the background and may notify */

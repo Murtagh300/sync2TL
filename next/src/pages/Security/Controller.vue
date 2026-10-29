@@ -75,7 +75,7 @@ import { contractName, UNLIMITED } from 'src/utils/actions'
 import { dappsFromActivity } from 'src/utils/dapps'
 import { genesises } from 'src/consts'
 
-type Key = 'backup' | 'lock' | 'bio' | 'approvals' | 'dapps' | 'emergency'
+type Key = 'backup' | 'lock' | 'bio' | 'approvals' | 'dapps' | 'emergency' | 'safe' | 'outgoing' | 'limit'
 type Check = { key: Key, title: string, detail: string, state: 'ok' | 'todo' | 'checking' }
 
 // how safe this wallet is set up, with a way to fix each point
@@ -125,6 +125,24 @@ export default defineComponent({
                     title: this.$t('emergency.title'),
                     detail: this.emergencyDone ? this.$t('security.ok_emergency') : this.$t('security.todo_emergency'),
                     state: this.emergencyDone ? 'ok' : 'todo'
+                },
+                {
+                    key: 'safe',
+                    title: this.$t('security.check_safe'),
+                    detail: prefs.safeAddress ? this.$t('security.ok_safe') : this.$t('security.todo_safe'),
+                    state: prefs.safeAddress ? 'ok' : 'todo'
+                },
+                {
+                    key: 'outgoing',
+                    title: this.$t('service.label_push_outgoing'),
+                    detail: prefs.pushOutgoing ? this.$t('security.ok_outgoing') : this.$t('security.todo_outgoing'),
+                    state: prefs.pushOutgoing ? 'ok' : 'todo'
+                },
+                {
+                    key: 'limit',
+                    title: this.$t('security.check_limit'),
+                    detail: prefs.spendLimit > 0 ? this.$t('security.ok_limit') : this.$t('security.todo_limit'),
+                    state: prefs.spendLimit > 0 ? 'ok' : 'todo'
                 },
                 {
                     key: 'dapps',
@@ -183,7 +201,14 @@ export default defineComponent({
                     if (w) void this.$router.push({ name: 'backup', params: { walletId: String(w.id) } })
                     break
                 }
+                case 'safe':
+                    void this.$router.push({ name: 'panic' })
+                    break
+                case 'outgoing':
+                    void this.$router.push({ name: 'notifications' })
+                    break
                 case 'lock':
+                case 'limit':
                 case 'bio':
                     void this.$router.push({ name: 'settings' })
                     break

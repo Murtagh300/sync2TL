@@ -4,6 +4,13 @@
             <q-btn
                 flat
                 round
+                icon="o_compare_arrows"
+                :aria-label="$t('validators.title')"
+                :to="{ name: 'validators' }"
+            />
+            <q-btn
+                flat
+                round
                 icon="o_open_in_new"
                 :aria-label="$t('a11y.open_external')"
                 @click="openURL('https://app.stargate.vechain.org')"

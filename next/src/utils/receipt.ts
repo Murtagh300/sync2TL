@@ -41,10 +41,15 @@ ${r.link && /^https:\/\//.test(r.link) ? `<div class="link">${esc(r.link)}</div>
 
 /** opens the print dialog for a receipt (a hidden frame: no pop-up to allow) */
 export function printReceipt(r: Receipt, lang?: string) {
+    printPage(receiptHtml(r, lang))
+}
+
+/** the print dialog for a page this app wrote (an invoice, a receipt) */
+export function printPage(html: string) {
     const frame = document.createElement('iframe')
     frame.setAttribute('aria-hidden', 'true')
     frame.style.cssText = 'position:fixed;right:0;bottom:0;width:0;height:0;border:0'
-    // a sandboxed frame without scripts: it only shows the receipt
+    // a sandboxed frame without scripts: it only shows the page
     frame.setAttribute('sandbox', 'allow-modals allow-same-origin')
     document.body.appendChild(frame)
     const doc = frame.contentDocument
@@ -53,7 +58,7 @@ export function printReceipt(r: Receipt, lang?: string) {
         return
     }
     doc.open()
-    doc.write(receiptHtml(r, lang))
+    doc.write(html)
     doc.close()
     setTimeout(() => {
         try {

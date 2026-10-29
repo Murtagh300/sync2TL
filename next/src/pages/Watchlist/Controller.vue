@@ -238,7 +238,7 @@ import AddressLabel from 'components/AddressLabel.vue'
 import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
 import CollectionPicker from './CollectionPicker.vue'
 import AlertDialog from './AlertDialog.vue'
-import { collectionBySlug, emptyWatchlist, type AlertRule, type Watchlist } from 'src/utils/alerts'
+import { collectionBySlug, emptyWatchlist, syncPriceAlerts, type AlertRule, type Watchlist } from 'src/utils/alerts'
 import { isVetName, resolveVetName } from 'src/utils/names'
 import { openURL } from 'src/utils/open-url'
 import { formatDate } from 'src/utils/format'
@@ -380,6 +380,7 @@ export default defineComponent({
                 const rule = await this.$dialog<AlertRule>({ component: AlertDialog, collection: c })
                 this.alerts = [...this.alerts, rule]
                 await this.$svc.config.setJSON('alerts', this.alerts)
+                void syncPriceAlerts(this.$svc, (key, params) => this.$t(key, params ?? {})).catch(() => { })
                 if (this.canAskPermission) {
                     void this.askPermission()
                 }
@@ -407,6 +408,7 @@ export default defineComponent({
                 })
                 this.alerts = [...this.alerts, rule]
                 await this.$svc.config.setJSON('alerts', this.alerts)
+                void syncPriceAlerts(this.$svc, (key, params) => this.$t(key, params ?? {})).catch(() => { })
                 if (this.canAskPermission) {
                     void this.askPermission()
                 }
@@ -415,6 +417,7 @@ export default defineComponent({
         async removeAlert(rule: AlertRule) {
             this.alerts = this.alerts.filter(a => a !== rule)
             await this.$svc.config.setJSON('alerts', this.alerts)
+            void syncPriceAlerts(this.$svc, (key, params) => this.$t(key, params ?? {})).catch(() => { })
         },
         async askPermission() {
             try {

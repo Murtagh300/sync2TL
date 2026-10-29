@@ -52,6 +52,9 @@ export const routeFeature: Record<string, Feature> = {
     vebetter: 'vebetter',
     vote: 'vebetter',
     leaderboard: 'vebetter',
+    validators: 'stargate',
+    impact: 'vebetter',
+    proposals: 'vebetter',
     launchpad: 'launchpad',
     launch: 'launchpad'
 }

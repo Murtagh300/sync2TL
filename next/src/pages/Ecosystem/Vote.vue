@@ -71,6 +71,16 @@
                     <div class="bvm-label">{{$t('vote.label_apps', { n: apps.length })}}</div>
                     <q-space />
                     <q-btn
+                        v-if="canVote && lastShares && !picked.length"
+                        flat
+                        dense
+                        no-caps
+                        color="primary"
+                        icon="o_replay"
+                        :label="$t('vote.action_like_last')"
+                        @click="likeLast()"
+                    />
+                    <q-btn
                         v-if="picked.length > 1"
                         flat
                         dense
@@ -177,6 +187,23 @@ import { veBetterInfo } from 'src/utils/ecosystem'
 import { roundApps, type X2App } from 'src/utils/x2earn'
 import { roundState, splitWeights, voteClause, voteProblem, type RoundState } from 'src/utils/vote'
 
+const LAST = 'bv-last-votes'
+
+/** per address (lowercase): the apps and shares of its last vote */
+function loadLastVotes(): Record<string, Record<string, number>> {
+    try {
+        return JSON.parse(localStorage.getItem(LAST) || '{}') as Record<string, Record<string, number>>
+    } catch {
+        return {}
+    }
+}
+
+function saveLastVote(address: string, shares: Record<string, number>) {
+    try {
+        localStorage.setItem(LAST, JSON.stringify({ ...loadLastVotes(), [address.toLowerCase()]: shares }))
+    } catch { }
+}
+
 // vote in VeBetterDAO's allocation round: pick apps, share the VOT3, sign once
 export default defineComponent({
     components: { PageToolbar, PageContent, PageAction, EmptyState },
@@ -212,6 +239,14 @@ export default defineComponent({
             const ids = this.picked
             const parts = splitWeights(this.state?.power || 0n, ids.map(id => this.shares[id] || 0))
             return Object.fromEntries(ids.map((id, i) => [id, parts[i]!]))
+        },
+        /** the shares this address voted with last time, for the apps that are in this round too */
+        lastShares(): Record<string, number> | null {
+            const saved = loadLastVotes()[this.address.toLowerCase()]
+            if (!saved) return null
+            const ids = new Set(this.state?.appIds || [])
+            const still = Object.entries(saved).filter(([id]) => ids.has(id))
+            return still.length ? Object.fromEntries(still) : null
         },
         canVote(): boolean {
             const s = this.state
@@ -273,6 +308,9 @@ export default defineComponent({
             else delete next[id]
             this.shares = next
         },
+        likeLast() {
+            if (this.lastShares) this.shares = { ...this.lastShares }
+        },
         equal() {
             this.shares = Object.fromEntries(this.picked.map(id => [id, 50]))
         },
@@ -297,6 +335,7 @@ export default defineComponent({
                     options: { signer: this.address, comment }
                 })
                 this.voted = true
+                saveLastVote(this.address, this.shares)
                 this.shares = {}
                 this.$dialog({ component: SuccessDialog, title: this.$t('vote.title_done'), message: this.$t('vote.msg_done') }).catch(() => { })
             } catch {

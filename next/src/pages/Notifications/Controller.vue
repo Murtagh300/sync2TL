@@ -56,6 +56,49 @@
                     @update:model-value="toggleOwnPush"
                 />
             </div>
+            <!-- what leaves your addresses: a key used somewhere else shows up at once -->
+            <div
+                v-if="ownAvailable && ownState === 'on'"
+                class="bvm-tile q-pa-md q-mb-md row no-wrap items-center"
+            >
+                <q-icon
+                    name="o_shield"
+                    size="24px"
+                    color="primary"
+                />
+                <div class="col q-mx-md">
+                    <div class="text-weight-bold">{{$t('service.label_push_outgoing')}}</div>
+                    <div class="text-muted push-hint">{{$t('service.msg_push_outgoing')}}</div>
+                </div>
+                <q-toggle
+                    :model-value="prefs.pushOutgoing"
+                    :disable="busy"
+                    color="primary"
+                    :aria-label="$t('service.label_push_outgoing')"
+                    @update:model-value="toggleOutgoing"
+                />
+            </div>
+            <div
+                v-if="ownAvailable && ownState === 'on'"
+                class="bvm-tile q-pa-md q-mb-md row no-wrap items-center"
+            >
+                <q-icon
+                    name="o_how_to_vote"
+                    size="24px"
+                    color="primary"
+                />
+                <div class="col q-mx-md">
+                    <div class="text-weight-bold">{{$t('service.label_push_rounds')}}</div>
+                    <div class="text-muted push-hint">{{$t('service.msg_push_rounds')}}</div>
+                </div>
+                <q-toggle
+                    :model-value="prefs.pushRounds"
+                    :disable="busy"
+                    color="primary"
+                    :aria-label="$t('service.label_push_rounds')"
+                    @update:model-value="toggleRounds"
+                />
+            </div>
 
             <div
                 v-if="!list.length"
@@ -110,16 +153,19 @@ import PageContent from 'components/PageContent.vue'
 import { clearNotifications, markAllRead, notifications, type AppNotification, type NotificationKind } from 'src/utils/notifications'
 import { bvmSession, bvmSignIn, disablePush, enablePush, pushEnabled, pushSupported, signInMessage, ownPushAvailable, ownPushState, enableOwnPush, disableOwnPush, type OwnPushState } from 'src/utils/push'
 import { syncBuyReminders } from 'src/utils/buy-reminders'
+import { syncPriceAlerts } from 'src/utils/alerts'
 import { featureOn } from 'src/utils/remote-config'
 import { selectedWallet } from 'src/utils/selection'
 import { formatDate } from 'src/utils/format'
 import { genesises } from 'src/consts'
+import { prefs } from 'src/utils/prefs'
 
 // what happened while you looked away: transfers, offers, alerts, finished transactions
 export default defineComponent({
     components: { PageToolbar, PageContent },
     data: () => ({
         notifications,
+        prefs,
         pushOn: false,
         ownAvailable: false,
         ownState: 'off' as OwnPushState,
@@ -220,13 +266,38 @@ export default defineComponent({
                 this.busy = false
             }
         },
+        async toggleOutgoing(on: boolean) {
+            this.busy = true
+            try {
+                await enableOwnPush(this.watchAddresses, this.$i18n.locale, { outgoing: on, rounds: prefs.pushRounds })
+                prefs.pushOutgoing = on
+            } catch (err) {
+                console.warn('push:', err)
+                this.$q.notify(this.$t('notifications.msg_push_failed'))
+            } finally {
+                this.busy = false
+            }
+        },
+        async toggleRounds(on: boolean) {
+            this.busy = true
+            try {
+                await enableOwnPush(this.watchAddresses, this.$i18n.locale, { outgoing: prefs.pushOutgoing, rounds: on })
+                prefs.pushRounds = on
+            } catch (err) {
+                console.warn('push:', err)
+                this.$q.notify(this.$t('notifications.msg_push_failed'))
+            } finally {
+                this.busy = false
+            }
+        },
         async toggleOwnPush(on: boolean) {
             this.busy = true
             try {
                 if (on) {
-                    await enableOwnPush(this.watchAddresses, this.$i18n.locale)
+                    await enableOwnPush(this.watchAddresses, this.$i18n.locale, { outgoing: prefs.pushOutgoing, rounds: prefs.pushRounds })
                     // recurring buys come by push too from now on
                     void syncBuyReminders(this.$t.bind(this))
+                    void syncPriceAlerts(this.$svc, (key, params) => this.$t(key, params ?? {})).catch(() => { })
                     this.ownState = 'on'
                     this.$q.notify(this.$t('notifications.msg_push_on'))
                 } else {

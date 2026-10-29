@@ -142,3 +142,21 @@ export async function earnedByApp(thor: Connex.Thor, addresses: string[], cap = 
     }
     return out
 }
+
+/** each X2Earn reward these addresses got, with its proof (newest first, at most `cap`) */
+export async function rewardsOf(thor: Connex.Thor, addresses: string[], cap = 2048): Promise<{ appId: string, amount: bigint, proof: string, time: number }[]> {
+    const out: { appId: string, amount: bigint, proof: string, time: number }[] = []
+    if (!addresses.length) return out
+    const filter = thor.filter('event', addresses.map(a => ({ address: X2EARN_REWARDS_POOL, topic0: REWARD.signature, topic2: pad(a) })))
+    for (let offset = 0; offset < cap; offset += 256) {
+        const page = await filter.order('desc').apply(offset, 256)
+        for (const e of page) {
+            try {
+                const d = REWARD.decode(e.data, e.topics)
+                out.push({ appId: String(d.appId).toLowerCase(), amount: BigInt(String(d.amount)), proof: String(d.proof || ''), time: e.meta.blockTimestamp * 1000 })
+            } catch { }
+        }
+        if (page.length < 256) break
+    }
+    return out
+}

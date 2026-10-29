@@ -31,3 +31,33 @@ export function keypad(current: string, key: string): string {
     if (!current.includes('.') && current.length >= 7) return current
     return current + key
 }
+
+/** a till sale as the day overview reads it: a paid request with the price it was asked at */
+export type TillSale = { amount: string, symbol: string, fiat?: number, currency?: string, paid?: { at: number, txId: string, from: string } }
+
+export type TillDay = { day: string, count: number, fiat: Record<string, number>, tokens: Record<string, string> }
+
+/** the paid till sales per day (local time), newest day first */
+export function tillDays(sales: TillSale[]): TillDay[] {
+    const days = new Map<string, TillDay>()
+    for (const s of sales) {
+        if (!s.paid || s.fiat === undefined || !s.currency) continue
+        const d = new Date(s.paid.at)
+        const day = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        const t = days.get(day) || { day, count: 0, fiat: {}, tokens: {} }
+        t.count++
+        t.fiat[s.currency] = Math.round(((t.fiat[s.currency] || 0) + s.fiat) * 100) / 100
+        t.tokens[s.symbol] = new BigNumber(t.tokens[s.symbol] || 0).plus(s.amount).toFixed()
+        days.set(day, t)
+    }
+    return [...days.values()].sort((a, b) => b.day.localeCompare(a.day))
+}
+
+/** the paid till sales as CSV: one line each */
+export function tillCsv(sales: TillSale[], headers: string[]): string {
+    const cell = (v: string) => /[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v
+    const lines = sales.filter(s => s.paid && s.fiat !== undefined)
+        .sort((a, b) => a.paid!.at - b.paid!.at)
+        .map(s => [new Date(s.paid!.at).toISOString(), String(s.fiat), s.currency || '', s.amount, s.symbol, s.paid!.from, s.paid!.txId])
+    return [headers, ...lines].map(l => l.map(cell).join(',')).join('\n')
+}

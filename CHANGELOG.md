@@ -33,6 +33,40 @@ an update comes from `next/src/changelog.ts` (keep the two in step).
 **Messages**
 - End-to-end encrypted chat between addresses, through the BlackVault server, with push for new messages.
 
+**Round two: safety**
+- Push for what leaves your addresses (transfers out, approvals given), so a key used elsewhere shows at once.
+- Security check-up: also the panic button's safe place, outgoing push and the spending limit.
+- Keystore files: import (Sync, Sync2, other VeChain wallets) and save one address's key as a keystore.
+
+**Paying**
+- Money links: crypto for someone without a wallet, through a link; picked up into their own wallet, or
+  taken back. The link's key never reaches a server (it sits after the #).
+- The fee from another address you hold (VIP-191): a child's or savings wallet needs no VTHO.
+- Invoices with lines and VAT as PDF, paid in crypto and recognised when paid; a donate button (plain HTML).
+- Till: a day overview with CSV, and an NFC sticker (or printed code) that opens the open sale on any phone.
+- Web shop checkout: a shop per address, orders priced in VET or B3TR, seen paid on chain; a WooCommerce
+  plugin (`next/public/integrations/woocommerce`) and a plain API for other shop systems.
+
+**Trading and StarGate**
+- Candles on the token chart, with a moving average and RSI.
+- Validators compared (earnings per 10,000 VET last week, delegated, age, online) and a node NFT moved.
+- VTHO tank: transactions left per address, a push when low, the surplus to VET in one tap.
+
+**VeBetterDAO**
+- A push when a new round starts, and "like last time" when voting.
+- Your impact (CO₂, water, plastic and more) from the proofs X2Earn apps put on chain.
+- DAO proposals (B3TRGovernor): read and vote for, against or abstain.
+
+**Insight and tools**
+- Monthly statement with start and end balances, as PDF. Token price alerts by push with the app closed.
+- Well-known addresses named (VeChain's contracts, VeBetterDAO, StarGate, the token and NFT registries).
+- Sign a message (a VeChain certificate) and check one.
+
+**App**
+- Simple mode: the balance and three big buttons. Six more languages: Portuguese (Brazil), Turkish,
+  Vietnamese, Russian, Polish and Indonesian.
+- Browser extension (`extension/`): VeChain sites find BlackVault where they look for a wallet.
+
 ## 2.3.0 — 2026-10-28
 
 **UI polish**

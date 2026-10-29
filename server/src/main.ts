@@ -11,11 +11,15 @@ import { createFlags } from './flags.ts'
 import { cleanReport } from './scrub.ts'
 import { openDb } from './db.ts'
 import { createStore, MAX_WATCHED, validateSubscribe, type Subscription } from './push/store.ts'
-import { createWatcher, tokenRegistry } from './push/watcher.ts'
+import { arrivals, createWatcher, tokenRegistry } from './push/watcher.ts'
 import { createReminders, validateReminders } from './push/reminders.ts'
+import { createRoundWatch } from './push/rounds.ts'
+import { betterswapPrices, createPriceAlerts, validatePriceAlerts } from './push/price-alerts.ts'
 import { createPhishing, HOST } from './phishing.ts'
 import { createX2Index } from './x2earn.ts'
 import { createChat } from './chat.ts'
+import { createTills } from './till.ts'
+import { createShops, createShopWatch, ecbRate } from './shop.ts'
 
 /**
  * BlackVault's server. Everything here is public data or data the wallet chose to send;
@@ -31,8 +35,16 @@ import { createChat } from './chat.ts'
  *   GET  /chat/keys/:address the chat keys of an address
  *   POST /chat/send          an encrypted message, signed with the sender's chat key
  *   POST /chat/inbox         an address's messages since an id, signed with its chat key
+ *   POST /till               a till for an address (an NFC sticker's id, and the till's secret)
+ *   POST /till/:id          the till's open sale { secret, amount, symbol } (empty amount: none)
+ *   GET  /till/:id           the address and open sale a tap shows
+ *   POST /shop               a web shop for an address { address, name }: its id and API key
+ *   POST /shop/:id/orders    an order { ref, amount, currency, symbol, returnUrl } (Authorization: Bearer key)
+ *   GET  /shop/:id/orders/:ref   an order's status (Authorization: Bearer key)
+ *   GET  /checkout/:token    an order as the wallet's checkout page shows it
  *   GET  /push/key           the VAPID public key
- *   POST /push/subscribe     { subscription, addresses, lang }
+ *   POST /push/subscribe     { subscription, addresses, lang, outgoing?, rounds? }
+ *   POST /push/price-alerts  { endpoint, alerts }: token price alerts pushed once per crossing
  *   POST /push/unsubscribe   { endpoint }
  *   POST /errors             an opt-in, scrubbed error report
  *   GET  /errors             the latest reports (Authorization: Bearer ADMIN_TOKEN)
@@ -43,6 +55,7 @@ const config = loadConfig()
 const db = openDb(config.dbPath)
 const store = createStore(db)
 const reminders = createReminders(db, store)
+const priceAlerts = createPriceAlerts(db, store, betterswapPrices(config.betterswapUrl))
 const flags = createFlags(config.flagsFile)
 const health = createHealth({ nodes: config.mainnetNodes, bvmUrl: config.bvmUrl, betterswapUrl: config.betterswapUrl })
 const proxy = createProxy({ betterswap: config.betterswapUrl, bvm: config.bvmUrl })
@@ -74,6 +87,10 @@ if (config.vapid) {
     // reminders due: checked every minute
     const sender = send
     setInterval(() => { reminders.tick(sender).catch(err => console.warn('[push] reminders:', err)) }, 60 * 1000).unref()
+    // a new VeBetterDAO round, for the devices that asked
+    createRoundWatch(db, { nodes: config.mainnetNodes, send }).start()
+    // price alerts: BetterSwap's prices every two minutes
+    setInterval(() => { priceAlerts.tick(sender).catch(err => console.warn('[push] price alerts:', (err as Error).message)) }, 2 * 60 * 1000).unref()
     console.log('[push] on')
 } else {
     console.log('[push] off: set VAPID_PUBLIC_KEY and VAPID_PRIVATE_KEY (npm run vapid makes a pair)')
@@ -82,8 +99,13 @@ if (config.vapid) {
 // a push for a new chat message, in the recipient's language; the text stays encrypted
 const CHAT_PUSH: Record<string, string> = {
     en: 'New message', nl: 'Nieuw bericht', de: 'Neue Nachricht', fr: 'Nouveau message', zh: '新消息',
-    es: 'Mensaje nuevo', it: 'Nuovo messaggio', ja: '新しいメッセージ', ko: '새 메시지'
+    es: 'Mensaje nuevo', it: 'Nuovo messaggio', ja: '新しいメッセージ', ko: '새 메시지',
+    pt: 'Nova mensagem', tr: 'Yeni mesaj', vi: 'Tin nhắn mới', ru: 'Новое сообщение', pl: 'Nowa wiadomość', id: 'Pesan baru'
 }
+const tills = createTills(db)
+const usdPrices = betterswapPrices(config.betterswapUrl)
+const shops = createShops(db, { price: async token => (await usdPrices([token])).get(token) || 0, eurUsd: ecbRate() })
+createShopWatch(db, shops, { nodes: config.mainnetNodes, arrivals }).start()
 const chat = createChat(db, {
     onMessage: m => {
         const sender = send
@@ -139,6 +161,68 @@ router.get('/x2earn/leaderboard', ctx => {
     const address = ctx.url.searchParams.get('address') || ''
     if (address && !/^0x[0-9a-fA-F]{40}$/.test(address)) throw new HttpError(400, 'not an address')
     json(ctx.res, 200, x2.board(days, address), { 'Cache-Control': address ? 'private, max-age=300' : 'public, max-age=300' })
+})
+
+router.post('/till', async ctx => {
+    if (!writeLimit.take(`till:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    try {
+        json(ctx.res, 200, tills.create(await readJson(ctx.req, 1024)))
+    } catch (err) {
+        throw err instanceof HttpError ? err : new HttpError(400, (err as Error).message)
+    }
+})
+router.post('/till/:id', async ctx => {
+    // a till puts up one sale after another: the looser limit
+    if (!relayLimit.take(`till:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    try {
+        tills.set(String(ctx.params.id || ''), await readJson(ctx.req, 1024))
+        json(ctx.res, 200, { ok: true })
+    } catch (err) {
+        throw err instanceof HttpError ? err : new HttpError(403, (err as Error).message)
+    }
+})
+router.get('/till/:id', ctx => {
+    if (!gatewayLimit.take(`till:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    const t = tills.read(String(ctx.params.id || ''))
+    if (!t) throw new HttpError(404, 'no such till')
+    json(ctx.res, 200, t, { 'Cache-Control': 'no-store' })
+})
+
+router.post('/shop', async ctx => {
+    if (!writeLimit.take(`shop:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    try {
+        json(ctx.res, 200, shops.create(await readJson(ctx.req, 1024)))
+    } catch (err) {
+        throw err instanceof HttpError ? err : new HttpError(400, (err as Error).message)
+    }
+})
+const shopKey = (ctx: { req: IncomingMessage }) => String(ctx.req.headers.authorization || '').replace(/^Bearer\s+/i, '')
+router.post('/shop/:id/orders', async ctx => {
+    if (!relayLimit.take(`order:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    try {
+        json(ctx.res, 200, await shops.createOrder(String(ctx.params.id || ''), shopKey(ctx), await readJson(ctx.req, 2048)), { 'Cache-Control': 'no-store' })
+    } catch (err) {
+        const msg = (err as Error).message
+        throw err instanceof HttpError ? err : new HttpError(msg === 'not this shop' ? 401 : msg === 'no price now' ? 503 : 400, msg)
+    }
+})
+router.get('/shop/:id/orders/:ref', ctx => {
+    if (!relayLimit.take(`order:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    let o
+    try {
+        o = shops.status(String(ctx.params.id || ''), shopKey(ctx), decodeURIComponent(String(ctx.params.ref || '')))
+    } catch (err) {
+        throw new HttpError(401, (err as Error).message)
+    }
+    if (!o) throw new HttpError(404, 'no such order')
+    json(ctx.res, 200, o, { 'Cache-Control': 'no-store' })
+})
+router.get('/checkout/:token', ctx => {
+    if (!gatewayLimit.take(`checkout:${ctx.ip}`)) throw new HttpError(429, 'slow down')
+    const o = shops.checkout(String(ctx.params.token || ''))
+    if (!o) throw new HttpError(404, 'no such order')
+    // what the customer sees: not the shop's own reference
+    json(ctx.res, 200, { shopName: o.shopName, address: o.address, amount: o.amount, symbol: o.symbol, fiat: o.fiat, currency: o.currency, status: o.status, txId: o.txId, returnUrl: o.returnUrl, expiresAt: o.expiresAt }, { 'Cache-Control': 'no-store' })
 })
 
 router.post('/chat/key', async ctx => {
@@ -204,6 +288,18 @@ router.post('/push/reminders', async ctx => {
     }
     if (!reminders.replace(valid.endpoint, valid.reminders)) throw new HttpError(404, 'not subscribed')
     json(ctx.res, 200, { ok: true, reminders: valid.reminders.length })
+})
+router.post('/push/price-alerts', async ctx => {
+    if (!send) throw new HttpError(503, 'push is not set up')
+    if (!writeLimit.take(ctx.ip)) throw new HttpError(429, 'slow down')
+    let valid
+    try {
+        valid = validatePriceAlerts(await readJson(ctx.req))
+    } catch (err) {
+        throw err instanceof HttpError ? err : new HttpError(400, (err as Error).message)
+    }
+    if (!priceAlerts.replace(valid.endpoint, valid.alerts)) throw new HttpError(404, 'not subscribed')
+    json(ctx.res, 200, { ok: true, alerts: valid.alerts.length })
 })
 router.post('/push/unsubscribe', async ctx => {
     if (!writeLimit.take(ctx.ip)) throw new HttpError(429, 'slow down')

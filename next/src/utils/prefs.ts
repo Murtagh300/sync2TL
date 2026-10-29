@@ -42,12 +42,22 @@ type Prefs = {
     feeToken: 'vtho' | 'vet' | 'b3tr'
     /** where the panic button sends everything (pages/Panic); '' for none: then it only revokes */
     safeAddress: string
+    /** push also for transfers out of your addresses and approvals they give (server/src/push/watcher.ts) */
+    pushOutgoing: boolean
+    /** per signer (lowercase): another own address that pays its fees in VTHO (pages/Sign/TxDialog.vue) */
+    feePayers: Record<string, string>
+    /** VTHO to keep per address; above it the VTHO tank suggests swapping to VET */
+    vthoKeep: number
+    /** push when a VeBetterDAO round starts (server/src/push/rounds.ts) */
+    pushRounds: boolean
+    /** the simple home: the balance and three big buttons, no tab bar (pages/Index/SimpleHome.vue) */
+    simpleMode: boolean
 }
 
 const KEY = 'bv-prefs'
 
 function load(): Prefs {
-    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, homeLayout: 'wide', highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true, errorReports: false, feeToken: 'vtho', safeAddress: '' }
+    const defaults: Prefs = { hideBalances: false, currency: 'EUR', accent: 'mint', haptics: true, autoLockMinutes: 5, textScale: 1, homeLayout: 'wide', highContrast: false, homeBackground: '', shakeToHide: false, spendLimit: 0, sound: true, errorReports: false, feeToken: 'vtho', safeAddress: '', pushOutgoing: false, feePayers: {}, vthoKeep: 50, pushRounds: false, simpleMode: false }
     try {
         return { ...defaults, ...JSON.parse(localStorage.getItem(KEY) || '{}') as Partial<Prefs> }
     } catch {

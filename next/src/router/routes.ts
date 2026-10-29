@@ -30,7 +30,7 @@ import Payout from 'pages/Payout'
 import Overview from 'pages/Overview'
 import Pnl from 'pages/Pnl'
 import { Listings, OfferInbox } from 'pages/Market'
-import { Discover, Leaderboard, Stargate, VeBetter, Vote } from 'pages/Ecosystem'
+import { Discover, Leaderboard, Stargate, VeBetter, Vote, Validators, VthoTank, Impact, Proposals } from 'pages/Ecosystem'
 import WalletConnect from 'pages/WalletConnect'
 import SwitchGuide from 'pages/SwitchGuide'
 import { Dust, Consolidate } from 'pages/Tidy'
@@ -42,6 +42,12 @@ import Pos from 'pages/Pos'
 import Yield from 'pages/Yield'
 import Practice from 'pages/Practice'
 import Chat from 'pages/Chat'
+import Tap from 'pages/Tap'
+import SignMessage from 'pages/SignMessage'
+import Statement from 'pages/Statement'
+import { ShopSetup, Checkout } from 'pages/Shop'
+import { Invoices, DonateButton } from 'pages/Invoices'
+import { Gifts, Claim } from 'pages/Gift'
 import { Subscribe, Subscriptions } from 'pages/Subscriptions'
 import Security, { Dapps } from 'pages/Security'
 import Profile from 'pages/Profile'
@@ -122,6 +128,61 @@ const routes: RouteRecordRaw[] = [
             path: 'chat',
             name: 'chat',
             component: Chat
+        }, {
+            // what a shop's NFC sticker opens
+            path: 'tap/:id',
+            name: 'tap',
+            component: Tap
+        }, {
+            path: 'shop',
+            name: 'shop',
+            component: ShopSetup
+        }, {
+            // a web shop's order (server/src/shop.ts)
+            path: 'checkout/:token',
+            name: 'checkout',
+            component: Checkout
+        }, {
+            path: 'statement',
+            name: 'statement',
+            component: Statement
+        }, {
+            path: 'sign-message',
+            name: 'sign-message',
+            component: SignMessage
+        }, {
+            path: 'impact',
+            name: 'impact',
+            component: Impact
+        }, {
+            path: 'proposals',
+            name: 'proposals',
+            component: Proposals
+        }, {
+            path: 'validators',
+            name: 'validators',
+            component: Validators
+        }, {
+            path: 'vtho',
+            name: 'vtho-tank',
+            component: VthoTank
+        }, {
+            path: 'gifts',
+            name: 'gifts',
+            component: Gifts
+        }, {
+            path: 'invoices',
+            name: 'invoices',
+            component: Invoices
+        }, {
+            path: 'donate-button',
+            name: 'donate-button',
+            component: DonateButton
+        }, {
+            // a money link: the key rides in the link's query, after the #, never sent to a server
+            path: 'claim',
+            name: 'claim',
+            component: Claim
         }, {
             path: 'subscriptions',
             name: 'subscriptions',

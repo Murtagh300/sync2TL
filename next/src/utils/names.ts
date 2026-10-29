@@ -1,9 +1,11 @@
 import { reactive } from 'vue'
-import { fn } from './actions'
+import { fn, contractName } from './actions'
+import { knownLabel } from './known-labels'
 
 /**
  * Names for addresses, wherever an address is shown: the user's contacts first,
- * then the .vet name it set (vet.domains, mainnet). Lookups are batched and cached.
+ * then the .vet name it set (vet.domains, mainnet), then a public name for a well-known
+ * contract (utils/known-labels.ts). Lookups are batched and cached.
  */
 
 export type Contact = { name: string, address: string, /** labels such as family or team */ groups?: string[] }
@@ -64,7 +66,7 @@ export function nameOf(address: string | null | undefined): string {
         queue.add(a)
         timer = timer || setTimeout(() => void flush(), 30)
     }
-    return state.vet[a] || ''
+    return state.vet[a] || contractName(a) || knownLabel(a)
 }
 
 export function isVetName(text: string) {

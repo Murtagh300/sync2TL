@@ -68,15 +68,30 @@ export default defineComponent({
         saveLastSigner() {
             localStorage.setItem(`last-signer-${this.gid}`, this.signer)
         },
-        async signTx(wallet: M.Wallet, signer: string, buildTx: () => Promise<Transaction<Transaction.LegacyBody>>): Promise<Buffer> {
+        /**
+         * the signer's signature; with a payer (another address this app holds keys for), the
+         * payer's VIP-191 signature appended, both with one unlock
+         */
+        async signTx(wallet: M.Wallet, signer: string, buildTx: () => Promise<Transaction<Transaction.LegacyBody>>, payer = ''): Promise<Buffer> {
             if (wallet.meta.type === 'hd' || wallet.meta.type === 'key') {
+                const payerWallet = payer ? (this.wallets || []).find(w => w.meta.addresses.some(a => a.toLowerCase() === payer.toLowerCase())) : null
+                if (payer && (!payerWallet || (payerWallet.meta.type !== 'hd' && payerWallet.meta.type !== 'key'))) {
+                    throw new Error('the fee payer is not an address of this app')
+                }
                 // acquire user master key
                 const umk = await this.$authenticate()
 
                 const tx = await buildTx()
                 const sk = Vault.decode(wallet.vault).derive(signerIndex(wallet, signer)).unlock(umk)
                 try {
-                    return signHash(tx.signingHash(), sk)
+                    const origin = signHash(tx.signingHash(), sk)
+                    if (!payerWallet) return origin
+                    const pk = Vault.decode(payerWallet.vault).derive(signerIndex(payerWallet, payer)).unlock(umk)
+                    try {
+                        return Buffer.concat([origin, signHash(tx.signingHash(signer), pk)])
+                    } finally {
+                        pk.fill(0)
+                    }
                 } finally {
                     sk.fill(0)
                 }

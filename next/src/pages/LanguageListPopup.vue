@@ -21,7 +21,13 @@ const displayNames: Record<string, string> = {
     'es-es': 'Español',
     'it-it': 'Italiano',
     'ja-jp': '日本語',
-    'ko-kr': '한국어'
+    'ko-kr': '한국어',
+    'pt-br': 'Português (Brasil)',
+    'tr-tr': 'Türkçe',
+    'vi-vn': 'Tiếng Việt',
+    'ru-ru': 'Русский',
+    'pl-pl': 'Polski',
+    'id-id': 'Bahasa Indonesia'
 }
 
 export default defineComponent({

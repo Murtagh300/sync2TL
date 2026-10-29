@@ -12,7 +12,7 @@
             >
                 <!-- wide screens: the tabs as a side bar, always there -->
                 <tab-bar
-                    v-if="wide"
+                    v-if="wide && !prefs.simpleMode"
                     vertical
                 />
                 <div class="column no-wrap col">
@@ -60,7 +60,7 @@ import WhatsNewDialog from 'components/WhatsNewDialog.vue'
 import { unseenRelease } from 'src/changelog'
 import AppLock from 'components/AppLock.vue'
 import { WalletConnectHost } from 'pages/WalletConnect'
-import { applyAccent, applyDisplay } from 'src/utils/prefs'
+import { applyAccent, applyDisplay, prefs } from 'src/utils/prefs'
 import { setupPrivacyClass, setupShake } from 'src/utils/shake'
 
 export default defineComponent({
@@ -70,6 +70,7 @@ export default defineComponent({
         return {
             initialized: false,
             mounted: false,
+            prefs,
             // async computed (see src/shims-async-computed.d.ts)
             gids: null as string[] | null
         }
@@ -79,7 +80,8 @@ export default defineComponent({
             return this.$q.screen.width >= 1024
         },
         showTabs(): boolean {
-            return TAB_ROUTES.includes(String(this.$route.name || ''))
+            // the simple mode: the home's big buttons instead
+            return !prefs.simpleMode && TAB_ROUTES.includes(String(this.$route.name || ''))
         }
     },
     asyncComputed: {

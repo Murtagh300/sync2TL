@@ -95,6 +95,25 @@
                 <button
                     type="button"
                     class="bvm-tile choice row no-wrap items-center"
+                    @click="importKeystore()"
+                >
+                    <q-icon
+                        name="o_description"
+                        size="24px"
+                        color="primary"
+                    />
+                    <div class="col q-ml-md">
+                        <div class="choice-title">{{$t('keystore.action_import')}}</div>
+                        <div class="choice-body">{{$t('keystore.msg_import')}}</div>
+                    </div>
+                    <q-icon
+                        name="o_chevron_right"
+                        class="text-muted"
+                    />
+                </button>
+                <button
+                    type="button"
+                    class="bvm-tile choice row no-wrap items-center"
                     @click="watchAddress()"
                 >
                     <q-icon
@@ -132,6 +151,7 @@ import { BackupDialog } from '../Backup'
 import PromptDialog, { type PromptOptions } from 'pages/Index/PromptDialog.vue'
 import { address as addressUtil } from 'thor-devkit'
 import { isVetName, resolveVetName } from 'src/utils/names'
+import { keystoreAddress, openKeystore, parseKeystore, pickTextFile } from 'src/utils/keystore'
 
 const defaultGid = genesises.main.id
 
@@ -233,6 +253,49 @@ export default defineComponent({
             } catch {
                 return
             }
+            await this.addKeyWallet(sk)
+        },
+        /** a wallet from a keystore file (Sync, Sync2 and other VeChain wallets export these) */
+        async importKeystore() {
+            this.error = ''
+            await this.$nextTick()
+            if (!this.name) {
+                this.error = this.$t('common.required_field').toString()
+                return
+            }
+            const text = await pickTextFile()
+            if (!text) return
+            const ks = parseKeystore(text)
+            if (!ks) {
+                this.error = this.$t('keystore.msg_not_keystore')
+                return
+            }
+            const opts: PromptOptions = {
+                title: this.$t('keystore.title_password'),
+                message: this.$t('keystore.msg_password', { address: keystoreAddress(ks) }),
+                model: '',
+                password: true,
+                action: { label: this.$t('common.continue'), color: 'primary' },
+                validate: () => ''
+            }
+            let password: string
+            try {
+                password = await this.$dialog<string>({ component: PromptDialog, opts })
+            } catch {
+                return
+            }
+            let sk: Buffer
+            try {
+                // scrypt: a second or two
+                sk = await this.$loading(() => openKeystore(ks, password))
+            } catch {
+                this.error = this.$t('keystore.msg_wrong_password')
+                return
+            }
+            await this.addKeyWallet(sk)
+        },
+        /** a key wallet for this private key (wiped after) */
+        async addKeyWallet(sk: Buffer) {
             try {
                 const umk = await this.$authenticate()
                 await this.$loading(async () => {

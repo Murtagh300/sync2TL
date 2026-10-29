@@ -189,13 +189,21 @@ export default defineComponent({
                         { icon: 'o_add_card', title: t('buyVet.title'), click: () => this.buyVet() },
                         { icon: 'o_request_quote', title: t('payments.title'), to: { name: 'payments' } },
                         { icon: 'o_point_of_sale', title: t('pos.title'), to: { name: 'pos' } },
+                        { icon: 'o_redeem', title: t('gift.title'), to: { name: 'gifts' } },
+                        { icon: 'o_receipt', title: t('invoice.title'), to: { name: 'invoices' } },
+                        { icon: 'o_volunteer_activism', title: t('donate.title'), to: { name: 'donate-button' } },
+                        { icon: 'o_storefront', title: t('shop.title'), to: { name: 'shop' } },
                         { icon: 'o_autorenew', title: t('subs.title'), to: { name: 'subscriptions' } },
                         { icon: 'o_forum', title: t('chat.title'), to: { name: 'chat' } },
                         { icon: 'o_groups', title: t('payout.title'), to: { name: 'payout' } },
                         { icon: 'o_hub', title: t('stargate.title'), to: { name: 'stargate' } },
+                        { icon: 'o_compare_arrows', title: t('validators.title'), to: { name: 'validators' } },
+                        { icon: 'o_local_gas_station', title: t('tank.title'), to: { name: 'vtho-tank' } },
                         { icon: 'o_eco', title: t('vebetter.title'), to: { name: 'vebetter' } },
                         { icon: 'o_explore', title: t('discover.title'), to: { name: 'discover' } },
                         { icon: 'o_how_to_vote', title: t('vote.action_open'), to: { name: 'vote' } },
+                        { icon: 'o_gavel', title: t('proposals.title'), to: { name: 'proposals' } },
+                        { icon: 'o_co2', title: t('impact.title'), to: { name: 'impact' } },
                         { icon: 'o_leaderboard', title: t('leaderboard.action_open'), to: { name: 'leaderboard' } },
                         { icon: 'o_badge', title: t('vetname.title'), to: { name: 'vet-name' } },
                         { icon: 'o_savings', title: t('yield.title'), to: { name: 'yield' } },
@@ -208,7 +216,8 @@ export default defineComponent({
                     title: t('more.label_insight'),
                     items: [
                         { icon: 'o_insights', title: t('overview.title'), to: { name: 'overview' } },
-                        { icon: 'o_query_stats', title: t('pnl.title'), to: { name: 'pnl' } }
+                        { icon: 'o_query_stats', title: t('pnl.title'), to: { name: 'pnl' } },
+                        { icon: 'o_description', title: t('statement.title'), to: { name: 'statement' } }
                     ]
                 },
                 {
@@ -220,7 +229,8 @@ export default defineComponent({
                         { icon: 'o_link', title: t('wc.title'), to: { name: 'walletconnect' } },
                         { icon: 'o_contacts', title: t('contacts.title'), to: { name: 'contacts' } },
                         { icon: 'o_family_restroom', title: t('emergency.title'), to: { name: 'emergency' } },
-                        { icon: 'o_emergency', title: t('panic.title'), to: { name: 'panic' } }
+                        { icon: 'o_emergency', title: t('panic.title'), to: { name: 'panic' } },
+                        { icon: 'o_draw', title: t('signMsg.title'), to: { name: 'sign-message' } }
                     ]
                 },
                 {

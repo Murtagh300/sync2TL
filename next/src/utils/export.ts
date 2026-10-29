@@ -30,8 +30,8 @@ export function toCsv(rows: ExportRow[], headers: string[]): string {
 }
 
 export function downloadText(name: string, text: string, type = 'text/csv') {
-    // a BOM so spreadsheet apps read the accents right
-    const blob = new Blob(['﻿' + text], { type: `${type};charset=utf-8` })
+    // a BOM so spreadsheet apps read the accents right (not in JSON: parsers stop at it)
+    const blob = new Blob([(type === 'text/csv' ? '﻿' : '') + text], { type: `${type};charset=utf-8` })
     const url = URL.createObjectURL(blob)
     const a = document.createElement('a')
     a.href = url

@@ -10,8 +10,12 @@ import { cleanReport, scrub } from '../src/scrub.ts'
 import { createRouter } from '../src/http.ts'
 import { createRelay, KEY } from '../src/relay.ts'
 import { openDb } from '../src/db.ts'
-import { createStore, validateSubscribe } from '../src/push/store.ts'
-import { formatAmount, messagesFor, type Arrival } from '../src/push/watcher.ts'
+import { createStore, validateSubscribe, type Subscription } from '../src/push/store.ts'
+import { createTills, SALE_TTL } from '../src/till.ts'
+import { createShops, orderAmount, ORDER_TTL, toWei } from '../src/shop.ts'
+import { createRoundWatch, roundText } from '../src/push/rounds.ts'
+import { createPriceAlerts, validatePriceAlerts } from '../src/push/price-alerts.ts'
+import { formatAmount, messagesFor, outgoingFor, type Arrival, type Departure } from '../src/push/watcher.ts'
 import { createReminders, nextAfter, validateReminders } from '../src/push/reminders.ts'
 import { createPhishing, domainsOf, HOST, isListed, parseLists } from '../src/phishing.ts'
 import { createX2Index, parseReward, REWARD_DISTRIBUTED, REWARDS_POOL } from '../src/x2earn.ts'
@@ -167,6 +171,10 @@ test('subscriptions are checked, stored and replaced', () => {
     store.subscribe(v.sub, [B])
     assert.deepEqual(store.addresses(), [B])
     assert.equal(store.forAddress(B)[0]!.lang, 'nl')
+    assert.deepEqual(store.outgoingAddresses(), [])
+    store.subscribe(validateSubscribe({ ...sub, outgoing: true }).sub, [B])
+    assert.deepEqual(store.outgoingAddresses(), [B])
+    assert.equal(store.forAddress(B)[0]!.outgoing, true)
     store.unsubscribe(v.sub.endpoint)
     assert.equal(store.count(), 0)
     assert.equal(store.addresses().length, 0)
@@ -193,6 +201,22 @@ test('push messages: one per transaction, known tokens only, no own moves', () =
     assert.equal(msgs[0]!.title, '25 VET + 5 B3TR ontvangen')
     assert.equal(formatAmount(1234567n, 6), '1.2345')
     assert.equal(formatAmount(10n ** 18n, 18), '1')
+})
+
+test('outgoing push: only for subscribers that asked, approvals always, own moves never', () => {
+    const C = '0x' + 'c'.repeat(40)
+    const on = { endpoint: 'e1', keys: { p256dh: 'p', auth: 'a' }, lang: 'nl', outgoing: true, addresses: [A, B] }
+    const off = { ...on, endpoint: 'e2', outgoing: false }
+    const list: Departure[] = [
+        { txId: 't1', from: A, to: C, kind: 'vet', amount: 3n * 10n ** 18n },
+        { txId: 't2', from: A, to: B, kind: 'vet', amount: 1n },
+        { txId: 't3', from: A, to: C, kind: 'approval', contract: TOKEN },
+        { txId: 't4', from: A, to: C, kind: 'vet', amount: 0n }
+    ]
+    const msgs = outgoingFor(list, a => (a === A ? [on, off] : []), c => (c === TOKEN ? { symbol: 'B3TR', decimals: 18 } : undefined))
+    assert.deepEqual(msgs.map(m => [m.sub.endpoint, m.txId, m.url]), [['e1', 't1', '#/activities'], ['e1', 't3', '#/approvals']])
+    assert.equal(msgs[0]!.title, '3 VET verstuurd vanaf je adres')
+    assert.match(msgs[1]!.title, /B3TR/)
 })
 
 test('the relay keeps each key once, wakes a waiting reader, and forgets after 10 minutes', async () => {
@@ -336,4 +360,95 @@ test('chat: keys need a certificate from the address; only signed sends and read
     assert.equal(inbox(a).length, 1)
     assert.equal(inbox(b, 1).length, 0)
     assert.throws(() => chat.read({ address: b.address, since: 0, at: t, sig: a.sign(`inbox|${b.address}|${t}`) }), /not signed/)
+})
+
+test('till: a fixed address, only the secret sets a sale, and a sale goes after 15 minutes', () => {
+    let t = 1_000_000
+    const tills = createTills(openDb(':memory:'), { now: () => t })
+    const { id, secret } = tills.create({ address: A })
+    assert.match(id, /^[a-z0-9]{12}$/)
+    assert.deepEqual(tills.read(id), { address: A, sale: null })
+    assert.throws(() => tills.set(id, { secret: 'wrong', amount: '1', symbol: 'VET' }), /not this till/)
+    assert.throws(() => tills.set(id, { secret, amount: '1e5', symbol: 'VET' }), /bad sale/)
+    tills.set(id, { secret, amount: '12.5034', symbol: 'VET', address: B })
+    assert.deepEqual(tills.read(id), { address: A, sale: { amount: '12.5034', symbol: 'VET', at: t } })
+    t += SALE_TTL
+    assert.equal(tills.read(id)!.sale, null)
+    tills.set(id, { secret, amount: '' })
+    assert.equal(tills.read('nope'), null)
+    assert.throws(() => tills.create({ address: 'x' }))
+})
+
+test('rounds: a new round is pushed once, to the devices that asked', async () => {
+    const db = openDb(':memory:')
+    const store = createStore(db)
+    store.subscribe(validateSubscribe({ ...sub, rounds: true }).sub, [A])
+    store.subscribe(validateSubscribe({ ...sub, subscription: { ...sub.subscription, endpoint: 'https://fcm.googleapis.com/fcm/send/other' } }).sub, [B])
+    let round = 70
+    const sent: { endpoint: string, payload: string }[] = []
+    const w = createRoundWatch(db, { nodes: ['n'], round: async () => round, send: async (s, payload) => { sent.push({ endpoint: s.endpoint, payload }) } })
+    assert.equal(await w.tick(), 0)
+    assert.equal(await w.tick(), 0)
+    round = 71
+    assert.equal(await w.tick(), 1)
+    assert.equal(sent[0]!.endpoint, sub.subscription.endpoint)
+    assert.equal(JSON.parse(sent[0]!.payload).title, roundText('nl', 71))
+    assert.equal(await w.tick(), 0)
+})
+
+test('price alerts: checked, pushed once per crossing, kept per device', async () => {
+    assert.throws(() => validatePriceAlerts({ endpoint: 'e', alerts: [{ id: 'a', token: 'nope', kind: 'below', usd: 1, title: 't', url: '#/x' }] }), /bad token/)
+    assert.throws(() => validatePriceAlerts({ endpoint: 'e', alerts: [{ id: 'a', token: '', kind: 'below', usd: 1, title: 't', url: 'https://evil' }] }), /bad url/)
+    const db = openDb(':memory:')
+    const store = createStore(db)
+    const v = validateSubscribe(sub)
+    store.subscribe(v.sub, v.addresses)
+    let vet = 0.03
+    const alerts = createPriceAlerts(db, store, async () => new Map([['', vet]]))
+    const valid = validatePriceAlerts({ endpoint: v.sub.endpoint, alerts: [{ id: 'a1', token: '0x0000000000000000000000000000000000000000', kind: 'below', usd: 0.025, title: 'VET onder $0,025', url: '#/watchlist' }] })
+    assert.equal(alerts.replace('https://fcm.googleapis.com/fcm/send/unknown', valid.alerts), false)
+    assert.equal(alerts.replace(v.sub.endpoint, valid.alerts), true)
+    const sent: string[] = []
+    const send = async (_s: Subscription, payload: string) => { sent.push(JSON.parse(payload).title) }
+    assert.equal(await alerts.tick(send), 0)
+    vet = 0.02
+    assert.equal(await alerts.tick(send), 1)
+    assert.equal(await alerts.tick(send), 0)
+    // handed over again (the app started): it stays fired
+    alerts.replace(v.sub.endpoint, valid.alerts)
+    assert.equal(await alerts.tick(send), 0)
+    vet = 0.03
+    await alerts.tick(send)
+    vet = 0.02
+    assert.equal(await alerts.tick(send), 1)
+    assert.deepEqual(sent, ['VET onder $0,025', 'VET onder $0,025'])
+})
+
+test('shop: an order in euros becomes an exact VET amount, settled by the matching transfer only', async () => {
+    let t = 5_000_000
+    const shops = createShops(openDb(':memory:'), { now: () => t, price: async () => 0.02, eurUsd: async () => 1.1 })
+    assert.equal(orderAmount(10, 0.02, 1.1, 7), '550.0007')
+    assert.equal(toWei('550.0007'), 550000700000000000000n)
+    assert.throws(() => shops.create({ address: 'x', name: 'Shop' }), /bad address/)
+    const { id, key } = shops.create({ address: A, name: 'Bakker <Jan>' })
+    await assert.rejects(shops.createOrder(id, 'wrong', { ref: 'o1', amount: 10 }), /not this shop/)
+    await assert.rejects(shops.createOrder(id, key, { ref: 'o1', amount: 10, returnUrl: 'http://x.y' }), /https/)
+    const o = await shops.createOrder(id, key, { ref: 'o1', amount: 10, currency: 'EUR', symbol: 'VET', returnUrl: 'https://shop.example/thanks' })
+    assert.equal(o.status, 'pending')
+    assert.equal(o.shopName, 'Bakker Jan')
+    assert.match(o.amount, /^550\.00\d\d$/)
+    const o2 = await shops.createOrder(id, key, { ref: 'o2', amount: 10 })
+    assert.notEqual(o2.amount, o.amount)
+    assert.deepEqual(shops.open(), [{ address: A, since: t }])
+    // the wrong amount, the wrong token, the wrong address: nothing
+    assert.equal(shops.settle([{ txId: '0x1', to: A, kind: 'vet', amount: toWei(o.amount) + 1n }]), 0)
+    assert.equal(shops.settle([{ txId: '0x2', to: A, kind: 'token', contract: '0x5ef79995fe8a89e0812330e4378eb2660cede699', amount: toWei(o.amount) }]), 0)
+    assert.equal(shops.settle([{ txId: '0x3', to: B, kind: 'vet', amount: toWei(o.amount) }]), 0)
+    assert.equal(shops.settle([{ txId: '0x4', to: A, kind: 'vet', amount: toWei(o.amount) }]), 1)
+    assert.equal(shops.status(id, key, 'o1')!.status, 'paid')
+    assert.equal(shops.status(id, key, 'o1')!.txId, '0x4')
+    assert.equal(shops.checkout(o.token)!.status, 'paid')
+    t += ORDER_TTL
+    assert.equal(shops.status(id, key, 'o2')!.status, 'expired')
+    assert.deepEqual(shops.open(), [])
 })

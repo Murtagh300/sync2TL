@@ -18,6 +18,7 @@
                         :error="!!error"
                         :error-message="error"
                         v-model="input"
+                        :type="opts.password ? 'password' : 'text'"
                         autocomplete="off"
                         no-error-icon
                     />
@@ -50,6 +51,8 @@ export type PromptOptions = {
         color: string
     }
     validate: (input: string) => string
+    /** a hidden input, for a password */
+    password?: boolean
 }
 
 export default defineComponent({

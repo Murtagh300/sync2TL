@@ -146,8 +146,11 @@ export async function ownPushState(): Promise<OwnPushState> {
     }
 }
 
-/** watch these addresses for incoming transfers on this device (again: replaces the list) */
-export async function enableOwnPush(addresses: string[], lang: string) {
+/**
+ * watch these addresses for incoming transfers on this device (again: replaces the list);
+ * outgoing: also what leaves them, and approvals they give; rounds: a new VeBetterDAO round
+ */
+export async function enableOwnPush(addresses: string[], lang: string, opts: { outgoing?: boolean, rounds?: boolean } = {}) {
     if (!own) throw new Error('unavailable')
     if ((await Notification.requestPermission()) !== 'granted') {
         throw new Error('blocked')
@@ -164,7 +167,9 @@ export async function enableOwnPush(addresses: string[], lang: string) {
     await own.post('/push/subscribe', {
         subscription: { endpoint: json.endpoint, keys: json.keys },
         addresses: addresses.map(a => a.toLowerCase()).slice(0, 20),
-        lang: lang.slice(0, 2)
+        lang: lang.slice(0, 2),
+        outgoing: !!opts.outgoing,
+        rounds: !!opts.rounds
     })
 }
 
@@ -187,4 +192,16 @@ export async function syncOwnReminders(reminders: OwnReminder[]) {
     const sub = await reg.pushManager.getSubscription()
     if (!sub) return
     await own.post('/push/reminders', { endpoint: sub.endpoint, reminders: reminders.slice(0, 20) })
+}
+
+/** a token price alert the BlackVault server checks (in dollars) and pushes once per crossing */
+export type OwnPriceAlert = { id: string, token: string, kind: 'below' | 'above', usd: number, title: string, url: string }
+
+/** replace this device's price alerts on the server; nothing when its push isn't on */
+export async function syncOwnPriceAlerts(alerts: OwnPriceAlert[]) {
+    if (!own || (await ownPushState()) !== 'on') return
+    const reg = await navigator.serviceWorker.ready
+    const sub = await reg.pushManager.getSubscription()
+    if (!sub) return
+    await own.post('/push/price-alerts', { endpoint: sub.endpoint, alerts: alerts.slice(0, 20) })
 }

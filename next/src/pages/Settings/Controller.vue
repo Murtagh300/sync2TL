@@ -186,6 +186,17 @@
                         </q-item-section>
                     </q-item>
                     <item
+                        icon="o_touch_app"
+                        :title="$t('simple.label_setting')"
+                    >
+                        <q-toggle
+                            :aria-label="$t('simple.label_setting')"
+                            :model-value="prefs.simpleMode"
+                            color="primary"
+                            @update:model-value="setSimple"
+                        />
+                    </item>
+                    <item
                         icon="o_contrast"
                         :title="$t('settings.label_contrast')"
                     >
@@ -359,6 +370,11 @@ export default defineComponent({
         }
     },
     methods: {
+        /** the simple home; a size up with it, which the user can still change */
+        setSimple(on: boolean) {
+            prefs.simpleMode = on
+            if (on && prefs.textScale < 1.1) prefs.textScale = 1.1
+        },
         playChime,
         async setDesktop(next: Partial<Pick<DesktopPrefs, 'keepInTray' | 'openAtLogin'>>) {
             if (!desktop || !this.desktopPrefs) return

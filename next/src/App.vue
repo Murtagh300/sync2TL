@@ -10,7 +10,7 @@ import { defineComponent } from 'vue'
 import '@fontsource-variable/geist'
 import { listen } from 'src/utils/external-url'
 import { desktop } from 'src/utils/desktop'
-import { checkAlerts, notifySystem } from 'src/utils/alerts'
+import { checkAlerts, notifySystem, syncPriceAlerts } from 'src/utils/alerts'
 import { notify as addNotification } from 'src/utils/notifications'
 import { buyRoute, dueBuys, dueScheduled, payments, reachedLimits } from 'src/utils/payments'
 import { dueReminders } from 'src/utils/launch-calendar'
@@ -27,6 +27,12 @@ import 'dayjs/locale/es'
 import 'dayjs/locale/it'
 import 'dayjs/locale/ja'
 import 'dayjs/locale/ko'
+import 'dayjs/locale/pt-br'
+import 'dayjs/locale/tr'
+import 'dayjs/locale/vi'
+import 'dayjs/locale/ru'
+import 'dayjs/locale/pl'
+import 'dayjs/locale/id'
 import { nodeHealth, startNodeHealth } from 'src/utils/node-health'
 
 /**
@@ -77,7 +83,13 @@ export default defineComponent({
                                 : wanted.startsWith('es') ? 'es-es'
                                     : wanted.startsWith('it') ? 'it-it'
                                         : wanted.startsWith('ja') ? 'ja-jp'
-                                            : wanted.startsWith('ko') ? 'ko-kr' : 'en-us'
+                                            : wanted.startsWith('ko') ? 'ko-kr'
+                                                : wanted.startsWith('pt') ? 'pt-br'
+                                                    : wanted.startsWith('tr') ? 'tr-tr'
+                                                        : wanted.startsWith('vi') ? 'vi-vn'
+                                                            : wanted.startsWith('ru') ? 'ru-ru'
+                                                                : wanted.startsWith('pl') ? 'pl-pl'
+                                                                    : wanted.startsWith('id') || wanted.startsWith('in') ? 'id-id' : 'en-us'
             this.$i18n.locale = lang
             setNumberLocale(lang)
             desktop?.setLabels({
@@ -91,7 +103,7 @@ export default defineComponent({
             // should set to default first
             dayjs.locale('en')
             // dayjs names these by language only
-            dayjs.locale(({ 'nl-nl': 'nl', 'de-de': 'de', 'fr-fr': 'fr', 'es-es': 'es', 'it-it': 'it', 'ja-jp': 'ja', 'ko-kr': 'ko' } as Record<string, string>)[lang] || lang)
+            dayjs.locale(({ 'nl-nl': 'nl', 'de-de': 'de', 'fr-fr': 'fr', 'es-es': 'es', 'it-it': 'it', 'ja-jp': 'ja', 'ko-kr': 'ko', 'pt-br': 'pt-br', 'tr-tr': 'tr', 'vi-vn': 'vi', 'ru-ru': 'ru', 'pl-pl': 'pl', 'id-id': 'id' } as Record<string, string>)[lang] || lang)
         }
     },
     methods: {
@@ -118,18 +130,22 @@ export default defineComponent({
             }
             try {
                 const fired = await checkAlerts(this.$svc, (key, params) => this.$t(key, params ?? {}))
+                // the same price rules, by push from the server when the app is closed
+                void syncPriceAlerts(this.$svc, (key, params) => this.$t(key, params ?? {})).catch(() => { })
                 for (const m of fired) {
                     addNotification({
                         id: `alert:${m.text}:${new Date().toDateString()}`,
-                        kind: m.slug ? 'alert' : 'offer',
+                        kind: m.slug || m.route ? 'alert' : 'offer',
                         title: m.text,
-                        route: m.slug ? { name: 'collection', params: { slug: m.slug } } : { name: 'nfts' }
+                        route: m.route || (m.slug ? { name: 'collection', params: { slug: m.slug } } : { name: 'nfts' })
                     })
                     this.$q.notify({
                         message: m.text,
                         icon: 'o_notifications',
                         timeout: 8000,
-                        actions: [{ label: this.$t('watchlist.title'), color: 'primary', handler: () => { void this.$router.push({ name: 'watchlist' }) } }]
+                        actions: m.route
+                            ? [{ label: this.$t('common.open'), color: 'primary', handler: () => { void this.$router.push(m.route!) } }]
+                            : [{ label: this.$t('watchlist.title'), color: 'primary', handler: () => { void this.$router.push({ name: 'watchlist' }) } }]
                     })
                     notifySystem(m.text)
                 }

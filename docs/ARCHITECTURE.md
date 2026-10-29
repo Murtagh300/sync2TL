@@ -58,13 +58,19 @@ Storage: `node:sqlite` with recorded migrations (`src/db.ts`).
 | `GET /phishing?host=` | whether a site is on MetaMask's phishing list or ours (`src/phishing.ts`), reloaded every 6 hours |
 | `GET /x2earn/leaderboard?days=7\|30&address=` | X2Earn rewards per address per day, indexed from the chain for 35 days (`src/x2earn.ts`) |
 | `POST /chat/key`, `GET /chat/keys/:address`, `POST /chat/send`, `POST /chat/inbox` | encrypted chat: chat keys published with a certificate from the address, ciphertext only, signed sends and reads, kept 90 days (`src/chat.ts`) |
+| `POST /push/price-alerts` | a subscribed device's token price alerts (in dollars), pushed once per crossing (`src/push/price-alerts.ts`) |
+| `POST /till`, `POST /till/:id`, `GET /till/:id` | a till behind an NFC sticker: a fixed address, the open sale set with the till's secret, shown for 15 minutes (`src/till.ts`) |
+| `POST /shop`, `POST /shop/:id/orders`, `GET /shop/:id/orders/:ref`, `GET /checkout/:token` | web shop checkout: orders priced in VET or B3TR (BetterSwap prices, the ECB's euro rate), seen paid on chain; the shop polls with its key, the server never calls a shop (`src/shop.ts`) |
 
 - **Push watcher** (`src/push/watcher.ts`): every 10 s it reads the transfer and token-transfer logs for the
   watched addresses (at most an hour of blocks per round, so it catches up after an outage), and sends one
   notification per subscriber per transaction. Tokens outside the VeChain token registry are ignored (spam).
+  A subscription that asked for it (`outgoing`) also hears of transfers out and approvals given; one with
+  `rounds` gets a push when a VeBetterDAO round starts (`src/push/rounds.ts`).
 - **What the server knows**: push endpoints and the addresses to watch, and error reports with addresses,
   amounts, names and URLs removed (`src/scrub.ts`); for chat, public chat keys and who sent ciphertext to
-  whom, never the text. No keys, no balances, no IP addresses in logs. Phishing lookups aren't stored.
+  whom, never the text; for tills and shops, their address, a hash of their secret or key, and the open
+  sales and orders. No keys, no balances, no IP addresses in logs. Phishing lookups aren't stored.
 
 Settings are environment variables (`src/config.ts`): `PORT`, `ALLOWED_ORIGINS`, `TRUST_PROXY`, `DB_PATH`,
 `FLAGS_FILE`, `VAPID_PUBLIC_KEY`, `VAPID_PRIVATE_KEY`, `VAPID_SUBJECT`, `ADMIN_TOKEN`, `BETTERSWAP_URL`,

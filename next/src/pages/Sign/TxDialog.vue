@@ -151,6 +151,23 @@
                             :options="[{ value: 'vtho', label: 'VTHO' }, { value: 'vet', label: 'VET' }, { value: 'b3tr', label: 'B3TR' }]"
                         />
                     </div>
+                    <!-- the fee from another address this app holds: a child's or a savings wallet needs no VTHO -->
+                    <div
+                        v-if="payerOptions.length"
+                        class="row no-wrap items-center q-px-md q-mb-sm"
+                    >
+                        <div class="text-muted fee-note q-mr-sm">{{$t('sign.label_fee_from')}}</div>
+                        <q-select
+                            v-model="payer"
+                            :options="payerOptions"
+                            emit-value
+                            map-options
+                            dense
+                            borderless
+                            class="col"
+                            options-dense
+                        />
+                    </div>
                     <signer-selector
                         :signer="signer"
                         :groups="signerGroups"
@@ -241,7 +258,9 @@ export default defineComponent({
             contracts: {} as Record<string, number | null>,
             usedBefore: new Set<string>(),
             /** what is known about the site that asks: a phishing list, a borrowed name */
-            siteRisks: [] as RiskLabel[]
+            siteRisks: [] as RiskLabel[],
+            /** another own address that pays the fee in VTHO ('' : the signer itself) */
+            payer: '' as string
         }
     },
     computed: {
@@ -306,6 +325,21 @@ export default defineComponent({
                 return null
             }
             return balanceChanges(est.outputs, this.signer)
+        },
+        /** the other addresses this app can sign with that could pay the fee in VTHO */
+        payerOptions(): { label: string, value: string }[] {
+            if (this.isDelegation || this.payToken !== 'vtho' || !this.signer) return []
+            const others = (this.wallets || []).flatMap(w => w.meta.addresses.map((a, i) => ({ w, a, i })))
+                .filter(x => x.a.toLowerCase() !== this.signer.toLowerCase())
+            if (!others.length) return []
+            return [
+                { label: this.$t('sign.label_fee_self'), value: '' },
+                ...others.map(x => ({ label: `${x.w.meta.name} #${x.i + 1} · ${x.a.slice(0, 6)}…${x.a.slice(-4)}`, value: x.a }))
+            ]
+        },
+        /** the address paying the fee when it isn't the signer (and no dApp or token delegator does) */
+        feePayer(): string {
+            return this.payerOptions.some(o => o.value && o.value === this.payer) ? this.payer : ''
         },
         isDelegation(): boolean {
             return !!this.req.options.delegator
@@ -390,7 +424,7 @@ export default defineComponent({
                 this.req.message,
                 this.req.options.gas || 0,
                 this.signer,
-                this.req.options.delegator && this.req.options.delegator.signer)
+                (this.req.options.delegator && this.req.options.delegator.signer) || this.feePayer || undefined)
         },
         collections: {
             async get(): Promise<Record<string, BVM.Collection>> {
@@ -420,7 +454,7 @@ export default defineComponent({
                 return null
             }
             const signer = this.signer
-            const gasPayer = (this.req.options.delegator && this.req.options.delegator.signer) || signer
+            const gasPayer = (this.req.options.delegator && this.req.options.delegator.signer) || this.feePayer || signer
             const acc = await this.thor.account(gasPayer).get()
 
             let energyBalance = new BigNumber(acc.energy)
@@ -445,6 +479,8 @@ export default defineComponent({
         signer: {
             async handler(signer: string) {
                 if (!signer) return
+                // the payer this signer used last time
+                this.payer = prefs.feePayers[signer.toLowerCase()] || ''
                 try {
                     const list = await this.$svc.activity.page(500, 0)
                     this.usedBefore = usedContracts(list, signer)
@@ -455,6 +491,14 @@ export default defineComponent({
         feeToken(t: FeeToken) {
             prefs.feeToken = t
         },
+        payer(p: string) {
+            const key = this.signer.toLowerCase()
+            const next = { ...prefs.feePayers }
+            if (p) next[key] = p
+            else delete next[key]
+            prefs.feePayers = next
+        },
+
         // a new quote and balance for each token, signer and estimate
         feeInputs: {
             async handler() {
@@ -603,6 +647,7 @@ export default defineComponent({
 
             let tx!: Transaction<Transaction.LegacyBody>
             let delegatorSig: Buffer | undefined
+            const feePayer = this.feePayer
 
             const originSig = await this.signTx(wallet, signer, () => {
                 // compose the tx body
@@ -646,6 +691,9 @@ export default defineComponent({
                             })
                             throw err
                         }
+                    } else if (feePayer) {
+                        // another own address pays: signTx appends its signature
+                        tx = new Transaction({ ...txBody, reserved: { features: 1 } })
                     } else if (delegator) {
                         tx = new Transaction({ ...txBody, reserved: { features: 1 /* VIP191 bit */ } })
                         try {
@@ -667,7 +715,7 @@ export default defineComponent({
                     }
                     return tx
                 })
-            })
+            }, feePayer)
 
             tx.signature = delegatorSig ? Buffer.concat([originSig, delegatorSig]) : originSig
 

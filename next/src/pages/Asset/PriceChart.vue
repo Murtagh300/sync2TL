@@ -11,6 +11,17 @@
             </div>
             <div class="ranges row no-wrap">
                 <button
+                    type="button"
+                    class="range range--icon"
+                    :class="{ 'range--on': candles }"
+                    :aria-label="$t('asset.label_candles')"
+                    :aria-pressed="candles"
+                    @click="candles = !candles"
+                ><q-icon
+                    name="o_candlestick_chart"
+                    size="16px"
+                /></button>
+                <button
                     v-for="r in ranges"
                     :key="r.hours"
                     type="button"
@@ -37,16 +48,47 @@
                 role="img"
                 :aria-label="$t('asset.label_chart')"
             >
-                <path
-                    :d="area"
-                    class="chart-fill"
-                />
-                <path
-                    :d="line"
-                    class="chart-line"
-                    :class="{ 'chart-line--down': (change || 0) < 0 }"
-                    vector-effect="non-scaling-stroke"
-                />
+                <template v-if="!candles">
+                    <path
+                        :d="area"
+                        class="chart-fill"
+                    />
+                    <path
+                        :d="line"
+                        class="chart-line"
+                        :class="{ 'chart-line--down': (change || 0) < 0 }"
+                        vector-effect="non-scaling-stroke"
+                    />
+                </template>
+                <template v-else>
+                    <g
+                        v-for="c in candleShapes"
+                        :key="c.x"
+                        :class="c.up ? 'candle-up' : 'candle-down'"
+                    >
+                        <line
+                            :x1="c.x"
+                            :x2="c.x"
+                            :y1="c.high"
+                            :y2="c.low"
+                            class="candle-wick"
+                            vector-effect="non-scaling-stroke"
+                        />
+                        <rect
+                            :x="c.x - c.w / 2"
+                            :y="Math.min(c.open, c.close)"
+                            :width="c.w"
+                            :height="Math.max(1, Math.abs(c.close - c.open))"
+                            class="candle-body"
+                        />
+                    </g>
+                    <path
+                        v-if="maLine"
+                        :d="maLine"
+                        class="ma-line"
+                        vector-effect="non-scaling-stroke"
+                    />
+                </template>
                 <!-- what you paid on average -->
                 <line
                     v-if="costY !== null"
@@ -92,6 +134,13 @@
             </template>
             <span v-if="costY !== null"><i class="dash" /> {{$t('asset.label_avg_buy_short')}}</span>
         </div>
+        <div
+            v-if="candles && candleList.length"
+            class="row q-gutter-x-md text-muted legend q-mt-xs"
+        >
+            <span v-if="maLine"><i class="ma-key" /> {{$t('asset.label_ma', { n: MA })}}</span>
+            <span v-if="rsiValue !== null">{{$t('asset.label_rsi', { value: Math.round(rsiValue) })}} · {{rsiWord}}</span>
+        </div>
     </div>
 </template>
 <script lang="ts">
@@ -99,6 +148,9 @@ import { defineComponent } from 'vue'
 import type { Prices } from 'boot/services/prices'
 import { money, prefs } from 'src/utils/prefs'
 import { formatDate } from 'src/utils/format'
+import { bucketFor, rsi, sma, toCandles, type Candle } from 'src/utils/candles'
+
+const MA = 10
 
 export type ChartMark = { time: number, direction: '+' | '-' }
 
@@ -118,7 +170,15 @@ export default defineComponent({
         loading: false,
         fx: 1,
         scrubX: null as number | null,
-        prefs
+        prefs,
+        MA,
+        candles: (() => {
+            try {
+                return localStorage.getItem('bv-chart-candles') === '1'
+            } catch {
+                return false
+            }
+        })()
     }),
     computed: {
         ranges(): { hours: number, label: string }[] {
@@ -184,6 +244,41 @@ export default defineComponent({
             const i = this.scrubIndex
             return i !== null && this.points[i] ? formatDate(this.points[i]!.time, { relative: true }) : ''
         },
+        candleList(): Candle[] {
+            return toCandles(this.points, bucketFor(this.hours))
+        },
+        /** each candle in chart space: price high is y low */
+        candleShapes(): { x: number, w: number, open: number, close: number, high: number, low: number, up: boolean }[] {
+            const list = this.candleList
+            const { min, max } = this.span
+            const n = list.length
+            if (!n) return []
+            const step = this.W / n
+            return list.map((c, i) => ({
+                x: step * (i + 0.5),
+                w: Math.max(1.5, step * 0.62),
+                open: this.y(c.open, min, max),
+                close: this.y(c.close, min, max),
+                high: this.y(c.high, min, max),
+                low: this.y(c.low, min, max),
+                up: c.close >= c.open
+            }))
+        },
+        maLine(): string {
+            const list = this.candleList
+            const { min, max } = this.span
+            const step = this.W / (list.length || 1)
+            const avg = sma(list.map(c => c.close), MA)
+            const pts = avg.map((v, i) => v === null ? null : `${(step * (i + 0.5)).toFixed(1)},${this.y(v, min, max).toFixed(1)}`).filter(Boolean)
+            return pts.length > 1 ? 'M' + pts.join(' L') : ''
+        },
+        rsiValue(): number | null {
+            return rsi(this.candleList.map(c => c.close))
+        },
+        rsiWord(): string {
+            const v = this.rsiValue ?? 50
+            return v >= 70 ? this.$t('asset.rsi_high') : v <= 30 ? this.$t('asset.rsi_low') : this.$t('asset.rsi_mid')
+        },
         change(): number | null {
             const first = this.points[0]?.price
             return first ? (this.shownPrice / first - 1) * 100 : null
@@ -191,6 +286,11 @@ export default defineComponent({
     },
     watch: {
         hours: { handler() { void this.load() }, immediate: true },
+        candles(on: boolean) {
+            try {
+                localStorage.setItem('bv-chart-candles', on ? '1' : '0')
+            } catch { }
+        },
         'prefs.currency': {
             async handler(c: 'EUR' | 'USD') { this.fx = await this.$svc.prices.fx(c) },
             immediate: true
@@ -254,6 +354,34 @@ export default defineComponent({
 .range--on
   border-color: var(--q-primary)
   color: var(--q-primary)
+
+.range--icon
+  padding: 2px 7px
+  display: flex
+  align-items: center
+
+.candle-wick
+  stroke-width: 1
+
+.candle-up
+  stroke: var(--q-primary)
+  fill: var(--q-primary)
+
+.candle-down
+  stroke: var(--q-negative)
+  fill: var(--q-negative)
+
+.ma-line
+  fill: none
+  stroke: #fcd34d
+  stroke-width: 1.5
+
+.ma-key
+  display: inline-block
+  width: 14px
+  border-top: 2px solid #fcd34d
+  vertical-align: middle
+  margin-right: 4px
 
 .chart-area
   touch-action: pan-y

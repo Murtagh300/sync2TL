@@ -1,6 +1,22 @@
 <template>
     <div class="fit column no-wrap">
-        <page-toolbar :title="$t('pos.title')" />
+        <page-toolbar :title="$t('pos.title')">
+            <q-btn
+                v-if="tapOn && address"
+                flat
+                round
+                icon="o_nfc"
+                :aria-label="$t('tap.action_sticker')"
+                @click="openSticker()"
+            />
+            <q-btn
+                flat
+                round
+                icon="o_summarize"
+                :aria-label="$t('pos.action_days')"
+                @click="showDays = true"
+            />
+        </page-toolbar>
         <page-content
             class="col"
             padding
@@ -84,6 +100,99 @@
                 >{{$t('pos.msg_no_price', { symbol })}}</div>
             </template>
         </page-content>
+        <!-- the day overview: what the till took, per day -->
+        <q-dialog
+            v-model="showDays"
+            :position="$q.screen.xs ? 'bottom' : 'standard'"
+        >
+            <q-card class="full-width days-card">
+                <q-card-section class="row items-center no-wrap">
+                    <div class="bvm-display col days-title">{{$t('pos.action_days')}}</div>
+                    <q-btn
+                        flat
+                        no-caps
+                        icon="o_download"
+                        :disable="!days.length"
+                        :label="$t('pos.action_csv')"
+                        @click="exportCsv()"
+                    />
+                </q-card-section>
+                <q-card-section class="q-pt-none">
+                    <div
+                        v-if="!days.length"
+                        class="text-muted text-center q-py-lg"
+                    >{{$t('pos.msg_no_sales')}}</div>
+                    <q-list
+                        v-else
+                        class="bvm-list"
+                    >
+                        <q-item
+                            v-for="d in days"
+                            :key="d.day"
+                        >
+                            <q-item-section>
+                                <q-item-label class="text-weight-bold">{{dayText(d.day)}}</q-item-label>
+                                <q-item-label caption>{{$t('pos.label_sales', { n: d.count })}}, {{tokenText(d.tokens)}}</q-item-label>
+                            </q-item-section>
+                            <q-item-section
+                                side
+                                class="text-weight-bold"
+                            >{{fiatTotals(d.fiat)}}</q-item-section>
+                        </q-item>
+                    </q-list>
+                    <p class="text-caption text-muted q-mt-md">{{$t('pos.msg_cashier')}}</p>
+                </q-card-section>
+            </q-card>
+        </q-dialog>
+        <!-- an NFC sticker or printed code at the counter that always opens the open sale -->
+        <q-dialog
+            v-model="showSticker"
+            :position="$q.screen.xs ? 'bottom' : 'standard'"
+        >
+            <q-card class="full-width days-card">
+                <q-card-section>
+                    <div class="bvm-display days-title">{{$t('tap.action_sticker')}}</div>
+                    <p class="text-soft q-mt-sm">{{$t('tap.msg_sticker')}}</p>
+                    <div
+                        v-if="tapUrl"
+                        class="column items-center"
+                    >
+                        <div class="qr bvm-tile">
+                            <q-r-code :key="tapUrl">{{tapUrl}}</q-r-code>
+                        </div>
+                        <div class="text-caption text-muted q-mt-sm ellipsis full-width text-center">{{tapUrl}}</div>
+                    </div>
+                    <q-skeleton
+                        v-else
+                        height="200px"
+                    />
+                </q-card-section>
+                <q-card-actions class="column q-gutter-y-sm q-px-md q-pb-md">
+                    <q-btn
+                        v-if="nfcWritable"
+                        unelevated
+                        no-caps
+                        color="primary"
+                        icon="o_nfc"
+                        class="full-width"
+                        :loading="writing"
+                        :disable="!tapUrl"
+                        :label="$t('tap.action_write')"
+                        @click="writeSticker()"
+                    />
+                    <q-btn
+                        outline
+                        no-caps
+                        color="primary"
+                        icon="o_content_copy"
+                        class="full-width"
+                        :disable="!tapUrl"
+                        :label="$t('tap.action_copy')"
+                        @click="copyTap()"
+                    />
+                </q-card-actions>
+            </q-card>
+        </q-dialog>
         <page-action v-if="address">
             <template v-if="request">
                 <q-btn
@@ -134,7 +243,10 @@ import { playChime } from 'src/utils/sound'
 import { incomingTransfers } from 'src/utils/incoming'
 import { buildPaymentLink } from 'src/utils/payment-request'
 import { matchPaidRequests, newId, payments, type PaymentRequestRecord } from 'src/utils/payments'
-import { keypad, tillAmount } from 'src/utils/pos'
+import { keypad, tillAmount, tillCsv, tillDays, type TillDay } from 'src/utils/pos'
+import { canWriteNfc, ensureTill, showSale, tapAvailable, tapLink, writeNfc } from 'src/utils/till-tap'
+import { downloadText } from 'src/utils/export'
+import { copyText } from 'src/utils/clipboard'
 import { printReceipt } from 'src/utils/receipt'
 
 const ZERO = '0x0000000000000000000000000000000000000000'
@@ -156,7 +268,13 @@ export default defineComponent({
         request: null as TillRequest | null,
         poll: null as ReturnType<typeof setInterval> | null,
         keys: ['1', '2', '3', '4', '5', '6', '7', '8', '9', '.', '0', 'back'],
-        decimal: decimalSeparator()
+        decimal: decimalSeparator(),
+        showDays: false,
+        showSticker: false,
+        tapOn: tapAvailable(),
+        tapUrl: '',
+        writing: false,
+        nfcWritable: canWriteNfc()
     }),
     computed: {
         addresses(): { label: string, value: string }[] {
@@ -187,6 +305,10 @@ export default defineComponent({
         },
         preview(): string | null {
             return tillAmount(this.fiat, this.tokenPrice, this.fx, 1)
+        },
+        /** the till's sales so far, per day */
+        days(): TillDay[] {
+            return tillDays(payments.requests as TillRequest[])
         },
         link(): string {
             const r = this.request
@@ -246,6 +368,8 @@ export default defineComponent({
             payments.requests = [r, ...payments.requests]
             this.request = payments.requests[0] as TillRequest
             this.poll = setInterval(() => void this.check(), 5000)
+            // a tap on the counter's sticker opens this sale
+            void showSale(r.to, { amount: r.amount, symbol: r.symbol })
         },
         async check() {
             const r = this.request
@@ -257,6 +381,7 @@ export default defineComponent({
                 if (now?.paid) {
                     this.request = { ...r, paid: now.paid }
                     this.poll && clearInterval(this.poll)
+                    void showSale(r.to, null)
                     haptic('success')
                     if (prefs.sound) playChime()
                 }
@@ -266,9 +391,53 @@ export default defineComponent({
             this.poll && clearInterval(this.poll)
             // a cancelled sale isn't a request anyone should still pay
             const r = this.request
-            if (r && !r.paid) payments.requests = payments.requests.filter(x => x.id !== r.id)
+            if (r && !r.paid) {
+                payments.requests = payments.requests.filter(x => x.id !== r.id)
+                void showSale(r.to, null)
+            }
             this.request = null
             this.typed = ''
+        },
+        dayText(day: string) {
+            return new Date(`${day}T12:00:00`).toLocaleDateString(this.$i18n.locale, { weekday: 'short', day: 'numeric', month: 'short', year: 'numeric' })
+        },
+        fiatTotals(fiat: Record<string, number>) {
+            return Object.entries(fiat).map(([c, v]) => new Intl.NumberFormat(numberLocale(), { style: 'currency', currency: c }).format(v)).join(' + ')
+        },
+        tokenText(tokens: Record<string, string>) {
+            return Object.entries(tokens).map(([s, v]) => `${new Intl.NumberFormat(numberLocale(), { maximumFractionDigits: 2 }).format(Number(v))} ${s}`).join(', ')
+        },
+        exportCsv() {
+            const headers = [this.$t('receipt.label_date'), this.$t('receipt.label_value'), this.$t('pos.label_currency'), this.$t('receipt.label_amount'), this.$t('pos.label_token'), this.$t('txDetail.label_from'), this.$t('txDetail.label_id')]
+            downloadText(`blackvault-till-${new Date().toISOString().slice(0, 10)}.csv`, tillCsv(payments.requests as TillRequest[], headers))
+        },
+        async openSticker() {
+            this.showSticker = true
+            this.tapUrl = ''
+            try {
+                this.tapUrl = tapLink((await ensureTill(this.address)).id)
+            } catch (err) {
+                console.warn('till:', err)
+                this.showSticker = false
+                this.$q.notify(this.$t('common.something_wrong'))
+            }
+        },
+        async writeSticker() {
+            this.writing = true
+            try {
+                this.$q.notify(this.$t('tap.msg_hold'))
+                await writeNfc(this.tapUrl)
+                this.$q.notify(this.$t('tap.msg_written'))
+            } catch (err) {
+                console.warn('nfc:', err)
+                this.$q.notify(this.$t('tap.msg_write_failed'))
+            } finally {
+                this.writing = false
+            }
+        },
+        async copyTap() {
+            await copyText(this.tapUrl)
+            this.$q.notify(this.$t('common.copied'))
         },
         bon(r: TillRequest) {
             if (!r.paid) return
@@ -312,6 +481,12 @@ export default defineComponent({
 
 .hint
   max-width: 320px
+
+.days-card
+  max-width: 480px
+
+.days-title
+  font-size: 22px
 
 .keypad
   display: grid

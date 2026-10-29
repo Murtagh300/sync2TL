@@ -69,7 +69,56 @@ const MIGRATIONS: string[] = [
         at INTEGER NOT NULL
     )`,
     `CREATE INDEX chat_to ON chat_messages(to_addr, id)`,
-    `CREATE INDEX chat_from ON chat_messages(from_addr, id)`
+    `CREATE INDEX chat_from ON chat_messages(from_addr, id)`,
+    // a subscription that also wants outgoing transfers and new approvals (push/watcher.ts)
+    `ALTER TABLE subscriptions ADD COLUMN outgoing INTEGER NOT NULL DEFAULT 0`,
+    // tills behind an NFC sticker (till.ts): the address, a hash of the till's secret, the open sale
+    `CREATE TABLE tills (
+        id TEXT PRIMARY KEY,
+        address TEXT NOT NULL,
+        secret BLOB NOT NULL,
+        sale TEXT,
+        updated_at INTEGER NOT NULL
+    )`,
+    // a subscription that wants a push when a VeBetterDAO round starts (push/rounds.ts)
+    `ALTER TABLE subscriptions ADD COLUMN rounds INTEGER NOT NULL DEFAULT 0`,
+    // token price alerts a device handed over (push/price-alerts.ts): gone with its subscription
+    `CREATE TABLE price_alerts (
+        endpoint TEXT NOT NULL REFERENCES subscriptions(endpoint) ON DELETE CASCADE,
+        id TEXT NOT NULL,
+        token TEXT NOT NULL,
+        kind TEXT NOT NULL,
+        usd REAL NOT NULL,
+        title TEXT NOT NULL,
+        url TEXT NOT NULL,
+        fired INTEGER NOT NULL DEFAULT 0,
+        PRIMARY KEY (endpoint, id)
+    )`,
+    // web shops and their orders (shop.ts): an address, a hash of the shop's key, amounts and status
+    `CREATE TABLE shops (
+        id TEXT PRIMARY KEY,
+        name TEXT NOT NULL,
+        address TEXT NOT NULL,
+        key_hash BLOB NOT NULL,
+        created_at INTEGER NOT NULL
+    )`,
+    `CREATE TABLE shop_orders (
+        token TEXT PRIMARY KEY,
+        shop TEXT NOT NULL REFERENCES shops(id) ON DELETE CASCADE,
+        ref TEXT NOT NULL,
+        address TEXT NOT NULL,
+        amount TEXT NOT NULL,
+        symbol TEXT NOT NULL,
+        fiat REAL NOT NULL,
+        currency TEXT NOT NULL,
+        status TEXT NOT NULL,
+        tx_id TEXT,
+        return_url TEXT NOT NULL,
+        created_at INTEGER NOT NULL,
+        expires_at INTEGER NOT NULL
+    )`,
+    `CREATE INDEX shop_orders_ref ON shop_orders(shop, ref)`,
+    `CREATE INDEX shop_orders_open ON shop_orders(status, expires_at)`
 ]
 
 export function openDb(path: string): DatabaseSync {

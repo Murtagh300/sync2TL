@@ -97,7 +97,12 @@
                         @backup="$router.push({name: 'backup', params: {walletId: w.id.toString()}})"
                         v-show="w.id === wallet?.id && !w.meta.backedUp"
                     />
-                    <template v-if="wallet">
+                    <!-- the simple home: the balance and three big buttons -->
+                    <simple-home
+                        v-if="wallet && prefs.simpleMode"
+                        :wallet="wallet"
+                    />
+                    <template v-else-if="wallet">
                         <first-funds
                             v-if="!all && canSign(wallet)"
                             :key="'funds-' + wallet.id"
@@ -192,7 +197,7 @@
                     </div>
                 </div>
             </pull-refresh>
-            <home-tour v-if="wallet" />
+            <home-tour v-if="wallet && !prefs.simpleMode" />
         </template>
     </div>
 </template>
@@ -213,6 +218,7 @@ import BalancePulse from './BalancePulse.vue'
 import HomeWidgets from './HomeWidgets.vue'
 import HomeTour from './HomeTour.vue'
 import FirstFunds from './FirstFunds.vue'
+import SimpleHome from './SimpleHome.vue'
 import { canSign } from 'src/utils/watch'
 import WidgetsDialog from './WidgetsDialog.vue'
 import { homeWidgets, type Widget } from './widgets'
@@ -222,7 +228,7 @@ import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { haptic } from 'src/utils/prefs'
 
 export default defineComponent({
-    components: { PullRefresh, PriceTicker, BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, BalancePulse, HomeWidgets, HomeTour, FirstFunds },
+    components: { PullRefresh, PriceTicker, BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, BalancePulse, HomeWidgets, HomeTour, FirstFunds, SimpleHome },
     data: () => {
         return {
             nodeHealth,

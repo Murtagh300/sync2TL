@@ -1,0 +1,35 @@
+{
+    "manifest_version": 3,
+    "name": "BlackVault",
+    "description": "Use the BlackVault wallet on VeChain sites: sign in and sign transactions in BlackVault, without WalletConnect.",
+    "version": "1.0.0",
+    "icons": {
+        "16": "icons/16.png",
+        "32": "icons/32.png",
+        "128": "icons/128.png"
+    },
+    "action": {
+        "default_title": "BlackVault",
+        "default_popup": "popup.html",
+        "default_icon": {
+            "16": "icons/16.png",
+            "32": "icons/32.png"
+        }
+    },
+    "content_scripts": [
+        {
+            "matches": ["https://*/*", "http://localhost/*", "http://127.0.0.1/*"],
+            "js": ["inject.js"],
+            "run_at": "document_start",
+            "world": "MAIN",
+            "all_frames": false
+        }
+    ],
+    "permissions": [],
+    "browser_specific_settings": {
+        "gecko": {
+            "id": "extension@blackvault.blackvemarket.com",
+            "strict_min_version": "128.0"
+        }
+    }
+}

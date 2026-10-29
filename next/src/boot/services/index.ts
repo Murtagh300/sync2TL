@@ -8,6 +8,7 @@ import * as Bvm from './bvm'
 import * as Prices from './prices'
 import { groupBy } from 'src/utils/array'
 import { configureNames, setContacts } from 'src/utils/names'
+import { loadKnownLabels } from 'src/utils/known-labels'
 import { genesises } from 'src/consts'
 
 export type Service = {
@@ -79,5 +80,7 @@ export default defineBoot(async ({ app }) => {
         }
     })
     config.getContacts().then(setContacts).catch(err => console.warn(err))
+    // public names for well-known contracts, tokens and collections
+    void loadKnownLabels()
     app.config.globalProperties.$svc = instance
 })

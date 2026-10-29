@@ -5,12 +5,16 @@ import type { DatabaseSync } from 'node:sqlite'
  * news about. Addresses are public; nothing here can move funds.
  */
 
-export type Subscription = { endpoint: string, keys: { p256dh: string, auth: string }, lang: string }
+/**
+ * outgoing: also a push for transfers out of the addresses and new approvals they give;
+ * rounds: a push when a VeBetterDAO round starts
+ */
+export type Subscription = { endpoint: string, keys: { p256dh: string, auth: string }, lang: string, outgoing?: boolean, rounds?: boolean }
 
 export const MAX_ADDRESSES = 20
 /** all subscriptions together: the watcher reads these every 10 seconds */
 export const MAX_WATCHED = 50000
-export const LANGS = ['en', 'nl', 'de', 'fr', 'zh', 'es', 'it', 'ja', 'ko']
+export const LANGS = ['en', 'nl', 'de', 'fr', 'zh', 'es', 'it', 'ja', 'ko', 'pt', 'tr', 'vi', 'ru', 'pl', 'id']
 
 /**
  * The push services browsers use. The server only ever posts to these: a subscription can't make
@@ -49,19 +53,20 @@ export function validateSubscribe(raw: unknown): { sub: Subscription, addresses:
     if (!addresses.length) throw new Error('no valid addresses')
     if (addresses.length > MAX_ADDRESSES) throw new Error(`at most ${MAX_ADDRESSES} addresses`)
     const lang = typeof r.lang === 'string' && LANGS.includes(r.lang.slice(0, 2)) ? r.lang.slice(0, 2) : 'en'
-    return { sub: { endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, lang }, addresses }
+    return { sub: { endpoint, keys: { p256dh: keys.p256dh, auth: keys.auth }, lang, outgoing: r.outgoing === true, rounds: r.rounds === true }, addresses }
 }
 
 export function createStore(db: DatabaseSync) {
-    const upsert = db.prepare(`INSERT INTO subscriptions (endpoint, keys, addresses, lang, created_at, updated_at)
-        VALUES (?, ?, ?, ?, ?, ?)
-        ON CONFLICT(endpoint) DO UPDATE SET keys = excluded.keys, addresses = excluded.addresses, lang = excluded.lang, updated_at = excluded.updated_at`)
+    const upsert = db.prepare(`INSERT INTO subscriptions (endpoint, keys, addresses, lang, outgoing, rounds, created_at, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(endpoint) DO UPDATE SET keys = excluded.keys, addresses = excluded.addresses, lang = excluded.lang, outgoing = excluded.outgoing, rounds = excluded.rounds, updated_at = excluded.updated_at`)
     const clearWatched = db.prepare('DELETE FROM watched WHERE endpoint = ?')
     const watch = db.prepare('INSERT OR IGNORE INTO watched (address, endpoint) VALUES (?, ?)')
     const remove = db.prepare('DELETE FROM subscriptions WHERE endpoint = ?')
-    const byAddress = db.prepare(`SELECT s.endpoint, s.keys, s.lang, s.addresses FROM watched w
+    const byAddress = db.prepare(`SELECT s.endpoint, s.keys, s.lang, s.addresses, s.outgoing FROM watched w
         JOIN subscriptions s ON s.endpoint = w.endpoint WHERE w.address = ?`)
     const allAddresses = db.prepare('SELECT DISTINCT address FROM watched')
+    const outgoingAddresses = db.prepare('SELECT DISTINCT w.address FROM watched w JOIN subscriptions s ON s.endpoint = w.endpoint WHERE s.outgoing = 1')
     const count = db.prepare('SELECT COUNT(*) AS n FROM subscriptions')
     const exists = db.prepare('SELECT 1 AS x FROM subscriptions WHERE endpoint = ?')
     const watchedCount = db.prepare('SELECT COUNT(DISTINCT address) AS n FROM watched')
@@ -73,7 +78,7 @@ export function createStore(db: DatabaseSync) {
             const now = Date.now()
             db.exec('BEGIN')
             try {
-                upsert.run(sub.endpoint, JSON.stringify(sub.keys), JSON.stringify(addresses), sub.lang, now, now)
+                upsert.run(sub.endpoint, JSON.stringify(sub.keys), JSON.stringify(addresses), sub.lang, sub.outgoing ? 1 : 0, sub.rounds ? 1 : 0, now, now)
                 clearWatched.run(sub.endpoint)
                 for (const a of addresses) watch.run(a, sub.endpoint)
                 db.exec('COMMIT')
@@ -87,11 +92,15 @@ export function createStore(db: DatabaseSync) {
         },
         /** the subscriptions watching an address, with every address each one watches */
         forAddress(address: string): (Subscription & { addresses: string[] })[] {
-            return (byAddress.all(address.toLowerCase()) as { endpoint: string, keys: string, lang: string, addresses: string }[])
-                .map(r => ({ endpoint: r.endpoint, keys: JSON.parse(r.keys), lang: r.lang, addresses: JSON.parse(r.addresses) }))
+            return (byAddress.all(address.toLowerCase()) as { endpoint: string, keys: string, lang: string, addresses: string, outgoing: number }[])
+                .map(r => ({ endpoint: r.endpoint, keys: JSON.parse(r.keys), lang: r.lang, outgoing: r.outgoing === 1, addresses: JSON.parse(r.addresses) }))
         },
         addresses(): string[] {
             return (allAddresses.all() as { address: string }[]).map(r => r.address)
+        },
+        /** the addresses some subscription wants outgoing news for */
+        outgoingAddresses(): string[] {
+            return (outgoingAddresses.all() as { address: string }[]).map(r => r.address)
         },
         has(endpoint: string): boolean {
             return !!exists.get(endpoint)
