@@ -12,6 +12,36 @@ export type Release = {
 }
 
 export const releases: Release[] = [{
+    version: '2.4.2',
+    date: '2026-10-30',
+    items: {
+        en: [
+            'The price ticker and your address cards are back on the home screen.',
+            'Top tokens show how much you hold, with its value underneath.',
+            'The ticker scrolls whenever the prices don\'t fit, and small prices always show three digits.'
+        ],
+        nl: [
+            'De koersticker en je adreskaarten staan weer op het startscherm.',
+            'Top-tokens tonen hoeveel je hebt, met de waarde eronder.',
+            'De ticker schuift zodra de koersen niet passen, en kleine koersen tonen altijd drie cijfers.'
+        ],
+        de: [
+            'Der Kursticker und deine Adresskarten sind zurück auf dem Startbildschirm.',
+            'Top-Token zeigen, wie viel du hältst, mit dem Wert darunter.',
+            'Der Ticker läuft, sobald die Kurse nicht passen, und kleine Kurse zeigen immer drei Stellen.'
+        ],
+        fr: [
+            'Le défilé des cours et vos cartes d\'adresse sont de retour sur l\'accueil.',
+            'Les principaux jetons affichent ce que vous détenez, avec la valeur en dessous.',
+            'Le défilé avance dès que les cours ne tiennent pas, et les petits cours affichent toujours trois chiffres.'
+        ],
+        zh: [
+            '价格滚动条和地址卡片重新回到首页。',
+            '主要代币显示你的持有数量，下方显示价值。',
+            '价格放不下时滚动条会滚动，小额价格始终显示三位有效数字。'
+        ]
+    }
+}, {
     version: '2.4.1',
     date: '2026-10-30',
     items: {

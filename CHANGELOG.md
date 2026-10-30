@@ -5,6 +5,12 @@ an update comes from `next/src/changelog.ts` (keep the two in step).
 
 ## Unreleased
 
+## 2.4.2 — 2026-10-30
+
+- The ticker and the address cards are back on home by default (2.4.1 had switched them off); top tokens
+  show the balance with the value underneath. The ticker runs whenever the prices don't fit, shows
+  prices while balances are hidden, and prices under a cent always get three significant digits.
+
 ## 2.4.1 — 2026-10-30
 
 - A calmer home: the total value (with a way into the wallet) and the top tokens; everything else can be
