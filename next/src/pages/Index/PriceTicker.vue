@@ -2,11 +2,13 @@
     <!-- prices of VET, VTHO, B3TR and pinned tokens, running across the top of home -->
     <div
         v-if="items.length"
+        ref="box"
         class="ticker"
         :aria-label="$t('widgets.ticker')"
         role="list"
     >
         <div
+            ref="track"
             class="ticker-track"
             :class="{ 'ticker-track--run': run }"
         >
@@ -47,23 +49,48 @@ export default defineComponent({
     },
     data: () => ({
         items: [] as { symbol: string, price: string, change: number }[],
-        timer: 0 as ReturnType<typeof setInterval> | 0
+        timer: 0 as ReturnType<typeof setInterval> | 0,
+        overflows: false,
+        observer: null as ResizeObserver | null
     }),
     computed: {
-        /** runs only with enough items, and not for people who asked for less motion */
+        /** runs only when the prices don't fit, and not for people who asked for less motion */
         run(): boolean {
             const reduced = typeof window !== 'undefined' && window.matchMedia?.('(prefers-reduced-motion: reduce)').matches
-            return this.items.length >= 4 && !reduced
+            return this.overflows && !reduced
+        }
+    },
+    watch: {
+        items() {
+            void this.$nextTick(() => this.measure())
         }
     },
     created() {
         void this.load()
         this.timer = setInterval(() => void this.load(), 60 * 1000)
     },
+    mounted() {
+        if (typeof ResizeObserver !== 'undefined') {
+            this.observer = new ResizeObserver(() => this.measure())
+        }
+    },
     beforeUnmount() {
         this.timer && clearInterval(this.timer)
+        this.observer?.disconnect()
     },
     methods: {
+        /** whether one copy of the prices is wider than the strip (a running loop shows two) */
+        measure() {
+            const box = this.$refs.box as HTMLElement | undefined
+            const track = this.$refs.track as HTMLElement | undefined
+            if (!box || !track) {
+                return
+            }
+            this.observer?.disconnect()
+            this.observer?.observe(box)
+            const one = track.scrollWidth / (this.run ? 2 : 1)
+            this.overflows = one > box.clientWidth
+        },
         async load() {
             try {
                 const [all, tokenPrefs, fx] = await Promise.all([
@@ -79,7 +106,7 @@ export default defineComponent({
                 const statOf = (spec: M.TokenSpec) => stats[(spec.address || '0x0000000000000000000000000000000000000000').toLowerCase()]
                 this.items = specs
                     .filter(s => statOf(s))
-                    .map(s => ({ symbol: s.symbol, price: money(statOf(s)!.price * fx), change: statOf(s)!.change24h }))
+                    .map(s => ({ symbol: s.symbol, price: money(statOf(s)!.price * fx, prefs.currency, { price: true }), change: statOf(s)!.change24h }))
             } catch {
                 // prices unreachable: keep what was shown
             }

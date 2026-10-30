@@ -35,8 +35,17 @@
                         :class="h.change24h >= 0 ? 'text-primary' : 'text-negative'"
                     >{{h.change24h >= 0 ? '+' : ''}}{{$fixed(h.change24h, 1)}}%</q-item-label>
                 </q-item-section>
+                <!-- how much you hold, and what it is worth -->
                 <q-item-section side>
-                    <div class="bvm-amount text-white">{{money(h.usd * fx)}}</div>
+                    <amount-label
+                        class="bvm-amount text-white"
+                        :value="h.amount"
+                        :decimals="h.spec.decimals"
+                    > --.-- </amount-label>
+                    <q-item-label
+                        caption
+                        class="text-muted"
+                    >{{money(h.usd * fx)}}</q-item-label>
                 </q-item-section>
             </q-item>
             <!-- nothing of value here yet: what trades most on VeChain, to swap into -->
@@ -175,6 +184,7 @@
 <script lang="ts">
 import { defineComponent } from 'vue'
 import TokenAvatar from 'components/TokenAvatar.vue'
+import AmountLabel from 'components/AmountLabel.vue'
 import { walletPortfolio, type Holding } from 'src/utils/portfolio'
 import { emptyWatchlist, type Watchlist } from 'src/utils/alerts'
 import { money, prefs } from 'src/utils/prefs'
@@ -183,7 +193,7 @@ import type { Prices } from 'boot/services/prices'
 
 // the optional blocks of the home screen: top tokens, watchlist feed, launchpad
 export default defineComponent({
-    components: { TokenAvatar },
+    components: { TokenAvatar, AmountLabel },
     props: {
         kind: { type: String as () => 'tokens' | 'watchlist' | 'launchpad', required: true },
         wallet: { type: Object as () => M.Wallet, required: true },

@@ -108,14 +108,14 @@ export function haptic(kind: 'tap' | 'success' | 'warning' | 'error' = 'tap') {
     } catch { }
 }
 
-/** money, or dots while balances are hidden */
-export function money(value: number, currency = prefs.currency, opts: { compact?: boolean } = {}): string {
-    if (prefs.hideBalances) {
+/** money, or dots while balances are hidden (a market price isn't a balance: `price` shows it anyway) */
+export function money(value: number, currency = prefs.currency, opts: { compact?: boolean, price?: boolean } = {}): string {
+    if (prefs.hideBalances && !opts.price) {
         return '••••'
     }
     // fractions of a cent (small tokens): three significant digits
     if (value !== 0 && Math.abs(value) < 0.01) {
-        return new Intl.NumberFormat(numberLocale(), { style: 'currency', currency, maximumSignificantDigits: 3 }).format(value)
+        return new Intl.NumberFormat(numberLocale(), { style: 'currency', currency, minimumSignificantDigits: 3, maximumSignificantDigits: 3 }).format(value)
     }
     const digits = Math.abs(value) >= 1000 ? 0 : Math.abs(value) >= 1 ? 2 : 4
     return new Intl.NumberFormat(numberLocale(), {
