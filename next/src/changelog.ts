@@ -12,6 +12,31 @@ export type Release = {
 }
 
 export const releases: Release[] = [{
+    version: '2.4.1',
+    date: '2026-10-30',
+    items: {
+        en: [
+            'A calmer home: your total value with a button into your wallet, and your top tokens. Everything else can be switched on under Edit home.',
+            'SQUAD, B3TR and VOT3 now sit in your wallet\'s token list, with their Buy now button.'
+        ],
+        nl: [
+            'Een rustiger startscherm: je totale waarde met een knop naar je wallet, en je toptokens. De rest zet je aan onder Home aanpassen.',
+            'SQUAD, B3TR en VOT3 staan nu in de tokenlijst van je wallet, met hun Koop nu-knop.'
+        ],
+        de: [
+            'Ein ruhigerer Startbildschirm: dein Gesamtwert mit einem Knopf zu deiner Wallet und deine Top-Token. Alles andere schaltest du unter Startseite anpassen ein.',
+            'SQUAD, B3TR und VOT3 stehen jetzt in der Token-Liste deiner Wallet, mit ihrem Jetzt-kaufen-Knopf.'
+        ],
+        fr: [
+            'Un accueil plus calme : votre valeur totale avec un bouton vers votre portefeuille, et vos principaux jetons. Le reste s\'active sous Personnaliser l\'accueil.',
+            'SQUAD, B3TR et VOT3 sont désormais dans la liste de jetons de votre portefeuille, avec leur bouton Acheter.'
+        ],
+        zh: [
+            '更清爽的首页：总价值加一个进入钱包的按钮，以及你的主要代币。其他内容可在“自定义首页”中开启。',
+            'SQUAD、B3TR 和 VOT3 现在位于钱包的代币列表中，并带有“立即购买”按钮。'
+        ]
+    }
+}, {
     version: '2.4.0',
     date: '2026-10-29',
     items: {
