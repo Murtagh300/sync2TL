@@ -2,7 +2,7 @@ import { test, expect, openHome } from './fixtures'
 
 test('the home screen shows the wallet and its address', async ({ page }) => {
     await openHome(page)
-    await expect(page.getByText('My Wallet')).toBeVisible()
+    await expect(page.getByText('My Wallet', { exact: true })).toBeVisible()
     await expect(page.getByText(/0x[0-9a-f]{4}/i).first()).toBeVisible()
 })
 
@@ -14,8 +14,16 @@ test('the tabs lead to every main screen', async ({ page }) => {
     }
 })
 
+test('the wallet opens from home', async ({ page }) => {
+    await openHome(page)
+    await page.getByRole('button', { name: 'Open my wallet' }).click()
+    await expect(page).toHaveURL(/#\/w\/1\/0$/)
+    await expect(page.getByRole('tab', { name: 'Tokens' })).toBeVisible()
+})
+
 test('receive shows a QR code and the full address', async ({ page }) => {
     await openHome(page)
+    await page.getByRole('button', { name: 'Open my wallet' }).click()
     await page.getByRole('button', { name: /receive/i }).first().click()
     const sheet = page.getByRole('dialog').filter({ hasText: /0x[0-9a-fA-F]{40}/ })
     await expect(sheet).toBeVisible()

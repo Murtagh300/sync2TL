@@ -72,11 +72,12 @@ describe('config.node', () => {
 })
 
 describe('config.token', () => {
-    it('combines VET/VTHO for every network with the registry', async () => {
+    it('combines VET/VTHO for every network with the registry, and the featured tokens on mainnet', async () => {
         const tokens = await config.token.all()
         const main = tokens.filter(t => t.gid === genesises.main.id).map(t => t.symbol)
         const test = tokens.filter(t => t.gid === genesises.test.id).map(t => t.symbol)
-        expect(main).toEqual(['VET', 'VTHO', 'TKA'])
+        // SQUAD, B3TR and VOT3 even when the registry doesn't list them (yet)
+        expect(main).toEqual(['VET', 'VTHO', 'TKA', 'SQUAD', 'B3TR', 'VOT3'])
         expect(test).toEqual(['VET', 'VTHO'])
 
         const tka = tokens.find(t => t.symbol === 'TKA')!

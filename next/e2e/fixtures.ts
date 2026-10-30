@@ -32,10 +32,10 @@ export const test = base.extend<{ server: ServerStub }>({
 
 export { expect }
 
-/** the wallet is ready: the home screen shows */
+/** the wallet is ready: the home screen shows (the total value and the way into the wallet) */
 export async function openHome(page: Page) {
     await page.goto('/#/')
-    await expect(page.getByRole('button', { name: /send/i }).first()).toBeVisible()
+    await expect(page.getByRole('button', { name: 'Open my wallet' })).toBeVisible()
 }
 
 export const PASSWORD = 'e2e-only-password-1'

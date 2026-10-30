@@ -104,6 +104,8 @@ export function build(storage: Storage) {
             }
             // tokens the user added by address (mainnet), unless the registry has them by now
             const listed = new Set(registry.main.map(e => e.address.toLowerCase()))
+            // the featured ones always exist, the registry's own entry when it has one
+            const featured = TokenRegistry.featured.filter(e => !listed.has(e.address)).map(e => toModel(genesises.main.id, e, false))
             const custom = (JSON.parse((await get('custom-tokens')) || '[]') as TokenRegistry.Entity[])
                 .filter(e => !listed.has(e.address.toLowerCase()))
                 .map(e => ({ ...toModel(genesises.main.id, e, false), custom: true }))
@@ -112,6 +114,7 @@ export function build(storage: Storage) {
             return ([] as M.TokenSpec[]).concat(
                 ...gids.map(gid => TokenRegistry.permanents.map(e => toModel(gid, e, true))),
                 registry.main.map(e => toModel(genesises.main.id, e, false)),
+                featured,
                 custom,
                 registry.test.map(e => toModel(genesises.test.id, e, false))
             )

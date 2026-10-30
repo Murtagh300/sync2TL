@@ -27,6 +27,6 @@ setup('create a wallet', async ({ page, context }) => {
     await page.getByRole('button', { name: 'Next' }).click()
     await page.getByRole('button', { name: 'Skip and finish' }).click()
 
-    await expect(page.getByText('My Wallet')).toBeVisible()
+    await expect(page.getByText('My Wallet', { exact: true })).toBeVisible()
     await context.storageState({ path: 'e2e/.auth/wallet.json', indexedDB: true })
 })
