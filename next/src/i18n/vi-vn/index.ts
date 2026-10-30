@@ -412,6 +412,7 @@ export default {
         action_swap_anyway: 'Vẫn hoán đổi'
     },
     home: {
+        action_open_wallet: 'Mở ví của tôi',
         action_resend: 'Gửi lại {amount} cho {name}',
         layout_wide: 'Hai cột',
         layout_compact: 'Một cột',
@@ -1032,6 +1033,7 @@ export default {
         my_wallet: 'BlackVault của tôi'
     },
     widgets: {
+        resend: 'Gửi lại',
         action_retry: 'Thử lại',
         msg_prices_failed: 'Hiện không tải được giá.',
         tokens_popular: 'Phổ biến trên VeChain',

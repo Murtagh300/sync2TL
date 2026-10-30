@@ -412,6 +412,7 @@ export default {
         action_swap_anyway: 'Tetap tukar'
     },
     home: {
+        action_open_wallet: 'Buka dompet saya',
         action_resend: 'Kirim lagi {amount} ke {name}',
         layout_wide: 'Dua kolom',
         layout_compact: 'Satu kolom',
@@ -1032,6 +1033,7 @@ export default {
         my_wallet: 'BlackVault saya'
     },
     widgets: {
+        resend: 'Kirim lagi',
         action_retry: 'Coba lagi',
         msg_prices_failed: 'Harga tidak bisa dimuat sekarang.',
         tokens_popular: 'Populer di VeChain',

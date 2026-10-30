@@ -1,18 +1,21 @@
 import { reactive, watch } from 'vue'
 
 /** the blocks of the home screen, in the user's order; each can be switched off */
-export type WidgetKey = 'ticker' | 'portfolio' | 'actions' | 'tokens' | 'watchlist' | 'launchpad' | 'addresses'
+export type WidgetKey = 'ticker' | 'portfolio' | 'actions' | 'resend' | 'tokens' | 'watchlist' | 'launchpad' | 'addresses'
 export type Widget = { key: WidgetKey, on: boolean }
 
-const KEY = 'bv-home-widgets'
+// a calm home by default: the total value and the top tokens; the rest is the user's choice
+// (a new key: everyone starts from these defaults once)
+const KEY = 'bv-home-widgets-2'
 const DEFAULTS: Widget[] = [
-    { key: 'ticker', on: true },
     { key: 'portfolio', on: true },
-    { key: 'actions', on: true },
     { key: 'tokens', on: true },
+    { key: 'actions', on: false },
+    { key: 'resend', on: false },
+    { key: 'ticker', on: false },
     { key: 'watchlist', on: false },
     { key: 'launchpad', on: false },
-    { key: 'addresses', on: true }
+    { key: 'addresses', on: false }
 ]
 
 function load(): Widget[] {

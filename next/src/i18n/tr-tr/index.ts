@@ -412,6 +412,7 @@ export default {
         action_swap_anyway: 'Yine de takas et'
     },
     home: {
+        action_open_wallet: 'Cüzdanımı aç',
         action_resend: '{name} adresine {amount} tekrar gönder',
         layout_wide: 'İki sütun',
         layout_compact: 'Tek sütun',
@@ -1032,6 +1033,7 @@ export default {
         my_wallet: 'BlackVault\'um'
     },
     widgets: {
+        resend: 'Tekrar gönder',
         action_retry: 'Tekrar dene',
         msg_prices_failed: 'Fiyatlar şu an yüklenemiyor.',
         tokens_popular: 'VeChain\'de popüler',

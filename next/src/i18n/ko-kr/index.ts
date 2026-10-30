@@ -412,6 +412,7 @@ export default {
         action_swap_anyway: '그래도 스왑'
     },
     home: {
+        action_open_wallet: '내 지갑 열기',
         action_resend: '{name}에게 {amount} 다시 보내기',
         layout_wide: '2열',
         layout_compact: '1열',
@@ -1032,6 +1033,7 @@ export default {
         my_wallet: '내 BlackVault'
     },
     widgets: {
+        resend: '다시 보내기',
         action_retry: '다시 시도',
         msg_prices_failed: '지금은 가격을 불러올 수 없습니다.',
         tokens_popular: 'VeChain 인기',

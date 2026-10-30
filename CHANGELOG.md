@@ -5,6 +5,9 @@ an update comes from `next/src/changelog.ts` (keep the two in step).
 
 ## Unreleased
 
+- A calmer home: the total value (with a way into the wallet) and the top tokens; everything else can be
+  switched on under "Edit home". SQUAD, B3TR and VOT3 live in the wallet's token list.
+
 ## 2.4.0 — 2026-10-29
 
 **Safety**

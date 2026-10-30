@@ -412,6 +412,7 @@ export default {
         action_swap_anyway: 'Всё равно обменять'
     },
     home: {
+        action_open_wallet: 'Открыть кошелёк',
         action_resend: 'Снова отправить {amount} для {name}',
         layout_wide: 'Две колонки',
         layout_compact: 'Одна колонка',
@@ -1032,6 +1033,7 @@ export default {
         my_wallet: 'Мой BlackVault'
     },
     widgets: {
+        resend: 'Отправить снова',
         action_retry: 'Попробовать снова',
         msg_prices_failed: 'Цены сейчас не загружаются.',
         tokens_popular: 'Популярное в VeChain',

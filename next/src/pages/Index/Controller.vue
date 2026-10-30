@@ -140,18 +140,27 @@
                                             :wallet-id="wallet.id"
                                             @changed="onBalanceChanged()"
                                         />
-                                    </template>
-                                    <template v-else-if="wd.key === 'actions'">
-                                        <quick-actions
-                                            :wallet="wallet"
-                                            class="q-mt-lg"
+                                        <!-- into the wallet: its tokens, send and receive (the address cards are optional) -->
+                                        <q-btn
+                                            unelevated
+                                            no-caps
+                                            color="primary"
+                                            class="full-width q-mt-md open-wallet"
+                                            icon="o_account_balance_wallet"
+                                            icon-right="o_chevron_right"
+                                            :label="$t('home.action_open_wallet')"
+                                            @click="openWallet()"
                                         />
-                                        <resend-row :wallet="wallet" />
-                                        <featured-tokens
-                                            :wallet="wallet"
-                                            :wallets="all ? wallets : [wallet]"
-                                        />
                                     </template>
+                                    <quick-actions
+                                        v-else-if="wd.key === 'actions'"
+                                        :wallet="wallet"
+                                        class="q-mt-lg"
+                                    />
+                                    <resend-row
+                                        v-else-if="wd.key === 'resend'"
+                                        :wallet="wallet"
+                                    />
                                     <template v-else-if="wd.key === 'addresses'">
                                         <template
                                             v-for="w in (all ? wallets : [wallet])"
@@ -221,7 +230,6 @@ import WalletSwitcher from './WalletSwitcher.vue'
 import PortfolioCard from './PortfolioCard.vue'
 import QuickActions from './QuickActions.vue'
 import ResendRow from './ResendRow.vue'
-import FeaturedTokens from './FeaturedTokens.vue'
 import BalancePulse from './BalancePulse.vue'
 import HomeWidgets from './HomeWidgets.vue'
 import HomeTour from './HomeTour.vue'
@@ -236,7 +244,7 @@ import { selection, selectedWallet, ALL_WALLETS } from 'src/utils/selection'
 import { haptic } from 'src/utils/prefs'
 
 export default defineComponent({
-    components: { PullRefresh, PriceTicker, BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, ResendRow, FeaturedTokens, BalancePulse, HomeWidgets, HomeTour, FirstFunds, SimpleHome },
+    components: { PullRefresh, PriceTicker, BackupTip, UpgradeTip, AddressCardList, OptionMenu, WalletSwitcher, PortfolioCard, QuickActions, ResendRow, BalancePulse, HomeWidgets, HomeTour, FirstFunds, SimpleHome },
     data: () => {
         return {
             nodeHealth,
@@ -266,7 +274,7 @@ export default defineComponent({
         /** the blocks per column: the total, actions and ticker left; tokens, lists and addresses right */
         columns(): Widget[][] {
             if (!this.wide) return [this.shownWidgets]
-            const left = ['ticker', 'portfolio', 'actions']
+            const left = ['ticker', 'portfolio', 'actions', 'resend']
             return [this.shownWidgets.filter(w => left.includes(w.key)), this.shownWidgets.filter(w => !left.includes(w.key))]
         }
     },
@@ -295,6 +303,11 @@ export default defineComponent({
         }
     },
     methods: {
+        /** the selected wallet's first address: its tokens (SQUAD, B3TR and VOT3 among them), send and receive */
+        openWallet() {
+            if (!this.wallet) return
+            void this.$router.push({ name: 'address', params: { walletId: String(this.wallet.id), addressIndex: '0' } })
+        },
         lockNow,
         canSign,
         onSelectWallet(id: number) {

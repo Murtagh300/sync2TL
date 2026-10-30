@@ -412,6 +412,7 @@ export default {
         action_swap_anyway: 'Swap anyway'
     },
     home: {
+        action_open_wallet: 'Open my wallet',
         action_resend: 'Send {amount} to {name} again',
         layout_wide: 'Two columns',
         layout_compact: 'One column',
@@ -1032,6 +1033,7 @@ export default {
         my_wallet: 'My BlackVault'
     },
     widgets: {
+        resend: 'Send again',
         action_retry: 'Try again',
         msg_prices_failed: 'Prices can\'t be loaded right now.',
         tokens_popular: 'Popular on VeChain',

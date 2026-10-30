@@ -412,6 +412,7 @@ export default {
         action_swap_anyway: 'Toch swappen'
     },
     home: {
+        action_open_wallet: 'Naar mijn wallet',
         action_resend: '{amount} opnieuw naar {name} sturen',
         layout_wide: 'Twee kolommen',
         layout_compact: 'Eén kolom',
@@ -1032,6 +1033,7 @@ export default {
         my_wallet: 'Mijn BlackVault'
     },
     widgets: {
+        resend: 'Opnieuw sturen',
         action_retry: 'Opnieuw',
         msg_prices_failed: 'Koersen kunnen nu niet worden geladen.',
         tokens_popular: 'Populair op VeChain',

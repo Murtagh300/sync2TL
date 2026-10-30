@@ -412,6 +412,7 @@ export default {
         action_swap_anyway: 'このままスワップ'
     },
     home: {
+        action_open_wallet: 'ウォレットを開く',
         action_resend: '{name} に {amount} をもう一度送る',
         layout_wide: '2 列',
         layout_compact: '1 列',
@@ -1032,6 +1033,7 @@ export default {
         my_wallet: 'マイ BlackVault'
     },
     widgets: {
+        resend: 'もう一度送る',
         action_retry: '再試行',
         msg_prices_failed: '現在価格を読み込めません。',
         tokens_popular: 'VeChain で人気',

@@ -411,6 +411,7 @@ export default {
         action_swap_anyway: '仍然兑换'
     },
     home: {
+        action_open_wallet: '打开我的钱包',
         action_resend: '再次向 {name} 发送 {amount}',
         layout_wide: '双栏',
         layout_compact: '单栏',
@@ -1031,6 +1032,7 @@ export default {
         my_wallet: '我的 BlackVault'
     },
     widgets: {
+        resend: '再次发送',
         action_retry: '重试',
         msg_prices_failed: '暂时无法加载价格。',
         tokens_popular: 'VeChain 热门',

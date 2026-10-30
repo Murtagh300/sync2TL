@@ -78,6 +78,7 @@ export default defineComponent({
         icons: {
             portfolio: 'o_show_chart',
             actions: 'o_bolt',
+            resend: 'o_replay',
             tokens: 'o_toll',
             watchlist: 'o_visibility',
             launchpad: 'o_rocket_launch',
